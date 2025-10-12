@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fb557a6b5255ebff6b0cc5c7cdafefb6",
+    "content-hash": "30328a9d9cd898629db2575c1ed004f6",
     "packages": [
         {
             "name": "cakephp/cakephp",
@@ -367,6 +367,62 @@
                 }
             ],
             "time": "2025-08-20T18:49:47+00:00"
+        },
+        {
+            "name": "friendsofcake/bootstrap-ui",
+            "version": "5.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/FriendsOfCake/bootstrap-ui.git",
+                "reference": "800b849776a9c1766667e0d20610e096f61f029c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/FriendsOfCake/bootstrap-ui/zipball/800b849776a9c1766667e0d20610e096f61f029c",
+                "reference": "800b849776a9c1766667e0d20610e096f61f029c",
+                "shasum": ""
+            },
+            "require": {
+                "cakephp/cakephp": "^5.1.4"
+            },
+            "require-dev": {
+                "cakephp/bake": "^3.0",
+                "cakephp/cakephp-codesniffer": "^5.1",
+                "phpunit/phpunit": "^10.5.5 || ^11.1.3"
+            },
+            "type": "cakephp-plugin",
+            "autoload": {
+                "psr-4": {
+                    "BootstrapUI\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jad Bitar",
+                    "homepage": "http://jadb.io",
+                    "role": "Author"
+                },
+                {
+                    "name": "Others",
+                    "homepage": "https://github.com/friendsofcake/bootstrap-ui/graphs/contributors"
+                }
+            ],
+            "description": "Bootstrap front-end framework support for CakePHP",
+            "homepage": "http://github.com/friendsofcake/bootstrap-ui",
+            "keywords": [
+                "bootstrap",
+                "cakephp",
+                "front-end"
+            ],
+            "support": {
+                "issues": "http://github.com/friendsofcake/bootstrap-ui/issues",
+                "source": "http://github.com/friendsofcake/bootstrap-ui"
+            },
+            "time": "2025-07-29T17:10:14+00:00"
         },
         {
             "name": "laminas/laminas-diactoros",

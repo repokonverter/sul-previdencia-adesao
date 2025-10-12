@@ -138,67 +138,6 @@
         transform: scale(0.95);
     }
 
-    /* Animação ao clicar nos botões do modal (Entendi, Copiar Código Pix) */
-    .modal-button:active {
-        transform: scale(0.95);
-    }
-
-    /* Estilo e animação do modal de sucesso e do simulador */
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-        padding: 20px;
-        /* Espaço nas bordas da tela */
-        box-sizing: border-box;
-        animation: fadeIn 0.3s ease forwards;
-    }
-
-    .modal.closing {
-        animation: fadeOut 0.3s ease forwards;
-    }
-
-    .success-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-        overflow-y: auto;
-        /* Permite rolagem vertical */
-    }
-
-    .modal-content {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        width: 90%;
-        max-width: 600px;
-        margin: 20px auto;
-        position: relative;
-        overflow-y: auto;
-        /* Permite rolagem dentro do modal */
-    }
-
-    @media (max-width: 768px) {
-        .modal-content {
-            height: auto;
-            max-height: 85vh;
-            /* Limita altura em telas menores */
-            margin: 10px auto;
-        }
-    }
-
     /* Estilo e animação do formulário de cadastro */
     .register-screen {
         display: none;
@@ -243,13 +182,6 @@
 
     .register-title {
         font-size: 24px;
-        color: #FF6200;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
-    /* Estilo do formulário do simulador */
-    .modal-content h2 {
         color: #FF6200;
         margin-bottom: 20px;
         text-align: center;
@@ -646,6 +578,10 @@
             left: 10px;
             width: auto;
         }
+    }
+
+    .hidden {
+        display: none;
     }
 
     /* Estilos para modais de upload */
@@ -1235,8 +1171,8 @@
             </h1>
             <p class="fintech-subtitle" style="color:#F47C20;">A previdência digital, simples e transparente para você.</p>
             <div class="botoes fintech-botoes">
-                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" id="abrir-simulador-modal">Simular minha previdência</a>
-                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" id="iniciar-btn">Faça sua adesão</a>
+                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja">Simular minha previdência</a>
+                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" data-bs-toggle="modal" data-bs-target="#registerModal">Faça sua adesão</a>
             </div>
         </div>
 
@@ -1455,7 +1391,6 @@
     <div class="app-nav">
         <div class="nav-item">
             <a href="https://www.instagram.com/sulprevidencia/" target="_blank" rel="noopener" style="text-decoration:none;display:flex;flex-direction:column;align-items:center;">
-                <!-- SVG mantido -->
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" stroke="#FF6200" stroke-width="2" fill="none" />
                     <circle cx="12" cy="12" r="4" stroke="#FF6200" stroke-width="2" fill="none" />
@@ -1467,15 +1402,16 @@
 
         <div class="nav-item">
             <a href="https://wa.me/5548991321918" target="_blank" rel="noopener" style="text-decoration:none;display:flex;flex-direction:column;align-items:center;">
-                <!-- SVG WhatsApp mantido -->
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M..." fill="#FF6200" />
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM16.2 15.2L14.7 14.7C14.53 14.65 14.36 14.7 14.23 14.82C13.68 15.32 12.89 15.32 12.34 14.82L11.18 13.66C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15L14.64 14.65C14.47 14.6 14.3 14.65 14.18 14.77C13.68 15.27 12.89 15.27 12.34 14.77L11.18 13.61C10.68 13.11 10.68 12.32 11.18 11.77C11.3 11.64 11.35 11.47 11.3 11.3L10.8 9.8C10.7 9.53 10.41 9.41 10.16 9.5C9.09 9.87 8.13 10.83 7.76 11.9C7.37 13.01 7.7 14.25 8.59 15.14C9.48 16.03 10.72 16.36 11.83 15.97C12.9 15.6 13.86 14.64 14.23 13.57C14.32 13.32 14.2 13.03 13.93 12.93L12.43 12.43C12.26 12.38 12.09 12.43 11.97 12.55C11.47 13.05 10.68 13.05 10.13 12.55L8.97 11.39C8.47 10.89 8.47 10.1 8.97 9.55C9.09 9.42 9.26 9.37 9.43 9.42L10.93 9.92C11.1 9.97 11.27 9.92 11.39 9.8C11.89 9.3 12.68 9.3 13.23 9.8L14.39 10.96C14.89 11.46 14.89 12.25 14.39 12.8C14.27 12.93 14.22 13.1 14.27 13.27L14.77 14.77C14.87 15.04 15.16 15.16 15.41 15.07C16.48 14.7 17.44 13.74 17.81 12.67C18.2 11.56 17.87 10.32 16.98 9.43C16.09 8.54 14.85 8.21 13.74 8.6C12.67 8.97 11.71 9.93 11.34 11C11.25 11.25 11.37 11.54 11.64 11.64L13.14 12.14C13.31 12.19 13.48 12.14 13.6 12.02C14.1 11.52 14.89 11.52 15.44 12.02L16.6 13.18C17.1 13.68 17.1 14.47 16.6 15.02C16.48 15.15 16.31 15.2 16.14 15.15Z" fill="#FF6200" />
+                    </svg>
                 </svg>
                 <span class="nav-label">Contato</span>
             </a>
         </div>
 
-        <div class="nav-item">
+        <div class="nav-item" style="display: none;">
             <a href="#" style="text-decoration:none;display:flex;flex-direction:column;align-items:center;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="4" y="7" width="16" height="10" rx="2" stroke="#FF6200" stroke-width="2" fill="none" />
@@ -1487,243 +1423,224 @@
     </div>
 </div>
 
-<!-- Upload buttons -->
-<div id="upload-buttons">
-    <button id="btn-upload-participante" class="upload-btn" title="Upload de Arquivos - Participante">
-        <!-- svg -->
-        <span>Upload de Arquivos - Participante</span>
-    </button>
-
-    <button id="btn-analise-documentacao" class="upload-btn" title="Análise de Documentação">
-        <span>Análise de Documentação</span>
-    </button>
-</div>
-
-<!-- Floating planos button -->
-<div id="floating-planos-btn" style="position: fixed; right: 20px; bottom: 80px; z-index: 999;">
-    <svg width="56" height="56" viewBox="0 0 24 24">
-        <rect width="24" height="24" rx="12" fill="#F47C20" />
-        <path d="M7.5 13.5h-1A1.5 1.5 0 0 1 5 12V7.5A1.5 1.5 0 0 1 6.5 6h7A1.5 1.5 0 0 1 15 7.5v4.5a1.5 1.5 0 0 1-1.5 1.5h-1l-2.25 2.25a.75.75 0 0 1-1.06 0L7.5 13.5Z" stroke="#fff" stroke-width="1.5" />
-        <rect x="13" y="13" width="6" height="4" rx="1" fill="#fff" />
-    </svg>
-</div>
-
-<!-- Planos popup -->
-<div id="planos-popup" class="planos-popup hidden" style="display:none; position: fixed; right: 20px; bottom: 140px; z-index:1000; background:#fff; padding:16px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12);">
-    <h3>Planos de Previdência</h3>
-    <div class="planos-list">
-        <div class="plano-card" data-plano="pleno-prev" style="display:flex;align-items:center;gap:12px;">
-            <?= $this->Html->image('Plenoprev.png', ['alt' => 'Pleno Prev', 'style' => 'width:64px;height:auto;']) ?>
-            <button class="modal-button">Pleno Prev</button>
-        </div>
-    </div>
-    <button class="close-popup modal-button" style="margin-top:10px;">Fechar</button>
-</div>
-
-<!-- Descrição popup -->
-<div id="descricao-popup" class="planos-popup hidden" style="display:none; position: fixed; right: 20px; bottom: 140px; z-index:1000; background:#fff; padding:16px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.12);">
-    <h3 id="plano-nome"></h3>
-    <p id="plano-descricao"></p>
-    <button class="close-popup modal-button" style="margin-top:10px;">Fechar</button>
-</div>
-
-<!-- Modal Upload Participante (resumido) -->
-<div id="modal-upload-participante" class="modal hidden" style="display:none;">
-    <div class="modal-content">
-        <div class="modal-content-inner">
-            <h2>🔐 Upload de Arquivos - Participante</h2>
-
-            <div id="step-verificacao-cpf" class="upload-step">
-                <div class="form-group">
-                    <label for="cpf-participante">Digite seu CPF para continuar:</label>
-                    <input type="text" id="cpf-participante" class="form-input" placeholder="000.000.000-00" maxlength="14">
-                    <small class="help-text">Informe seu CPF para verificar seus documentos pendentes</small>
-                </div>
-                <div class="form-actions">
-                    <button id="btn-verificar-cpf" class="modal-button btn-primary">Verificar CPF</button>
-                    <button id="btn-cancelar-upload" class="modal-button btn-secondary">Cancelar</button>
-                </div>
-                <div id="cpf-error-message" class="error-message hidden" style="display:none;"></div>
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
+            <div class="modal-body">
 
-            <!-- demais etapas mantidas front-end -->
-            <div id="step-boas-vindas" class="upload-step hidden" style="display:none;">
-                <div id="welcome-message" class="welcome-section"></div>
-                <div class="documentos-pendentes">
-                    <h3>📄 Documentos para preenchimento:</h3>
-                    <div class="pdf-list">
-                        <div class="pdf-item">
-                            <div class="pdf-icon">📄</div>
-                            <div class="pdf-info">
-                                <span class="pdf-name">BFX - Proposta PlenoPrev - v01.pdf</span>
-                                <small class="pdf-description">Formulário de adesão principal</small>
+                <div id="initialData" class="hidden">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nome completo*</label>
+                        <input type="text" class="form-control" name="name" placeholder="Nome completo">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-mail</label>
+                        <input type="email" class="form-control" name="email" placeholder="E-mail">
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Celular*</label>
+                        <input type="text" class="form-control" name="phone" placeholder="Celular">
+                    </div>
+                    <p class="form-text">
+                        Em conformidade com a Lei Geral de Proteção de Dados (LGPD), informamos que os dados fornecidos serão
+                        armazenados em nosso sistema e utilizados exclusivamente para fins de pesquisa de satisfação e suporte ao longo do processo.
+                        Ao clicar em “Concordo”, você concorda com o uso dessas informações para que possamos entrar em contato, caso necessário,
+                        para esclarecer dúvidas ou auxiliar em eventuais impedimentos.
+                    </p>
+                </div>
+
+                <div id="personalData" class="hidden">
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="planFor" class="form-label">O plano é para*</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="planForD" name="planFor" value="Dependente">
+                                    <label class="form-check-label" for="planForD">Dependente</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="planForT" name="planFor" value="Titular">
+                                    <label class="form-check-label" for="planForT">Titular</label>
+                                </div>
                             </div>
-                            <a href="/documentos/proposta-bfx-fixed.pdf" target="_blank" class="btn-download">Baixar</a>
                         </div>
-                        <div class="pdf-item">
-                            <div class="pdf-icon">📝</div>
-                            <div class="pdf-info">
-                                <span class="pdf-name">Formulário CEPREV - (Novo).docx</span>
-                                <small class="pdf-description">Formulário complementar CEPREV</small>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Nome completo*</label>
+                                <input type="text" class="form-control" name="name" placeholder="Nome completo">
                             </div>
-                            <a href="/documentos/formulario-ceprev-fixed_novo.docx" target="_blank" class="btn-download">Baixar</a>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="cpf" class="form-label">CPF*</label>
+                                <input type="text" class="form-control" name="cpf" placeholder="CPF">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="dateBirth" class="form-label">Data de nascimento*</label>
+                                <input type="date" class="form-control" name="dateBirth" placeholder="Data de nascimento">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="nacionality" class="form-label">Nacionalidade</label>
+                                <input type="text" class="form-control" name="nacionality" placeholder="Nacionalidade">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="gender" class="form-label">Gênero de nascimento*</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="genderF" name="gender" value="F">
+                                    <label class="form-check-label" for="genderF">Feminino</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="genderM" name="gender" value="M">
+                                    <label class="form-check-label" for="genderM">Masculino</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="maritalStatus" class="form-label">Estado civil*</label>
+                                <select class="form-select" name="maritalStatus">
+                                    <option value="">Selecione...</option>
+                                    <option value="Casado">Casado</option>
+                                    <option value="Divorciado">Divorciado</option>
+                                    <option value="Separado">Separado</option>
+                                    <option value="Solteiro">Solteiro</option>
+                                    <option value="União estável">União estável</option>
+                                    <option value="Viúvo">Viúvo</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="numberChildren" class="form-label">Nº de filhos*</label>
+                                <input type="text" class="form-control" name="numberChildren" placeholder="Nº de filhos">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="motherName" class="form-label">Nome da mãe*</label>
+                                <input type="text" class="form-control" name="motherName" placeholder="Nome da mãe">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="fatherName" class="form-label">Nome do pai*</label>
+                                <input type="text" class="form-control" name="fatherName" placeholder="Nome do pai">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="divLegalRepresentative">
+                        <blockquote class="blockquote">
+                            <p>Dados do representante legal</p>
+                        </blockquote>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="nameLegalRepresentative" class="form-label">Nome*</label>
+                                <input type="text" class="form-control" name="nameLegalRepresentative" placeholder="Nome">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="cpfLegalRepresentative" class="form-label">CPF*</label>
+                                <input type="text" class="form-control" name="cpfLegalRepresentative" placeholder="CPF">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="affiliationLegalRepresentative" class="form-label">Filiação*</label>
+                                <input type="text" class="form-control" name="affiliationLegalRepresentative" placeholder="Filiação">
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="next-step">
-                    <p><strong>Próximo passo:</strong> Baixe, preencha e envie os documentos usando o botão abaixo.</p>
-                    <button id="btn-ir-para-upload" class="modal-button btn-primary">Continuar para Upload</button>
-                </div>
-            </div>
 
-            <div id="step-upload-arquivos" class="upload-step hidden" style="display:none;">
-                <h3>📤 Envie seus documentos preenchidos</h3>
-                <div class="upload-area">
-                    <input type="file" id="file-input" multiple accept=".pdf" style="display:none;">
-                    <div id="drop-zone" class="drop-zone">
-                        <div class="drop-zone-content">
-                            <p>Arraste seus arquivos PDF aqui ou <span class="click-to-browse">clique para selecionar</span></p>
-                            <small>Apenas arquivos PDF são aceitos (máximo 10MB cada)</small>
+                <div id="documents" class="hidden">
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="documentType" class="form-label">Natureza do documento*</label>
+                                <select class="form-select" name="documentType">
+                                    <option value="">Selecione...</option>
+                                    <option value="CNH">CNH</option>
+                                    <option value="RG">RG</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="documentNumber" class="form-label">Nº do documento*</label>
+                                <input type="text" class="form-control" name="documentNumber" placeholder="Nº do documento">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="dateShipment" class="form-label">Data de expedição*</label>
+                                <input type="date" class="form-control" name="dateShipment" placeholder="Data de expedição">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="issuingBody" class="form-label">Órgão expedidor*</label>
+                                <input type="text" class="form-control" name="issuingBody" placeholder="Órgão expedidor">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="nationality" class="form-label">Naturalidade*</label>
+                                <input type="text" class="form-control" name="nationality" placeholder="Naturalidade">
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div id="file-list" class="file-list hidden" style="display:none;"></div>
-                <div id="upload-progress" class="upload-progress hidden" style="display:none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progress-fill"></div>
+
+                <div id="plan" class="">
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício*</label>
+                                <input type="number" class="form-control" name="benefitEntryAge" placeholder="Idade para entrada em benefício">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="monthlyContribuitionAmount" class="form-label">Valor da contribuição mensal*</label>
+                                <input type="text" class="form-control" name="monthlyContribuitionAmount" placeholder="Valor da contribuição mensal">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="mb-3">
+                                <label for="nationality" class="form-label">Naturalidade*</label>
+                                <input type="text" class="form-control" name="nationality" placeholder="Naturalidade">
+                            </div>
+                        </div>
                     </div>
-                    <div class="progress-text" id="progress-text">Enviando arquivos...</div>
                 </div>
-                <div class="form-actions">
-                    <button id="btn-enviar-arquivos" class="modal-button btn-primary" disabled>Enviar Documentos</button>
-                    <button id="btn-voltar-documentos" class="modal-button btn-secondary">Voltar</button>
-                </div>
-            </div>
 
-            <div id="step-sucesso-upload" class="upload-step hidden" style="display:none;">
-                <div class="success-content">
-                    <div class="success-icon">✅</div>
-                    <h3>Upload realizado com sucesso!</h3>
-                    <p>Seus documentos foram enviados e estão sendo analisados pela nossa equipe.</p>
-                    <button id="btn-finalizar-upload" class="modal-button btn-primary">Finalizar</button>
-                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary">Concordo</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Admin login modal -->
-<div id="modal-admin-login" class="modal hidden" style="display:none;">
-    <div class="modal-content">
-        <div class="modal-content-inner">
-            <h2>🔒 Acesso Administrativo</h2>
-            <p>Digite suas credenciais para acessar a análise de documentos:</p>
-            <div class="form-group">
-                <label for="admin-username">Usuário:</label>
-                <input type="text" id="admin-username" class="form-input" placeholder="Digite o usuário" autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="admin-password">Senha:</label>
-                <input type="password" id="admin-password" class="form-input" placeholder="Digite a senha" autocomplete="current-password">
-            </div>
-            <div id="login-error-message" class="error-message hidden" style="display:none;"></div>
-            <div class="form-actions">
-                <button id="btn-fazer-login" class="modal-button btn-primary">🔑 Entrar</button>
-                <button id="btn-cancelar-login" class="modal-button btn-secondary">Cancelar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Análise de Documentação modal -->
-<div id="modal-analise-documentacao" class="modal hidden" style="display:none;">
-    <div class="modal-content">
-        <div class="modal-content-inner">
-            <h2>📋 Análise de Documentação</h2>
-            <div class="analise-header">
-                <p>Lista de documentos enviados pelos participantes para análise:</p>
-                <button id="btn-atualizar-lista" class="modal-button btn-secondary">🔄 Atualizar</button>
-            </div>
-            <div id="loading-documentos" class="loading-section">
-                <div class="loading-spinner-small"></div>
-                <p>Carregando documentos...</p>
-            </div>
-            <div id="lista-documentos" class="documentos-analise hidden" style="display:none;"></div>
-            <div class="form-actions">
-                <button id="btn-fechar-analise" class="modal-button btn-secondary">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Função utilitária JS in-page mínima (em caso de não ter sido carregado o arquivo js) -->
 <script>
-    // copia o BR code do textarea
-    function copyPixCode() {
-        const pix = document.getElementById('pix-code');
-        if (!pix) return alert('Código Pix não disponível');
-        pix.select();
-        try {
-            document.execCommand('copy');
-            alert('Código Pix copiado para a área de transferência');
-        } catch (e) {
-            alert('Não foi possível copiar automaticamente. Selecione e copie manualmente.');
-        }
-    }
-
-    // mostram/ocultam modais básicos — o arquivo externo que você já tem cuidará de mais comportamento
-    document.addEventListener('DOMContentLoaded', function() {
-        // abrir simulador
-        const abrirSim = document.getElementById('abrir-simulador-modal');
-        const simuladorModal = document.getElementById('simulador-modal');
-        const fecharSim = document.getElementById('fechar-simulador');
-        if (abrirSim && simuladorModal) {
-            abrirSim.addEventListener('click', function(e) {
-                e.preventDefault();
-                simuladorModal.style.display = 'block';
-            });
-        }
-        if (fecharSim && simuladorModal) {
-            fecharSim.addEventListener('click', function() {
-                simuladorModal.style.display = 'none';
-            });
-        }
-
-        // iniciar formulário (botão principal)
-        const iniciarBtn = document.getElementById('iniciar-btn');
-        const registerForm = document.getElementById('register-form');
-        if (iniciarBtn && registerForm) {
-            iniciarBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                registerForm.style.display = 'flex';
-            });
-        }
-
-        // fechar success modal
-        const closeModalBtn = document.getElementById('close-modal');
-        const successModal = document.getElementById('success-modal');
-        if (closeModalBtn && successModal) {
-            closeModalBtn.addEventListener('click', function() {
-                successModal.style.display = 'none';
-                registerForm.style.display = 'none';
-            });
-        }
-
-        // floating planos btn toggler (se script externo não rodar)
-        const floatingPlanosBtn = document.getElementById('floating-planos-btn');
-        const planosPopup = document.getElementById('planos-popup');
-        if (floatingPlanosBtn && planosPopup) {
-            floatingPlanosBtn.addEventListener('click', function() {
-                planosPopup.style.display = planosPopup.style.display === 'block' ? 'none' : 'block';
-            });
-            document.addEventListener('click', function(event) {
-                if (!planosPopup.contains(event.target) && !floatingPlanosBtn.contains(event.target)) {
-                    planosPopup.style.display = 'none';
-                }
-            });
-        }
-    });
 </script>
-
-<!-- Carrega o JS principal (o arquivo que você enviou) -->
-<?= $this->Html->script('application') ?>

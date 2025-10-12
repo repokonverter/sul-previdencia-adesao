@@ -229,22 +229,6 @@ html, body {
   display: flex;
 }
 
-.modal-content {
-  background-color: var(--white);
-  padding: 30px;
-  border-radius: var(--border-radius);
-  max-width: 90%;
-  width: 350px;
-  text-align: center;
-}
-
-.modal-title {
-  color: var(--primary-color);
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 16px;
-}
-
 .modal-message {
   color: var(--text-color);
   font-size: 16px;
