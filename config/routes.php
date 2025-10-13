@@ -23,6 +23,7 @@
 
 use Cake\Routing\Route\DashedRoute;
 use Cake\Routing\RouteBuilder;
+use Authentication\Middleware\AuthenticationMiddleware;
 
 /*
  * This file is loaded in the context of the `Application` class.
@@ -76,6 +77,11 @@ return function (RouteBuilder $routes): void {
          * See https://book.cakephp.org/5/en/development/routing.html#fallbacks-method for more information
          */
         $builder->fallbacks();
+    });
+
+    $routes->prefix('Admin', function (RouteBuilder $routes) {
+        $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
+        $routes->fallbacks(DashedRoute::class);
     });
 
     /*

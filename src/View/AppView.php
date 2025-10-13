@@ -44,6 +44,8 @@ class AppView extends View
     {
         parent::initialize();
 
+        $this->loadHelper('Authentication.Identity');
+
         $this->initializeUI(['layout' => false]);
     }
 }
