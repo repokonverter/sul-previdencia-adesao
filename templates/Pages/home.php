@@ -1172,7 +1172,7 @@
             <p class="fintech-subtitle" style="color:#F47C20;">A previdência digital, simples e transparente para você.</p>
             <div class="botoes fintech-botoes">
                 <a href="#" class="fintech-btn fintech-btn-lg btn-laranja">Simular minha previdência</a>
-                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" data-bs-toggle="modal" data-bs-target="#registerModal">Faça sua adesão</a>
+                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" id="signUpButton">Faça sua adesão</a>
             </div>
         </div>
 
@@ -1372,7 +1372,7 @@
                 <form id="simulador-form" data-turbo="false">
                     <div class="form-group">
                         <label for="data_nascimento">Data de Nascimento</label>
-                        <input type="date" id="data_nascimento" name="data_nascimento" required>
+                        <input type="text" id="data_nascimento" name="data_nascimento" required>
                     </div>
                     <div class="form-group">
                         <label for="valor_investimento">Investimento Total Mensal</label>
@@ -1431,216 +1431,598 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
+                <h4 class="mb-3"></h4>
 
-                <div id="initialData" class="hidden">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Nome completo*</label>
-                        <input type="text" class="form-control" name="name" placeholder="Nome completo">
+                <form id="testeForm" novalidate>
+                    <div id="initialData" class="hidden">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nome completo*</label>
+                            <input type="text" class="form-control" name="name" placeholder="Nome completo" required>
+                            <div class="invalid-feedback">
+                                Preenchimento obrigatório.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" name="email" placeholder="E-mail">
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Celular*</label>
+                            <input type="text" class="form-control phone" name="phone" placeholder="(XX) XXXXX-XXXX">
+                        </div>
+                        <p class="form-text">
+                            Em conformidade com a Lei Geral de Proteção de Dados (LGPD), informamos que os dados fornecidos serão
+                            armazenados em nosso sistema e utilizados exclusivamente para fins de pesquisa de satisfação e suporte ao longo do processo.
+                            Ao clicar em “Concordo”, você concorda com o uso dessas informações para que possamos entrar em contato, caso necessário,
+                            para esclarecer dúvidas ou auxiliar em eventuais impedimentos.
+                        </p>
                     </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">E-mail</label>
-                        <input type="email" class="form-control" name="email" placeholder="E-mail">
-                    </div>
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Celular*</label>
-                        <input type="text" class="form-control" name="phone" placeholder="Celular">
-                    </div>
-                    <p class="form-text">
-                        Em conformidade com a Lei Geral de Proteção de Dados (LGPD), informamos que os dados fornecidos serão
-                        armazenados em nosso sistema e utilizados exclusivamente para fins de pesquisa de satisfação e suporte ao longo do processo.
-                        Ao clicar em “Concordo”, você concorda com o uso dessas informações para que possamos entrar em contato, caso necessário,
-                        para esclarecer dúvidas ou auxiliar em eventuais impedimentos.
-                    </p>
-                </div>
 
-                <div id="personalData" class="hidden">
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="planFor" class="form-label">O plano é para*</label>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="planForD" name="planFor" value="Dependente">
-                                    <label class="form-check-label" for="planForD">Dependente</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="planForT" name="planFor" value="Titular">
-                                    <label class="form-check-label" for="planForT">Titular</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Nome completo*</label>
-                                <input type="text" class="form-control" name="name" placeholder="Nome completo">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="cpf" class="form-label">CPF*</label>
-                                <input type="text" class="form-control" name="cpf" placeholder="CPF">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="dateBirth" class="form-label">Data de nascimento*</label>
-                                <input type="date" class="form-control" name="dateBirth" placeholder="Data de nascimento">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="nacionality" class="form-label">Nacionalidade</label>
-                                <input type="text" class="form-control" name="nacionality" placeholder="Nacionalidade">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="gender" class="form-label">Gênero de nascimento*</label>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="genderF" name="gender" value="F">
-                                    <label class="form-check-label" for="genderF">Feminino</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" id="genderM" name="gender" value="M">
-                                    <label class="form-check-label" for="genderM">Masculino</label>
+                    <div id="personalData" class="hidden">
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="planFor" class="form-label">O plano é para*</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="planForD" name="planFor" value="Dependente" onclick="planForHandle(this.value)">
+                                        <label class="form-check-label" for="planForD">Dependente</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="planForT" name="planFor" value="Titular" onclick="planForHandle(this.value)" checked>
+                                        <label class="form-check-label" for="planForT">Titular</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="maritalStatus" class="form-label">Estado civil*</label>
-                                <select class="form-select" name="maritalStatus">
-                                    <option value="">Selecione...</option>
-                                    <option value="Casado">Casado</option>
-                                    <option value="Divorciado">Divorciado</option>
-                                    <option value="Separado">Separado</option>
-                                    <option value="Solteiro">Solteiro</option>
-                                    <option value="União estável">União estável</option>
-                                    <option value="Viúvo">Viúvo</option>
-                                </select>
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Nome completo*</label>
+                                    <input type="text" class="form-control" name="name" placeholder="Nome completo">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="cpf" class="form-label">CPF*</label>
+                                    <input type="text" class="form-control cpf" name="cpf" placeholder="CPF">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="dateBirth" class="form-label">Data de nasc.*</label>
+                                    <input type="text" class="form-control date" name="dateBirth" placeholder="Data de nascimento">
+                                </div>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="numberChildren" class="form-label">Nº de filhos*</label>
-                                <input type="text" class="form-control" name="numberChildren" placeholder="Nº de filhos">
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="nacionality" class="form-label">Nacionalidade</label>
+                                    <input type="text" class="form-control" name="nacionality" placeholder="Nacionalidade">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Gênero de nasc.*</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="genderF" name="gender" value="F">
+                                        <label class="form-check-label" for="genderF">Feminino</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="genderM" name="gender" value="M">
+                                        <label class="form-check-label" for="genderM">Masculino</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="maritalStatus" class="form-label">Estado civil*</label>
+                                    <select class="form-select" name="maritalStatus">
+                                        <option value="">Selecione...</option>
+                                        <option value="Casado">Casado</option>
+                                        <option value="Divorciado">Divorciado</option>
+                                        <option value="Separado">Separado</option>
+                                        <option value="Solteiro">Solteiro</option>
+                                        <option value="União estável">União estável</option>
+                                        <option value="Viúvo">Viúvo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="numberChildren" class="form-label">Nº de filhos*</label>
+                                    <input type="text" class="form-control" name="numberChildren" placeholder="Nº de filhos">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="motherName" class="form-label">Nome da mãe*</label>
+                                    <input type="text" class="form-control" name="motherName" placeholder="Nome da mãe">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="fatherName" class="form-label">Nome do pai*</label>
+                                    <input type="text" class="form-control" name="fatherName" placeholder="Nome do pai">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row hidden" id="divLegalRepresentative">
+                            <blockquote class="blockquote">
+                                <p>Dados do representante legal</p>
+                            </blockquote>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="nameLegalRepresentative" class="form-label">Nome*</label>
+                                    <input type="text" class="form-control" name="nameLegalRepresentative" placeholder="Nome">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="cpfLegalRepresentative" class="form-label">CPF*</label>
+                                    <input type="text" class="form-control cpf" name="cpfLegalRepresentative" placeholder="CPF">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="affiliationLegalRepresentative" class="form-label">Filiação*</label>
+                                    <input type="text" class="form-control" name="affiliationLegalRepresentative" placeholder="Filiação">
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="motherName" class="form-label">Nome da mãe*</label>
-                                <input type="text" class="form-control" name="motherName" placeholder="Nome da mãe">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="fatherName" class="form-label">Nome do pai*</label>
-                                <input type="text" class="form-control" name="fatherName" placeholder="Nome do pai">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row" id="divLegalRepresentative">
-                        <blockquote class="blockquote">
-                            <p>Dados do representante legal</p>
-                        </blockquote>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="nameLegalRepresentative" class="form-label">Nome*</label>
-                                <input type="text" class="form-control" name="nameLegalRepresentative" placeholder="Nome">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="cpfLegalRepresentative" class="form-label">CPF*</label>
-                                <input type="text" class="form-control" name="cpfLegalRepresentative" placeholder="CPF">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="affiliationLegalRepresentative" class="form-label">Filiação*</label>
-                                <input type="text" class="form-control" name="affiliationLegalRepresentative" placeholder="Filiação">
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div id="documents" class="hidden">
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="documentType" class="form-label">Natureza do documento*</label>
-                                <select class="form-select" name="documentType">
-                                    <option value="">Selecione...</option>
-                                    <option value="CNH">CNH</option>
-                                    <option value="RG">RG</option>
-                                </select>
+                    <div id="documents" class="hidden">
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="documentType" class="form-label">Natureza do documento*</label>
+                                    <select class="form-select" name="documentType">
+                                        <option value="">Selecione...</option>
+                                        <option value="CNH">CNH</option>
+                                        <option value="RG">RG</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="documentNumber" class="form-label">Nº do documento*</label>
+                                    <input type="text" class="form-control" name="documentNumber" placeholder="Nº do documento">
+                                </div>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="documentNumber" class="form-label">Nº do documento*</label>
-                                <input type="text" class="form-control" name="documentNumber" placeholder="Nº do documento">
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="dateShipment" class="form-label">Data de expedição*</label>
+                                    <input type="text" class="form-control date" name="dateShipment" placeholder="Data de expedição">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="issuingBody" class="form-label">Órgão expedidor*</label>
+                                    <input type="text" class="form-control" name="issuingBody" placeholder="Órgão expedidor">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="nationality" class="form-label">Naturalidade*</label>
+                                    <input type="text" class="form-control" name="nationality" placeholder="Naturalidade">
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="dateShipment" class="form-label">Data de expedição*</label>
-                                <input type="date" class="form-control" name="dateShipment" placeholder="Data de expedição">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="issuingBody" class="form-label">Órgão expedidor*</label>
-                                <input type="text" class="form-control" name="issuingBody" placeholder="Órgão expedidor">
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="nationality" class="form-label">Naturalidade*</label>
-                                <input type="text" class="form-control" name="nationality" placeholder="Naturalidade">
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div id="plan" class="">
-                    <div class="row">
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício*</label>
-                                <input type="number" class="form-control" name="benefitEntryAge" placeholder="Idade para entrada em benefício">
+                    <div id="plan" class="hidden">
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício*</label>
+                                    <input type="number" class="form-control" name="benefitEntryAge" placeholder="Idade para entrada em benefício">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="monthlyContribuitionAmount" class="form-label">Valor da contribuição mensal*</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control money" name="monthlyContribuitionAmount" placeholder="Valor da contribuição mensal">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="valueFoundingContribution" class="form-label">Valor da contribuição do instituidor*</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control money" name="valueFoundingContribution" placeholder="Valor da contribuição do instituidor">
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="monthlyContribuitionAmount" class="form-label">Valor da contribuição mensal*</label>
-                                <input type="text" class="form-control" name="monthlyContribuitionAmount" placeholder="Valor da contribuição mensal">
+                        <div class="row">
+                            <div class="col">
+                                <div><strong>Benefício de risco</strong></div>
+                                <ul>
+                                    <li>Morte (M)</li>
+                                    <li>Invalidez permanente total por acidente (IPTA)</li>
+                                    <li>Invalidez funcional permanente total por doença - antecipação (IFPDA)</li>
+                                </ul>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="mb-3">
-                                <label for="nationality" class="form-label">Naturalidade*</label>
-                                <input type="text" class="form-control" name="nationality" placeholder="Naturalidade">
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="insuredCapital" class="form-label">Capital segurado*</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control money" name="insuredCapital" placeholder="Capital segurado">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="contribution" class="form-label">Contribuição*</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control money" name="contribution" placeholder="Contribuição">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col text-center">
+                                <div>Contribuição total</div>
+                                <div>R$ 100.000,00</div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    <div id="dependents" class="hidden">
+                        <div class="row">
+                            <div class="col d-flex justify-content-end"><button type="button" class="btn btn-success">Adicionar</button></div>
+                        </div>
+                        <div id="listDependents">
+                            <div>
+                                <div class="text-center"><strong>Dependente 1</strong></div>
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label for="nameDependent" class="form-label">Nome*</label>
+                                            <input type="text" class="form-control" name="nameDependent[0]" placeholder="Nome">
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="mb-3">
+                                            <label for="kinshipDependent" class="form-label">Parentesco*</label>
+                                            <select class="form-select" name="kinshipDependent[0]">
+                                                <option value="">Selecione...</option>
+                                                <option value="Avô(ó)">Avô(ó)</option>
+                                                <option value="Companheiro(a)">Companheiro(a)</option>
+                                                <option value="Cônjuge">Cônjuge</option>
+                                                <option value="Filho(a)">Filho(a)</option>
+                                                <option value="Irmão(ã)">Irmão(ã)</option>
+                                                <option value="Mãe">Mãe</option>
+                                                <option value="Nenhum">Nenhum</option>
+                                                <option value="Neto(a)">Neto(a)</option>
+                                                <option value="Pai">Pai</option>
+                                                <option value="Sobrinho(a)">Sobrinho(a)</option>
+                                                <option value="Tio(a)">Tio(a)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label for="cpfDependent" class="form-label">CPF*</label>
+                                            <input type="text" class="form-control cpf" name="cpfDependent[0]" placeholder="CPF">
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label for="dateBirthDependent" class="form-label">Data de nascimento*</label>
+                                            <input type="text" class="form-control date" name="dateBirthDependent[0]" placeholder="Data de nascimento">
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label for="participationDependent" class="form-label">Participação (%)*</label>
+                                            <input type="number" class="form-control" name="participationDependent[0]" placeholder="Participação (%)">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="addressData" class="hidden">
+                        <div class="row">
+                            <div class="col-3">
+                                <div class="mb-3">
+                                    <label for="cep" class="form-label">CEP*</label>
+                                    <input type="text" class="form-control cep" name="cep" placeholder="CEP">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Endereço*</label>
+                                    <input type="text" class="form-control" name="address" placeholder="Endereço">
+                                </div>
+                            </div>
+                            <div class="col-2">
+                                <div class="mb-3">
+                                    <label for="addressNumber" class="form-label">Nº</label>
+                                    <input type="text" class="form-control" name="addressNumber" placeholder="Nº">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="neighborhood" class="form-label">Bairro*</label>
+                                    <input type="text" class="form-control" name="neighborhood" placeholder="Bairro">
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="city" class="form-label">Cidade*</label>
+                                    <input type="text" class="form-control" name="city" placeholder="Cidade">
+                                </div>
+                            </div>
+                            <div class="col-2">
+                                <div class="mb-3">
+                                    <label for="state" class="form-label">UF*</label>
+                                    <select class="form-select" name="state">
+                                        <option value="">Selecione...</option>
+                                        <option value="AC">Acre</option>
+                                        <option value="AL">Alagoas</option>
+                                        <option value="AP">Amapá</option>
+                                        <option value="AM">Amazonas</option>
+                                        <option value="BA">Bahia</option>
+                                        <option value="CE">Ceará</option>
+                                        <option value="DF">Distrito Federal</option>
+                                        <option value="ES">Espírito Santo</option>
+                                        <option value="GO">Goiás</option>
+                                        <option value="MA">Maranhão</option>
+                                        <option value="MT">Mato Grosso</option>
+                                        <option value="MS">Mato Grosso do Sul</option>
+                                        <option value="MG">Minas Gerais</option>
+                                        <option value="PA">Pará</option>
+                                        <option value="PB">Paraíba</option>
+                                        <option value="PR">Paraná</option>
+                                        <option value="PE">Pernambuco</option>
+                                        <option value="PI">Piauí</option>
+                                        <option value="RJ">Rio de Janeiro</option>
+                                        <option value="RN">Rio Grande do Norte</option>
+                                        <option value="RS">Rio Grande do Sul</option>
+                                        <option value="RO">Rondônia</option>
+                                        <option value="RR">Roraima</option>
+                                        <option value="SC">Santa Catarina</option>
+                                        <option value="SP">São Paulo</option>
+                                        <option value="SE">Sergipe</option>
+                                        <option value="TO">Tocantins</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="otherInformation" class="">
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="mainOccupation" class="form-label">Ocupação principal*</label>
+                                    <select class="form-select" name="mainOccupation">
+                                        <option value="">Digite para buscar...</option>
+                                        <option value="252105">Administrador</option>
+                                        <option value="252405">Analista de Recursos Humanos</option>
+                                        <option value="212405">Analista de Sistemas</option>
+                                        <option value="411010">Assistente Administrativo</option>
+                                        <option value="514120">Bombeiro Civil</option>
+                                        <option value="252210">Contador</option>
+                                        <option value="513205">Cozinheiro Geral</option>
+                                        <option value="261515">Designer Gráfico</option>
+                                        <option value="212415">Desenvolvedor de Software (Programador)</option>
+                                        <option value="223505">Enfermeiro</option>
+                                        <option value="214205">Engenheiro Civil</option>
+                                        <option value="223605">Fisioterapeuta</option>
+                                        <option value="142305">Gerente Comercial</option>
+                                        <option value="142105">Gerente Administrativo</option>
+                                        <option value="225125">Médico Clínico Geral</option>
+                                        <option value="782310">Motorista de Furgão ou Veículo Similar</option>
+                                        <option value="223710">Nutricionista</option>
+                                        <option value="233115">Professor de Educação Física (no ensino fundamental)</option>
+                                        <option value="322205">Técnico de Enfermagem</option>
+                                        <option value="521110">Vendedor de Comércio Varejista</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Categoria*</label>
+                                    <select class="form-select" name="category">
+                                        <option value="">Selecione...</option>
+                                        <option value="Autônomo">Autônomo</option>
+                                        <option value="Empregado">Empregado</option>
+                                        <option value="Empregador">Empregador</option>
+                                        <option value="Servidor Público">Servidor Público</option>
+                                        <option value="Outros">Outros</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="" class="form-label">Residente no Brasil?*</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="brazilianResident" id="brazilianResidentYes" value="1">
+                                        <label class="form-check-label" for="brazilianResidentYes">Sim</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="brazilianResident" id="brazilianResidentNo" value="0">
+                                        <label class="form-check-label" for="brazilianResidentNo">Não</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="" class="form-label">É pessoa politicamente exposta?*</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="politicallyExposed" id="politicallyExposedYes" value="1">
+                                        <label class="form-check-label" for="politicallyExposedYes">Sim</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="politicallyExposed" id="politicallyExposedNo" value="0">
+                                        <label class="form-check-label" for="politicallyExposedNo">Não</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="" class="form-label">Você tem obrigações fiscais com outros países?*</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="obligationOtherCountries" id="obligationOtherCountriesYes" value="1">
+                                        <label class="form-check-label" for="obligationOtherCountriesYes">Sim</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="obligationOtherCountries" id="obligationOtherCountriesNo" value="0">
+                                        <label class="form-check-label" for="obligationOtherCountriesNo">Não</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
 
             </div>
             <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary">Concordo</button>
+                <button type="button" class="btn btn-secondary" onclick="previousPage()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="nextPage()">Concordo</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    const registerPages = [
+        'Dados iniciais',
+        'Dados pessoais',
+        'Documentos',
+        'Plano',
+        'Dependente(s)',
+        'Endereço',
+        'Outras informações',
+    ];
+    let registerPageIndex = 0
+    let registerModal;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const openModalBtn = document.getElementById('signUpButton');
+        const registerModalEl = document.getElementById('registerModal');
+        registerModal = new bootstrap.Modal(registerModalEl);
+
+        openModalBtn.addEventListener('click', function() {
+            registerPageIndex = 0;
+
+            updatePage(registerPageIndex);
+
+            registerModal.show();
+        });
+    });
+
+    const planForHandle = (planFor) => {
+        $('#registerModal #divLegalRepresentative').hide('slow');
+
+        if (planFor === 'Dependente') {
+            $('#registerModal #divLegalRepresentative').show('slow');
+        }
+    }
+
+    const updateButtonPreviousNext = (pageIndex) => {
+        switch (pageIndex) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+                jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior');
+                jQuery('#registerModal .modal-footer .btn-primary').text('Próximo');
+                break;
+            default:
+                jQuery('#registerModal .modal-footer .btn-secondary').text('Cancelar');
+                jQuery('#registerModal .modal-footer .btn-primary').text('Concordo');
+                break;
+        }
+    }
+
+    const updatePage = (pageIndex) => {
+        jQuery('#registerModal #initialData').hide();
+        jQuery('#registerModal #personalData').hide();
+        jQuery('#registerModal #documents').hide();
+        jQuery('#registerModal #plan').hide();
+        jQuery('#registerModal #dependents').hide();
+        jQuery('#registerModal #addressData').hide();
+        jQuery('#registerModal #otherInformation').hide();
+
+        switch (pageIndex) {
+            case 0:
+                jQuery('#registerModal #initialData').fadeIn().show();
+                break;
+            case 1:
+                jQuery('#registerModal #personalData').fadeIn().show();
+                break;
+            case 2:
+                jQuery('#registerModal #documents').fadeIn().show();
+                break;
+            case 3:
+                jQuery('#registerModal #plan').fadeIn().show();
+                break;
+            case 4:
+                jQuery('#registerModal #dependents').fadeIn().show();
+                break;
+            case 5:
+                jQuery('#registerModal #addressData').fadeIn().show();
+                break;
+            case 6:
+                jQuery('#registerModal #otherInformation').fadeIn().show();
+                break;
+        }
+
+        jQuery('#registerModal .modal-body h4').html(registerPages[registerPageIndex]);
+        updateButtonPreviousNext(registerPageIndex);
+    }
+
+    const nextPage = () => {
+        const form = document.querySelector('#initialData input');
+
+        if (!form.checkValidity()) {
+            form.parentElement.parentElement.classList.add('was-validated')
+            return;
+        }
+
+        registerPageIndex += 1;
+
+        updatePage(registerPageIndex)
+    }
+
+    const previousPage = () => {
+        if (registerPageIndex === 0)
+            registerModal.hide();
+
+        if (registerPageIndex !== 0)
+            registerPageIndex -= 1;
+
+        updatePage(registerPageIndex)
+    }
 </script>
