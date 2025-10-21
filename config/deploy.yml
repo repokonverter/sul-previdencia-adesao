@@ -1,0 +1,45 @@
+service: sul-previdencia-adesao
+
+image: ghcr.io/repokonverter/sul-previdencia-adesao
+
+servers:
+  web:
+    hosts:
+      - 162.240.166.197
+
+proxy:
+  ssl: true
+  host: adesao.konverter.com.br
+  app_port: 80
+
+registry:
+  server: ghcr.io
+  username: repokonverter
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+env:
+  clear:
+    DB_HOST: adesao-sulprev-db
+    DB_USER: POSTGRES_USER # Nome da variável no secrets
+    DB_PASSWORD: POSTGRES_PASSWORD # Nome da variável no secrets
+
+builder:
+  remote: "ssh://deploy@162.240.166.197:22022"
+  arch: amd64
+
+ssh:
+  user: deploy
+  port: 22022
+
+accessories:
+  db:
+    image: postgres:16
+    host: 162.240.166.197
+    port: 5432
+    env:
+      secret:
+        - POSTGRES_USER
+        - POSTGRES_PASSWORD
+    volumes:
+      - adesao-sulprev-db-data:/var/lib/postgresql/data

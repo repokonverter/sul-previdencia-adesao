@@ -1171,7 +1171,7 @@
             </h1>
             <p class="fintech-subtitle" style="color:#F47C20;">A previdência digital, simples e transparente para você.</p>
             <div class="botoes fintech-botoes">
-                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja">Simular minha previdência</a>
+                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" data-bs-toggle="modal" data-bs-target="#simulatorModal">Simular minha previdência</a>
                 <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" id="signUpButton">Faça sua adesão</a>
             </div>
         </div>
@@ -1273,7 +1273,7 @@
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay hidden" style="display:none;">
+    <div id="loading-overlay" class="loading-overlay hidden">
         <div class="loading-content">
             <div class="loading-spinner"></div>
             <h3 class="loading-title">Processando seu cadastro...</h3>
@@ -1299,7 +1299,7 @@
     </div>
 
     <!-- CPF Confirmation Modal -->
-    <div id="cpf-confirmation-modal" class="loading-overlay hidden" style="display:none;">
+    <div id="cpf-confirmation-modal" class="loading-overlay hidden">
         <div class="loading-content" style="max-width: 500px;">
             <div style="text-align: center; margin-bottom: 20px;">
                 <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
@@ -1331,7 +1331,7 @@
     </div>
 
     <!-- Success Modal -->
-    <div class="success-modal" id="success-modal" style="display:none;">
+    <div class="success-modal hidden" id="success-modal">
         <div class="modal-content">
             <div class="modal-content-inner">
                 <h3 class="modal-title">Cadastro realizado!</h3>
@@ -1365,24 +1365,45 @@
     </div>
 
     <!-- Simulador Modal -->
-    <div id="simulador-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <div class="modal-content-inner">
-                <h2>Simulador de Previdência Privada</h2>
-                <form id="simulador-form" data-turbo="false">
-                    <div class="form-group">
-                        <label for="data_nascimento">Data de Nascimento</label>
-                        <input type="text" id="data_nascimento" name="data_nascimento" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="valor_investimento">Investimento Total Mensal</label>
-                        <input type="number" id="valor_investimento" name="valor_investimento" step="0.01" placeholder="R$ 100,00" required>
-                    </div>
-                    <div style="margin-top:16px;">
-                        <button type="button" class="modal-button" id="simular-btn">Simular</button>
-                        <button type="button" class="modal-button" id="fechar-simulador">Fechar</button>
-                    </div>
-                </form>
+    <div class="modal fade" id="simulatorModal" tabindex="-1" aria-labelledby="simulatorModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="simulatorModalLabel">Simulador de previdência</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3"><strong>Para iniciar uma simulação, digite os dados abaixo:</strong></p>
+                    <form id="simulatorForm" data-turbo="false">
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="dateBirth" class="form-label">Data de nascimento*</label>
+                                    <input type="text" class="form-control date" name="dateBirth" placeholder="XX/XX/XXXX" required>
+                                    <div class="invalid-feedback">
+                                        Preenchimento obrigatório.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label for="monthlyInvestment" class="form-label">Investimento mensal*</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal">
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" onclick="">Simular</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1819,10 +1840,10 @@
                     <div id="addressData" class="hidden">
                         <div class="row">
                             <div class="col-3">
-                                <div class="mb-3">
+                                <div class="input-group mb-3">
                                     <label for="cep" class="form-label">CEP*</label>
-                                    <div class="d-flex">
-                                        <input type="text" class="form-control cep" name="cep" placeholder="CEP" onchange="getCEP(this.value)">
+                                    <input type="text" class="form-control cep" name="cep" placeholder="CEP" onchange="getCEP(this.value)">
+                                    <div class="input-group-append">
                                         <div class="spinner-border ml-2" role="status">
                                             <span class="visually-hidden">Carregando...</span>
                                         </div>
