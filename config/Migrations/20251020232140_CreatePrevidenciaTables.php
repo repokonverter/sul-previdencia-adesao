@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
-use Migrations\AbstractMigration;
+use Migrations\BaseMigration;
 
-class CreatePrevidenciaTables extends AbstractMigration
+class CreatePrevidenciaTables extends BaseMigration
 {
     public function change(): void
     {
@@ -28,7 +29,7 @@ class CreatePrevidenciaTables extends AbstractMigration
             ->addColumn('phone', 'string', ['limit' => 20, 'null' => true])
             ->addColumn('is_legal_representative', 'boolean', ['default' => false])
             ->addTimestamps()
-            ->addForeignKey('subscription_id', 'subscriptions', 'id', ['delete'=> 'CASCADE'])
+            ->addForeignKey('subscription_id', 'subscriptions', 'id', ['delete' => 'CASCADE'])
             ->create();
 
         // addresses
@@ -42,7 +43,7 @@ class CreatePrevidenciaTables extends AbstractMigration
             ->addColumn('city', 'string', ['limit' => 80])
             ->addColumn('state', 'string', ['limit' => 2])
             ->addTimestamps()
-            ->addForeignKey('subscription_id', 'subscriptions', 'id', ['delete'=> 'CASCADE'])
+            ->addForeignKey('subscription_id', 'subscriptions', 'id', ['delete' => 'CASCADE'])
             ->create();
 
         // dependents
@@ -53,7 +54,7 @@ class CreatePrevidenciaTables extends AbstractMigration
             ->addColumn('birth_date', 'date', ['null' => true])
             ->addColumn('kinship', 'string', ['limit' => 30, 'null' => true])
             ->addTimestamps()
-            ->addForeignKey('subscription_id', 'subscriptions', 'id', ['delete'=> 'CASCADE'])
+            ->addForeignKey('subscription_id', 'subscriptions', 'id', ['delete' => 'CASCADE'])
             ->create();
 
         // documents
@@ -64,7 +65,7 @@ class CreatePrevidenciaTables extends AbstractMigration
             ->addColumn('issue_date', 'date', ['null' => true])
             ->addColumn('issuer', 'string', ['limit' => 50, 'null' => true])
             ->addTimestamps()
-            ->addForeignKey('subscription_id', 'subscriptions', 'id', ['delete'=> 'CASCADE'])
+            ->addForeignKey('subscription_id', 'subscriptions', 'id', ['delete' => 'CASCADE'])
             ->create();
     }
 }

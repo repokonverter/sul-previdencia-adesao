@@ -54,6 +54,12 @@
         ],
         "cs-check": "phpcs --colors -p",
         "cs-fix": "phpcbf --colors -p",
-        "test": "phpunit --colors=always"
+        "test": "phpunit --colors=always",
+        "start": "bin/cake server -p 8765",
+        "migrate": "bin/cake migrations migrate",
+        "migrate:rollback": "php vendor/bin/phinx rollback -e development -t 0",
+        "seed": "php vendor/bin/phinx seed:run",
+        "docker:start": "docker-compose up -d",
+        "docker:stop": "docker-compose down"
     }
 }
