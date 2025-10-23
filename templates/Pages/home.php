@@ -1458,18 +1458,18 @@
                     <div id="initialData" class="hidden">
                         <div class="mb-3">
                             <label for="name" class="form-label">Nome completo*</label>
-                            <input type="text" class="form-control" name="name" placeholder="Nome completo" required>
+                            <input type="text" class="form-control" name="person[name]" placeholder="Nome completo" required>
                             <div class="invalid-feedback">
                                 Preenchimento obrigatório.
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="email" class="form-label">E-mail</label>
-                            <input type="email" class="form-control" name="email" placeholder="E-mail">
+                            <input type="email" class="form-control" name="person[email]" placeholder="E-mail">
                         </div>
                         <div class="mb-3">
                             <label for="phone" class="form-label">Celular*</label>
-                            <input type="text" class="form-control phone" name="phone" placeholder="(XX) XXXXX-XXXX" required>
+                            <input type="text" class="form-control phone" name="person[phone]" placeholder="(XX) XXXXX-XXXX" required>
                             <div class="invalid-feedback">
                                 Preenchimento obrigatório.
                             </div>
@@ -2044,6 +2044,9 @@
 </div>
 
 <script>
+    const localStorageKey = 'adesaoSulPrevidencia';
+    let draftUUID = localStorage.getItem(localStorageKey);
+
     const registerPages = [{
             title: 'Dados iniciais',
             id: 'initialData',
@@ -2080,6 +2083,12 @@
         const openModalBtn = document.getElementById('signUpButton');
         const registerModalEl = document.getElementById('registerModal');
         registerModal = new bootstrap.Modal(registerModalEl);
+
+        if (!draftUUID) {
+            draftUUID = self.crypto.randomUUID ? self.crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+            localStorage.setItem(localStorageKey, draftUUID);
+            console.log('Novo UUID gerado:', draftUUID);
+        }
 
         openModalBtn.addEventListener('click', function() {
             registerPageIndex = 0;
@@ -2164,7 +2173,7 @@
         updateButtonPreviousNext(registerPageIndex);
     }
 
-    const nextPage = () => {
+    const nextPage = async () => {
         let isValid = true;
         const form = document.querySelectorAll(`#${registerPages[registerPageIndex].id} input, #${registerPages[registerPageIndex].id} select`);
 
@@ -2177,6 +2186,8 @@
             $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
             return;
         }
+
+        await saveForm(registerPages[registerPageIndex].id);
 
         registerPageIndex += 1;
 
@@ -2191,6 +2202,31 @@
             registerPageIndex -= 1;
 
         updatePage(registerPageIndex)
+    }
+
+    const saveForm = async (id) => {
+        const formSelector = `#${id}`;
+        const formElements = $(`form ${formSelector} input, ${formSelector} select, ${formSelector} textarea`).serialize();
+
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'POST',
+                url: `<?= $this->Url->build(['controller' => 'RegistrationsController', 'action' => 'save']) ?>`,
+                headers: {
+                    'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>',
+                    'Content-Type': 'application/json'
+                },
+                data: formElements + `&storage_uuid=${draftUUID}`,
+                beforeSend: () => {},
+                success: (response) => {
+                    resolve(response);
+                },
+                error: (error) => {
+                    alert('CEP não encontrado!');
+                    reject(error);
+                }
+            })
+        })
     }
 
     const getCEP = (value) => {

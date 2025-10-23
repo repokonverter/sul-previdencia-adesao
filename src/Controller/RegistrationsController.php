@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
@@ -39,59 +40,58 @@ class RegistrationsController extends AppController
 
         $data = $this->request->getData();
 
-        $connection = $this->Subscriptions->getConnection();
+        dd($data);
+
+        $connection = $this->People->getConnection();
         $connection->begin();
 
         try {
-            // --- Subscription ---
-            $subscription = $this->Subscriptions->newEntity([
-                'plan_type'       => $data['plan_type'] ?? null,
-                'plan_value'      => $data['plan_value'] ?? null,
-                'periodicity'     => $data['periodicity'] ?? null,
-                'payment_method'  => $data['payment_method'] ?? null,
-            ]);
-
-            if (!$this->Subscriptions->save($subscription)) {
-                throw new BadRequestException('Erro ao salvar inscrição.');
-            }
-
-            $subscriptionId = $subscription->id;
-
-            // --- Pessoa principal ---
-            if (empty($data['person'])) {
-                throw new BadRequestException('Dados da pessoa não informados.');
-            }
-
             $personData = $data['person'];
             $person = $this->People->newEntity([
-                'subscription_id'        => $subscriptionId,
-                'name'                   => $personData['name'] ?? '',
-                'cpf'                    => $personData['cpf'] ?? '',
-                'birth_date'             => $personData['birth_date'] ?? null,
-                'marital_status'         => $personData['marital_status'] ?? null,
-                'gender'                 => $personData['gender'] ?? null,
-                'email'                  => $personData['email'] ?? null,
-                'phone'                  => $personData['phone'] ?? null,
-                'is_legal_representative'=> $personData['is_legal_representative'] ?? false,
+                'storage_uuid' => $data['storage_uuid'],
+                'name' => $personData['name'] ?? '',
+                'cpf' => $personData['cpf'] ?? '',
+                'birth_date' => $personData['birth_date'] ?? null,
+                'marital_status' => $personData['marital_status'] ?? null,
+                'gender' => $personData['gender'] ?? null,
+                'email' => $personData['email'] ?? null,
+                'phone' => $personData['phone'] ?? null,
+                'is_legal_representative' => $personData['is_legal_representative'] ?? false,
             ]);
 
             if (!$this->People->save($person)) {
-                throw new BadRequestException('Erro ao salvar os dados da pessoa.');
+                throw new BadRequestException('Erro ao salvar dados.');
+            }
+
+            $personId = $person->id;
+
+            if (!empty($data['address'])) {
+                $planData = $data['plan'];
+                $subscription = $this->Subscriptions->newEntity([
+                    'person_id' => $personId,
+                    'plan_type' => $planData['plan_type'] ?? null,
+                    'plan_value' => $planData['plan_value'] ?? null,
+                    'periodicity' => $planData['periodicity'] ?? null,
+                    'payment_method' => $planData['payment_method'] ?? null,
+                ]);
+
+                $this->Subscriptions->save($subscription);
             }
 
             // --- Endereço ---
             if (!empty($data['address'])) {
                 $addrData = $data['address'];
                 $address = $this->Addresses->newEntity([
-                    'subscription_id' => $subscriptionId,
-                    'cep'             => $addrData['cep'] ?? '',
-                    'address'         => $addrData['address'] ?? '',
-                    'number'          => $addrData['number'] ?? '',
-                    'complement'      => $addrData['complement'] ?? '',
-                    'neighborhood'    => $addrData['neighborhood'] ?? '',
-                    'city'            => $addrData['city'] ?? '',
-                    'state'           => $addrData['state'] ?? '',
+                    'person_id' => $personId,
+                    'cep' => $addrData['cep'] ?? '',
+                    'address' => $addrData['address'] ?? '',
+                    'number' => $addrData['number'] ?? '',
+                    'complement' => $addrData['complement'] ?? '',
+                    'neighborhood' => $addrData['neighborhood'] ?? '',
+                    'city' => $addrData['city'] ?? '',
+                    'state' => $addrData['state'] ?? '',
                 ]);
+
                 $this->Addresses->save($address);
             }
 
@@ -99,13 +99,15 @@ class RegistrationsController extends AppController
             if (!empty($data['dependents']) && is_array($data['dependents'])) {
                 foreach ($data['dependents'] as $dep) {
                     if (empty($dep['name'])) continue;
+
                     $dependent = $this->Dependents->newEntity([
-                        'subscription_id' => $subscriptionId,
-                        'name'            => $dep['name'] ?? '',
-                        'cpf'             => $dep['cpf'] ?? null,
-                        'birth_date'      => $dep['birth_date'] ?? null,
-                        'kinship'         => $dep['kinship'] ?? null,
+                        'person_id' => $personId,
+                        'name' => $dep['name'] ?? '',
+                        'cpf' => $dep['cpf'] ?? null,
+                        'birth_date' => $dep['birth_date'] ?? null,
+                        'kinship' => $dep['kinship'] ?? null,
                     ]);
+
                     $this->Dependents->save($dependent);
                 }
             }
@@ -116,11 +118,11 @@ class RegistrationsController extends AppController
                     if (empty($doc['type']) || empty($doc['file_path'])) continue;
 
                     $document = $this->Documents->newEntity([
-                        'subscription_id' => $subscriptionId,
-                        'type'            => $doc['type'],
-                        'file_path'       => $doc['file_path'],
-                        'issue_date'      => $doc['issue_date'] ?? null,
-                        'issuer'          => $doc['issuer'] ?? null,
+                        'person_id' => $personId,
+                        'type' => $doc['type'],
+                        'file_path' => $doc['file_path'],
+                        'issue_date' => $doc['issue_date'] ?? null,
+                        'issuer' => $doc['issuer'] ?? null,
                     ]);
 
                     $this->Documents->save($document);
@@ -133,9 +135,8 @@ class RegistrationsController extends AppController
                 ->withStringBody(json_encode([
                     'success' => true,
                     'message' => 'Adesão salva com sucesso!',
-                    'subscription_id' => $subscriptionId,
+                    'person_id' => $personId,
                 ]));
-
         } catch (\Exception $e) {
             $connection->rollback();
             Log::error('Erro ao salvar adesão: ' . $e->getMessage());
