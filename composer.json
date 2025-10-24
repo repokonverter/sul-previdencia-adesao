@@ -55,7 +55,6 @@
         "cs-check": "phpcs --colors -p",
         "cs-fix": "phpcbf --colors -p",
         "test": "phpunit --colors=always",
-        "start": "bin/cake server -p 8765",
         "migrate": "bin/cake migrations migrate",
         "migrate:rollback": "bin/cake migrations rollback",
         "seed": "php vendor/bin/phinx seed:run",
