@@ -16,17 +16,27 @@ use Cake\Http\Client;
 
 class RegistrationsController extends AppController
 {
+    protected \App\Model\Table\AdhesionAddressesTable $AdhesionAddresses;
+    protected \App\Model\Table\AdhesionDependentsTable $AdhesionDependents;
+    protected \App\Model\Table\AdhesionDocumentsTable $AdhesionDocuments;
+    protected \App\Model\Table\AdhesionInitialDatasTable $AdhesionInitialDatas;
+    protected \App\Model\Table\AdhesionOtherInformationsTable $AdhesionOtherInformations;
+    protected \App\Model\Table\AdhesionPersonalDatasTable $AdhesionPersonalDatas;
+    protected \App\Model\Table\AdhesionPlansTable $AdhesionPlans;
+
     public function initialize(): void
     {
         parent::initialize();
 
-        $this->loadModel('Subscriptions');
-        $this->loadModel('People');
-        $this->loadModel('Addresses');
-        $this->loadModel('Dependents');
-        $this->loadModel('Documents');
+        $this->AdhesionAddresses = $this->fetchTable('AdhesionAddresses');
+        $this->AdhesionDependents = $this->fetchTable('AdhesionDependents');
+        $this->AdhesionDocuments = $this->fetchTable('AdhesionDocuments');
+        $this->AdhesionInitialDatas = $this->fetchTable('AdhesionInitialDatas');
+        $this->AdhesionOtherInformations = $this->fetchTable('AdhesionOtherInformations');
+        $this->AdhesionPersonalDatas = $this->fetchTable('AdhesionPersonalDatas');
+        $this->AdhesionPlans = $this->fetchTable('AdhesionPlans');
 
-        $this->loadComponent('RequestHandler');
+        // $this->loadComponent('RequestHandler');
         $this->viewBuilder()->setClassName('Ajax');
         $this->autoRender = false;
     }

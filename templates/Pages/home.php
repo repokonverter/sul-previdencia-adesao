@@ -1519,8 +1519,8 @@
                             </div>
                             <div class="col">
                                 <div class="mb-3">
-                                    <label for="dateBirth" class="form-label">Data de nasc.*</label>
-                                    <input type="text" class="form-control date" name="dateBirth" placeholder="Data de nascimento" required>
+                                    <label for="birthDate" class="form-label">Data de nasc.*</label>
+                                    <input type="text" class="form-control date" name="birthDate" placeholder="Data de nascimento" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1573,7 +1573,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="numberChildren" class="form-label">Nº de filhos*</label>
-                                    <input type="text" class="form-control" name="numberChildren" placeholder="Nº de filhos" required>
+                                    <input type="number" min="0" class="form-control" name="numberChildren" placeholder="Nº de filhos" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1680,8 +1680,8 @@
                             </div>
                             <div class="col">
                                 <div class="mb-3">
-                                    <label for="nationality" class="form-label">Naturalidade*</label>
-                                    <input type="text" class="form-control" name="nationality" placeholder="Naturalidade" required>
+                                    <label for="placeBirth" class="form-label">Naturalidade*</label>
+                                    <input type="text" class="form-control" name="placeBirth" placeholder="Naturalidade" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1816,8 +1816,8 @@
                                     </div>
                                     <div class="col">
                                         <div class="mb-3">
-                                            <label for="dateBirthDependent" class="form-label">Data de nascimento*</label>
-                                            <input type="text" class="form-control date" name="dateBirthDependent[0]" placeholder="Data de nascimento">
+                                            <label for="birthDateDependent" class="form-label">Data de nascimento*</label>
+                                            <input type="text" class="form-control date" name="birthDateDependent[0]" placeholder="Data de nascimento">
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -1826,7 +1826,7 @@
                                     <div class="col">
                                         <div class="mb-3">
                                             <label for="participationDependent" class="form-label">Participação (%)*</label>
-                                            <input type="number" class="form-control" name="participationDependent[0]" placeholder="Participação (%)">
+                                            <input type="number" min="0" class="form-control" name="participationDependent[0]" placeholder="Participação (%)">
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -2187,7 +2187,7 @@
             return;
         }
 
-        await saveForm(registerPages[registerPageIndex].id);
+        // await saveForm(registerPages[registerPageIndex].id);
 
         registerPageIndex += 1;
 
@@ -2206,23 +2206,23 @@
 
     const saveForm = async (id) => {
         const formSelector = `#${id}`;
-        const formElements = $(`form ${formSelector} input, ${formSelector} select, ${formSelector} textarea`).serialize();
+        const formElements = $(`form ${formSelector} input, ${formSelector} select, ${formSelector} textarea`)
 
         return new Promise((resolve, reject) => {
             $.ajax({
                 type: 'POST',
-                url: `<?= $this->Url->build(['controller' => 'RegistrationsController', 'action' => 'save']) ?>`,
+                url: `<?= $this->Url->build(['controller' => 'Registrations', 'action' => 'save']) ?>`,
                 headers: {
-                    'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>',
-                    'Content-Type': 'application/json'
+                    'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
                 },
-                data: formElements + `&storage_uuid=${draftUUID}`,
+                data: formElements.serialize() + `&storage_uuid=${draftUUID}`,
+                dataType: 'json',
                 beforeSend: () => {},
                 success: (response) => {
                     resolve(response);
                 },
                 error: (error) => {
-                    alert('CEP não encontrado!');
+                    alert('Erro ao avançar!');
                     reject(error);
                 }
             })
