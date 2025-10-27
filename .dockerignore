@@ -1,6 +1,7 @@
 # Excluir dependências de desenvolvimento e ferramentas
 /node_modules
 /tests/
+/vendor
 
 # Excluir arquivos de versionamento e IDEs
 /.git
