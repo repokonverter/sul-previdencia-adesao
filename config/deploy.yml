@@ -26,7 +26,6 @@ env:
 
 builder:
   remote: "ssh://deploy@162.240.166.197:22022"
-  context: ".."
   arch: amd64
 
 ssh:
