@@ -29,6 +29,9 @@ FROM php:8.3-fpm-alpine AS app
 
 # Instala Nginx e as extensões PHP (intl já está instalada no estágio final da imagem base)
 RUN apk add --no-cache nginx \
+    # 👇 Adicione as bibliotecas de runtime do ICU para resolver o Warning do intl
+    && apk add --no-cache icu-libs \
+    \
     # 1. Instala as dependências de compilação para o PostgreSQL
     && apk add --no-cache --virtual .build-deps \
     postgresql-dev \
