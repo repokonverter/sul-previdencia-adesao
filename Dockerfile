@@ -1,11 +1,25 @@
 # ----------------------------------------------------
 # 1. BUILDER STAGE: Prepara a imagem base PHP-FPM
 # ----------------------------------------------------
-FROM composer:latest AS composer
+# MUDANÇA CRÍTICA: Usa PHP como base, não Composer.
+# O Composer será instalado DENTRO desta imagem base.
+FROM php:8.3-fpm-alpine AS builder
+
+# Instala ferramentas necessárias (git, build-base para compilação)
+RUN apk add --no-cache git build-base \
+    # Instala as dependências de desenvolvimento para a extensão INTL
+    && apk add --no-cache icu-dev \
+    # Instala a extensão INTL
+    && docker-php-ext-install intl \
+    # Instala o Composer globalmente na imagem de build
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    # Limpa dependências de build desnecessárias (exceto git, etc.)
+    && rm -rf /var/cache/apk/*
 
 # Instala as dependências do Composer
 WORKDIR /app
 COPY composer.json composer.lock ./
+# O Composer é executado em um ambiente que AGORA tem a extensão intl.
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # ----------------------------------------------------
@@ -13,12 +27,12 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # ----------------------------------------------------
 FROM php:8.3-fpm-alpine AS app
 
-# Instala extensões PHP necessárias para o CakePHP e PostgreSQL
+# Instala Nginx e as extensões PHP (intl já está instalada no estágio final da imagem base)
 RUN apk add --no-cache nginx \
-    # 👇 ADICIONADO: Bibliotecas de desenvolvimento para PostgreSQL (libpq-dev no Debian/postgres-dev no Alpine)
+    # 1. Instala as dependências de compilação para o PostgreSQL
     && apk add --no-cache --virtual .build-deps \
-        postgresql-dev \
-        build-base \
+    postgresql-dev \
+    build-base \
     \
     # 2. Compila e instala as extensões do PHP
     && docker-php-ext-install pdo pdo_pgsql \
@@ -29,7 +43,11 @@ RUN apk add --no-cache nginx \
 
 # Copia as dependências e o código da aplicação
 WORKDIR /var/www/html
-COPY --from=composer /app/vendor /var/www/html/vendor
+# ⚠️ COPIAMOS A PASTA VENDOR DO ESTÁGIO 'builder'
+COPY --from=builder /app/vendor /var/www/html/vendor
+# ⚠️ COPIAMOS O ARQUIVO .ini DA EXTENSÃO INTL DO ESTÁGIO 'builder'
+COPY --from=builder /usr/local/etc/php/conf.d/docker-php-ext-intl.ini /usr/local/etc/php/conf.d/
+# COPIAMOS O CÓDIGO FONTE (que agora é pequeno devido ao .dockerignore)
 COPY . /var/www/html
 
 # Ajusta permissões do CakePHP
