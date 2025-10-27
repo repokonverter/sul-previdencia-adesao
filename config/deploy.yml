@@ -1,6 +1,6 @@
 service: sul-previdencia-adesao
 
-image: ghcr.io/repokonverter/sul-previdencia-adesao
+image: repokonverter/sul-previdencia-adesao
 
 servers:
   web:
@@ -26,6 +26,7 @@ env:
 
 builder:
   remote: "ssh://deploy@162.240.166.197:22022"
+  context: ".."
   arch: amd64
 
 ssh:

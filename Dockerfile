@@ -1,7 +1,7 @@
 # ----------------------------------------------------
 # 1. BUILDER STAGE: Prepara a imagem base PHP-FPM
 # ----------------------------------------------------
-FROM composer:2.8 as composer
+FROM composer:latest AS composer
 
 # Instala as dependências do Composer
 WORKDIR /app
@@ -11,11 +11,20 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # ----------------------------------------------------
 # 2. APPLICATION STAGE: Imagem final com PHP-FPM
 # ----------------------------------------------------
-FROM php:8.5-fpm-alpine AS app
+FROM php:8.3-fpm-alpine AS app
 
 # Instala extensões PHP necessárias para o CakePHP e PostgreSQL
 RUN apk add --no-cache nginx \
+    # 👇 ADICIONADO: Bibliotecas de desenvolvimento para PostgreSQL (libpq-dev no Debian/postgres-dev no Alpine)
+    && apk add --no-cache --virtual .build-deps \
+        postgresql-dev \
+        build-base \
+    \
+    # 2. Compila e instala as extensões do PHP
     && docker-php-ext-install pdo pdo_pgsql \
+    \
+    # 3. Limpa as dependências de build (para reduzir o tamanho da imagem)
+    && apk del .build-deps \
     && rm -rf /var/cache/apk/*
 
 # Copia as dependências e o código da aplicação
