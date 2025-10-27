@@ -50,6 +50,9 @@ COPY --from=builder /usr/local/etc/php/conf.d/docker-php-ext-intl.ini /usr/local
 # COPIAMOS O CÓDIGO FONTE (que agora é pequeno devido ao .dockerignore)
 COPY . /var/www/html
 
+RUN mkdir -p /var/www/html/tmp \
+    && mkdir -p /var/www/html/logs
+
 # Ajusta permissões do CakePHP
 RUN chown -R www-data:www-data /var/www/html/tmp \
     && chown -R www-data:www-data /var/www/html/logs \
