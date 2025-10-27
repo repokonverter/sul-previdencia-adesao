@@ -10,7 +10,7 @@ class AdhesionOtherInformation extends Entity
 {
     protected array $_accessible = [
         'adhesion_initial_data_id' => true,
-        'mainOccupation' => true,
+        'main_occupation' => true,
         'category' => true,
         'brazilian_resident' => true,
         'politically_exposed' => true,

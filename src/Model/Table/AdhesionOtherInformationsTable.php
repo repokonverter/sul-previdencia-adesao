@@ -13,7 +13,7 @@ class AdhesionOtherInformationsTable extends Table
     public function initialize(array $config): void
     {
         parent::initialize($config);
-        $this->setTable('adhesion_other_information');
+        $this->setTable('adhesion_other_informations');
         $this->addBehavior('Timestamp');
         $this->belongsTo('AdhesionInitialDatas', [
             'foreignKey' => 'adhesion_initial_data_id',
@@ -34,7 +34,7 @@ class AdhesionOtherInformationsTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
-        $rules->add($rules->existsIn(['adhesion_initial_data_id'], 'AdhesionInitialData'), ['errorField' => 'adhesion_initial_data_id']);
+        $rules->add($rules->existsIn(['adhesion_initial_data_id'], 'AdhesionInitialDatas'), ['errorField' => 'adhesion_initial_data_id']);
 
         return $rules;
     }

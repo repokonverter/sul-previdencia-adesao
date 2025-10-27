@@ -49,94 +49,169 @@ class RegistrationsController extends AppController
         $this->request->allowMethod(['post', 'ajax']);
 
         $data = $this->request->getData();
-
-        dd($data);
-
-        $connection = $this->People->getConnection();
+        $connection = $this->AdhesionInitialDatas->getConnection();
         $connection->begin();
 
         try {
-            $personData = $data['person'];
-            $person = $this->People->newEntity([
-                'storage_uuid' => $data['storage_uuid'],
-                'name' => $personData['name'] ?? '',
-                'cpf' => $personData['cpf'] ?? '',
-                'birth_date' => $personData['birth_date'] ?? null,
-                'marital_status' => $personData['marital_status'] ?? null,
-                'gender' => $personData['gender'] ?? null,
-                'email' => $personData['email'] ?? null,
-                'phone' => $personData['phone'] ?? null,
-                'is_legal_representative' => $personData['is_legal_representative'] ?? false,
-            ]);
+            $initialDataId = isset($data['initialDataId']) ? $data['initialDataId'] : null;
 
-            if (!$this->People->save($person)) {
-                throw new BadRequestException('Erro ao salvar dados.');
-            }
-
-            $personId = $person->id;
-
-            if (!empty($data['address'])) {
-                $planData = $data['plan'];
-                $subscription = $this->Subscriptions->newEntity([
-                    'person_id' => $personId,
-                    'plan_type' => $planData['plan_type'] ?? null,
-                    'plan_value' => $planData['plan_value'] ?? null,
-                    'periodicity' => $planData['periodicity'] ?? null,
-                    'payment_method' => $planData['payment_method'] ?? null,
+            if ($initialDataId !== null) {
+                $initialDataAll = $this->AdhesionInitialDatas->get($initialDataId, [
+                    'contain' => [
+                        'AdhesionPersonalDatas',
+                        'AdhesionDocuments',
+                        'AdhesionPlans',
+                        'AdhesionDependents',
+                        'AdhesionAddresses',
+                        'AdhesionOtherInformations',
+                    ]
                 ]);
-
-                $this->Subscriptions->save($subscription);
             }
 
-            // --- Endereço ---
-            if (!empty($data['address'])) {
-                $addrData = $data['address'];
-                $address = $this->Addresses->newEntity([
-                    'person_id' => $personId,
-                    'cep' => $addrData['cep'] ?? '',
-                    'address' => $addrData['address'] ?? '',
-                    'number' => $addrData['number'] ?? '',
-                    'complement' => $addrData['complement'] ?? '',
-                    'neighborhood' => $addrData['neighborhood'] ?? '',
-                    'city' => $addrData['city'] ?? '',
-                    'state' => $addrData['state'] ?? '',
-                ]);
+            if (isset($data['initialData'])) {
+                $initialData = $data['initialData'];
+                $initial = $initialDataId === null ? $this->AdhesionInitialDatas->newEmptyEntity() : $this->AdhesionInitialDatas->get($initialDataId, []);
+                $initial = $this->AdhesionInitialDatas->patchEntity(
+                    $initial,
+                    [
+                        'storage_uuid' => $data['storageUuid'],
+                        'name' => $initialData['name'] ?? '',
+                        'email' => $initialData['email'] ?? null,
+                        'phone' => $initialData['phone'] ?? null,
+                    ],
+                );
 
-                $this->Addresses->save($address);
+                $this->AdhesionInitialDatas->save($initial);
+
+                $initialDataId = $initial->id;
             }
 
-            // --- Dependentes ---
-            if (!empty($data['dependents']) && is_array($data['dependents'])) {
+            if (isset($data['personalData'])) {
+                $personalData = $data['personalData'];
+                $personal = !$initialDataAll->adhesion_personal_data ? $this->AdhesionPersonalDatas->newEmptyEntity() : $this->AdhesionPersonalDatas->get($initialDataAll->adhesion_personal_data->id, []);
+                $personal = $this->AdhesionPersonalDatas->patchEntity(
+                    $personal,
+                    [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'plan_for' => $personalData['planFor'] ?? '',
+                        'name' => $personalData['name'] ?? '',
+                        'cpf' => $personalData['cpf'] ?? '',
+                        'birth_date' => $personalData['birthDate'] ?? null,
+                        'nacionality' => $personalData['nacionality'] ?? '',
+                        'gender' => $personalData['gender'] ?? null,
+                        'marital_status' => $personalData['maritalStatus'] ?? null,
+                        'number_children' => $personalData['numberChildren'] ?? null,
+                        'mother_name' => $personalData['motherName'] ?? null,
+                        'father_name' => $personalData['fatherName'] ?? null,
+                        'name_legal_representative' => $personalData['nameLegalRepresentative'] ?? '',
+                        'cpf_legal_representative' => $personalData['cpfLegalRepresentative'] ?? '',
+                        'affiliation_legal_representative' => $personalData['affiliationLegalRepresentative'] ?? '',
+                    ],
+                );
+
+                if (!$this->AdhesionPersonalDatas->save($personal))
+                    throw new \Exception('Falha ao salvar Dados Pessoais: ' . json_encode($personal->getErrors()));
+            }
+
+            if (isset($data['documents'])) {
+                $documentsData = $data['documents'];
+                $documents = !$initialDataAll->adhesion_documents ? $this->AdhesionDocuments->newEmptyEntity() : $this->AdhesionDocuments->get($initialDataAll->adhesion_documents->id, []);
+                $documents = $this->AdhesionDocuments->patchEntity(
+                    $documents,
+                    [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'type' => $documentsData['documentType'],
+                        'document_number' => $documentsData['documentNumber'],
+                        'issue_date' => $documentsData['issueDate'] ?? null,
+                        'issuer' => $documentsData['issuer'] ?? null,
+                        'place_birth' => $documentsData['placeBirth'] ?? null,
+                    ],
+                );
+
+                if (!$this->AdhesionDocuments->save($documents))
+                    throw new \Exception('Falha ao salvar os documentos: ' . json_encode($documents->getErrors()));
+            }
+
+            if (isset($data['plans'])) {
+                $planData = $data['plans'];
+                $plans = !$initialDataAll->adhesion_plans ? $this->AdhesionPlans->newEmptyEntity() : $this->AdhesionPlans->get($initialDataAll->adhesion_plans->id, []);
+                $plans = $this->AdhesionPlans->patchEntity(
+                    $plans,
+                    [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'benefit_entry_age' => $planData['benefitEntryAge'] ?? null,
+                        'monthly_contribuition_amount' => str_replace(',', '.', str_replace('.', '', $planData['monthlyContribuitionAmount'])) ?? null,
+                        'value_founding_contribution' => str_replace(',', '.', str_replace('.', '', $planData['valueFoundingContribution'])) ?? null,
+                        'insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['insuredCapital'])) ?? null,
+                        'contribution' => str_replace(',', '.', str_replace('.', '', $planData['contribution'])) ?? null,
+                    ],
+                );
+
+                if (!$this->AdhesionPlans->save($plans))
+                    throw new \Exception('Falha ao salvar os planos: ' . json_encode($plans->getErrors()));
+            }
+
+            if (isset($data['dependents']) && is_array($data['dependents'])) {
+                if ($initialDataAll->adhesion_dependents && count($initialDataAll->adhesion_dependents) > 0)
+                    $this->AdhesionDependents->deleteAll(['adhesion_initial_data_id' => $initialDataId]);
+
                 foreach ($data['dependents'] as $dep) {
-                    if (empty($dep['name'])) continue;
+                    $dependent = $this->AdhesionDependents->newEmptyEntity();
+                    $dependent = $this->AdhesionDependents->patchEntity(
+                        $dependent,
+                        [
+                            'adhesion_initial_data_id' => $initialDataId,
+                            'name' => $dep['name'] ?? '',
+                            'cpf' => $dep['cpf'] ?? null,
+                            'birth_date' => $dep['birth_date'] ?? null,
+                            'kinship' => $dep['kinship'] ?? null,
+                            'participation' => str_replace(',', '.', $dep['participation']) ?? null,
+                        ],
+                    );
 
-                    $dependent = $this->Dependents->newEntity([
-                        'person_id' => $personId,
-                        'name' => $dep['name'] ?? '',
-                        'cpf' => $dep['cpf'] ?? null,
-                        'birth_date' => $dep['birth_date'] ?? null,
-                        'kinship' => $dep['kinship'] ?? null,
-                    ]);
-
-                    $this->Dependents->save($dependent);
+                    if (!$this->AdhesionDependents->save($dependent))
+                        throw new \Exception('Falha ao salvar os dependentes: ' . json_encode($dependent->getErrors()));
                 }
             }
 
-            // --- Documentos (uploads) ---
-            if (!empty($data['documents']) && is_array($data['documents'])) {
-                foreach ($data['documents'] as $doc) {
-                    if (empty($doc['type']) || empty($doc['file_path'])) continue;
+            if (!empty($data['addresses'])) {
+                $addrData = $data['addresses'];
+                $address = !$initialDataAll->adhesion_address ? $this->AdhesionAddresses->newEmptyEntity() : $this->AdhesionAddresses->get($initialDataAll->adhesion_address->id, []);
+                $address = $this->AdhesionAddresses->patchEntity(
+                    $address,
+                    [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'cep' => str_replace(['.', '-'], '', $addrData['cep']) ?? '',
+                        'address' => $addrData['address'] ?? '',
+                        'number' => $addrData['number'] ?? '',
+                        'complement' => $addrData['complement'] ?? '',
+                        'neighborhood' => $addrData['neighborhood'] ?? '',
+                        'city' => $addrData['city'] ?? '',
+                        'state' => $addrData['state'] ?? '',
+                    ],
+                );
 
-                    $document = $this->Documents->newEntity([
-                        'person_id' => $personId,
-                        'type' => $doc['type'],
-                        'file_path' => $doc['file_path'],
-                        'issue_date' => $doc['issue_date'] ?? null,
-                        'issuer' => $doc['issuer'] ?? null,
-                    ]);
+                if (!$this->AdhesionAddresses->save($address))
+                    throw new \Exception('Falha ao salvar os endereços: ' . json_encode($address->getErrors()));
+            }
 
-                    $this->Documents->save($document);
-                }
+            if (!empty($data['otherInformations'])) {
+                $otherInformationsData = $data['otherInformations'];
+                $otherInformations = !$initialDataAll->adhesion_other_information ? $this->AdhesionOtherInformations->newEmptyEntity() : $this->AdhesionOtherInformations->get($initialDataAll->adhesion_other_information->id, []);
+                $otherInformations = $this->AdhesionOtherInformations->patchEntity(
+                    $otherInformations,
+                    [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'main_occupation' => $otherInformationsData['mainOccupation'] ?? '',
+                        'category' => $otherInformationsData['category'] ?? '',
+                        'brazilian_resident' => $otherInformationsData['brazilianResident'] ?? false,
+                        'politically_exposed' => $otherInformationsData['politicallyExposed'] ?? false,
+                        'obligation_other_countries' => $otherInformationsData['obligationOtherCountries'] ?? false,
+                    ],
+                );
+
+                if (!$this->AdhesionOtherInformations->save($otherInformations))
+                    throw new \Exception('Falha ao salvar as outras informações: ' . json_encode($otherInformations->getErrors()));
             }
 
             $connection->commit();
@@ -145,7 +220,7 @@ class RegistrationsController extends AppController
                 ->withStringBody(json_encode([
                     'success' => true,
                     'message' => 'Adesão salva com sucesso!',
-                    'person_id' => $personId,
+                    'initialDataId' => intval($initialDataId),
                 ]));
         } catch (\Exception $e) {
             $connection->rollback();

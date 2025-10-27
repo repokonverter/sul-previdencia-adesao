@@ -86,7 +86,7 @@ class CreatePrevidenciaTables extends BaseMigration
 
         $this->table('adhesion_other_informations')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
-            ->addColumn('mainOccupation', 'integer', ['null' => true])
+            ->addColumn('main_occupation', 'integer', ['null' => true])
             ->addColumn('category', 'string', ['limit' => 25])
             ->addColumn('brazilian_resident', 'boolean', ['default' => true, 'null' => true])
             ->addColumn('politically_exposed', 'boolean', ['default' => false, 'null' => true])

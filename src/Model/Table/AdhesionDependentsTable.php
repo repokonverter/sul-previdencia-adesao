@@ -34,7 +34,7 @@ class AdhesionDependentsTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
-        $rules->add($rules->existsIn(['adhesion_initial_data_id'], 'AdhesionInitialData'), ['errorField' => 'adhesion_initial_data_id']);
+        $rules->add($rules->existsIn(['adhesion_initial_data_id'], 'AdhesionInitialDatas'), ['errorField' => 'adhesion_initial_data_id']);
 
         return $rules;
     }

@@ -1379,7 +1379,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="dateBirth" class="form-label">Data de nascimento*</label>
-                                    <input type="text" class="form-control date" name="dateBirth" placeholder="XX/XX/XXXX" required>
+                                    <input type="date" max="9999-12-31" class="form-control" name="dateBirth" placeholder="XX/XX/XXXX" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1458,18 +1458,18 @@
                     <div id="initialData" class="hidden">
                         <div class="mb-3">
                             <label for="name" class="form-label">Nome completo*</label>
-                            <input type="text" class="form-control" name="person[name]" placeholder="Nome completo" required>
+                            <input type="text" class="form-control" name="initialData[name]" placeholder="Nome completo" required>
                             <div class="invalid-feedback">
                                 Preenchimento obrigatório.
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="email" class="form-label">E-mail</label>
-                            <input type="email" class="form-control" name="person[email]" placeholder="E-mail">
+                            <input type="email" class="form-control" name="initialData[email]" placeholder="E-mail">
                         </div>
                         <div class="mb-3">
                             <label for="phone" class="form-label">Celular*</label>
-                            <input type="text" class="form-control phone" name="person[phone]" placeholder="(XX) XXXXX-XXXX" required>
+                            <input type="text" class="form-control phone" name="initialData[phone]" placeholder="(XX) XXXXX-XXXX" required>
                             <div class="invalid-feedback">
                                 Preenchimento obrigatório.
                             </div>
@@ -1488,11 +1488,11 @@
                                 <div class="mb-3">
                                     <label for="planFor" class="form-label">O plano é para*</label>
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" id="planForD" name="planFor" value="Dependente" onclick="planForHandle(this.value)">
+                                        <input class="form-check-input" type="radio" id="planForD" name="personalData[planFor]" value="Dependente" onclick="planForHandle(this.value)">
                                         <label class="form-check-label" for="planForD">Dependente</label>
                                     </div>
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" id="planForT" name="planFor" value="Titular" onclick="planForHandle(this.value)" checked>
+                                        <input class="form-check-input" type="radio" id="planForT" name="personalData[planFor]" value="Titular" onclick="planForHandle(this.value)" checked>
                                         <label class="form-check-label" for="planForT">Titular</label>
                                     </div>
                                 </div>
@@ -1502,7 +1502,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="name" class="form-label">Nome completo*</label>
-                                    <input type="text" class="form-control" name="namePersonalData" placeholder="Nome completo" required>
+                                    <input type="text" class="form-control" name="personalData[name]" placeholder="Nome completo" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1511,7 +1511,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="cpf" class="form-label">CPF*</label>
-                                    <input type="text" class="form-control cpf" name="cpf" placeholder="CPF" required>
+                                    <input type="text" class="form-control cpf" name="personalData[cpf]" placeholder="CPF" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1520,7 +1520,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="birthDate" class="form-label">Data de nasc.*</label>
-                                    <input type="text" class="form-control date" name="birthDate" placeholder="Data de nascimento" required>
+                                    <input type="date" max="9999-12-31" class="form-control" name="personalData[birthDate]" placeholder="Data de nascimento" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1531,7 +1531,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="nacionality" class="form-label">Nacionalidade</label>
-                                    <input type="text" class="form-control" name="nacionality" placeholder="Nacionalidade">
+                                    <input type="text" class="form-control" name="personalData[nacionality]" placeholder="Nacionalidade">
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1541,11 +1541,11 @@
                                 <div class="mb-3">
                                     <label for="gender" class="form-label">Gênero de nasc.*</label>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" id="genderF" name="gender" value="F" required>
+                                        <input class="form-check-input" type="radio" id="genderF" name="personalData[gender]" value="F" required>
                                         <label class="form-check-label" for="genderF">Feminino</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" id="genderM" name="gender" value="M" required>
+                                        <input class="form-check-input" type="radio" id="genderM" name="personalData[gender]" value="M" required>
                                         <label class="form-check-label" for="genderM">Masculino</label>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
@@ -1556,7 +1556,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="maritalStatus" class="form-label">Estado civil*</label>
-                                    <select class="form-select" name="maritalStatus" required>
+                                    <select class="form-select" name="personalData[maritalStatus]" required>
                                         <option value="">Selecione...</option>
                                         <option value="Casado">Casado</option>
                                         <option value="Divorciado">Divorciado</option>
@@ -1573,7 +1573,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="numberChildren" class="form-label">Nº de filhos*</label>
-                                    <input type="number" min="0" class="form-control" name="numberChildren" placeholder="Nº de filhos" required>
+                                    <input type="number" min="0" class="form-control" name="personalData[numberChildren]" placeholder="Nº de filhos" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1584,7 +1584,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="motherName" class="form-label">Nome da mãe*</label>
-                                    <input type="text" class="form-control" name="motherName" placeholder="Nome da mãe" required>
+                                    <input type="text" class="form-control" name="personalData[motherName]" placeholder="Nome da mãe" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1593,7 +1593,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="fatherName" class="form-label">Nome do pai*</label>
-                                    <input type="text" class="form-control" name="fatherName" placeholder="Nome do pai" required>
+                                    <input type="text" class="form-control" name="personalData[fatherName]" placeholder="Nome do pai" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1607,7 +1607,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="nameLegalRepresentative" class="form-label">Nome*</label>
-                                    <input type="text" class="form-control" name="nameLegalRepresentative" placeholder="Nome">
+                                    <input type="text" class="form-control" name="personalData[nameLegalRepresentative]" placeholder="Nome">
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1616,7 +1616,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="cpfLegalRepresentative" class="form-label">CPF*</label>
-                                    <input type="text" class="form-control cpf" name="cpfLegalRepresentative" placeholder="CPF">
+                                    <input type="text" class="form-control cpf" name="personalData[cpfLegalRepresentative]" placeholder="CPF">
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1625,7 +1625,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="affiliationLegalRepresentative" class="form-label">Filiação*</label>
-                                    <input type="text" class="form-control" name="affiliationLegalRepresentative" placeholder="Filiação">
+                                    <input type="text" class="form-control" name="personalData[affiliationLegalRepresentative]" placeholder="Filiação">
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1639,7 +1639,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="documentType" class="form-label">Natureza do documento*</label>
-                                    <select class="form-select" name="documentType" required>
+                                    <select class="form-select" name="documents[documentType]" required>
                                         <option value="">Selecione...</option>
                                         <option value="CNH">CNH</option>
                                         <option value="RG">RG</option>
@@ -1652,7 +1652,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="documentNumber" class="form-label">Nº do documento*</label>
-                                    <input type="text" class="form-control" name="documentNumber" placeholder="Nº do documento" required>
+                                    <input type="text" class="form-control" name="documents[documentNumber]" placeholder="Nº do documento" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1662,8 +1662,8 @@
                         <div class="row">
                             <div class="col">
                                 <div class="mb-3">
-                                    <label for="dateShipment" class="form-label">Data de expedição*</label>
-                                    <input type="text" class="form-control date" name="dateShipment" placeholder="Data de expedição" required>
+                                    <label for="issueDate" class="form-label">Data de expedição*</label>
+                                    <input type="date" max="9999-12-31" class="form-control" name="documents[issueDate]" placeholder="Data de expedição" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1671,8 +1671,8 @@
                             </div>
                             <div class="col">
                                 <div class="mb-3">
-                                    <label for="issuingBody" class="form-label">Órgão expedidor*</label>
-                                    <input type="text" class="form-control" name="issuingBody" placeholder="Órgão expedidor" required>
+                                    <label for="issuer" class="form-label">Órgão expedidor*</label>
+                                    <input type="text" class="form-control" name="documents[issuer]" placeholder="Órgão expedidor" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1681,7 +1681,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="placeBirth" class="form-label">Naturalidade*</label>
-                                    <input type="text" class="form-control" name="placeBirth" placeholder="Naturalidade" required>
+                                    <input type="text" class="form-control" name="documents[placeBirth]" placeholder="Naturalidade" required>
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1695,7 +1695,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício*</label>
-                                    <input type="number" class="form-control" name="benefitEntryAge" placeholder="Idade para entrada em benefício">
+                                    <input type="number" class="form-control" name="plans[benefitEntryAge]" placeholder="Idade para entrada em benefício">
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1706,7 +1706,7 @@
                                     <label for="monthlyContribuitionAmount" class="form-label">Valor da contribuição mensal*</label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>
-                                        <input type="text" class="form-control money" name="monthlyContribuitionAmount" placeholder="Valor da contribuição mensal">
+                                        <input type="text" class="form-control money" name="plans[monthlyContribuitionAmount]" placeholder="Valor da contribuição mensal">
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -1718,7 +1718,7 @@
                                     <label for="valueFoundingContribution" class="form-label">Valor da contribuição do instituidor*</label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>
-                                        <input type="text" class="form-control money" name="valueFoundingContribution" placeholder="Valor da contribuição do instituidor">
+                                        <input type="text" class="form-control money" name="plans[valueFoundingContribution]" placeholder="Valor da contribuição do instituidor">
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -1742,7 +1742,7 @@
                                     <label for="insuredCapital" class="form-label">Capital segurado*</label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>
-                                        <input type="text" class="form-control money" name="insuredCapital" placeholder="Capital segurado">
+                                        <input type="text" class="form-control money" name="plans[insuredCapital]" placeholder="Capital segurado">
                                     </div>
                                 </div>
                             </div>
@@ -1751,7 +1751,7 @@
                                     <label for="contribution" class="form-label">Contribuição*</label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>
-                                        <input type="text" class="form-control money" name="contribution" placeholder="Contribuição">
+                                        <input type="text" class="form-control money" name="plans[contribution]" placeholder="Contribuição">
                                     </div>
                                 </div>
                             </div>
@@ -1766,84 +1766,18 @@
 
                     <div id="dependents" class="hidden">
                         <div class="row">
-                            <div class="col d-flex justify-content-end"><button type="button" class="btn btn-success">Adicionar</button></div>
+                            <div class="col d-flex justify-content-end"><button type="button" class="btn btn-success" onclick="addDependent();">Adicionar</button></div>
                         </div>
-                        <div id="listDependents" class="hidden">
-                            <div>
-                                <div class="text-center"><strong>Dependente 1</strong></div>
-                                <div class="row">
-                                    <div class="col">
-                                        <div class="mb-3">
-                                            <label for="nameDependent" class="form-label">Nome*</label>
-                                            <input type="text" class="form-control" name="nameDependent[0]" placeholder="Nome">
-                                            <div class="invalid-feedback">
-                                                Preenchimento obrigatório.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-3">
-                                        <div class="mb-3">
-                                            <label for="kinshipDependent" class="form-label">Parentesco*</label>
-                                            <select class="form-select" name="kinshipDependent[0]">
-                                                <option value="">Selecione...</option>
-                                                <option value="Avô(ó)">Avô(ó)</option>
-                                                <option value="Companheiro(a)">Companheiro(a)</option>
-                                                <option value="Cônjuge">Cônjuge</option>
-                                                <option value="Filho(a)">Filho(a)</option>
-                                                <option value="Irmão(ã)">Irmão(ã)</option>
-                                                <option value="Mãe">Mãe</option>
-                                                <option value="Nenhum">Nenhum</option>
-                                                <option value="Neto(a)">Neto(a)</option>
-                                                <option value="Pai">Pai</option>
-                                                <option value="Sobrinho(a)">Sobrinho(a)</option>
-                                                <option value="Tio(a)">Tio(a)</option>
-                                            </select>
-                                            <div class="invalid-feedback">
-                                                Preenchimento obrigatório.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <div class="mb-3">
-                                            <label for="cpfDependent" class="form-label">CPF*</label>
-                                            <input type="text" class="form-control cpf" name="cpfDependent[0]" placeholder="CPF">
-                                            <div class="invalid-feedback">
-                                                Preenchimento obrigatório.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <div class="mb-3">
-                                            <label for="birthDateDependent" class="form-label">Data de nascimento*</label>
-                                            <input type="text" class="form-control date" name="birthDateDependent[0]" placeholder="Data de nascimento">
-                                            <div class="invalid-feedback">
-                                                Preenchimento obrigatório.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <div class="mb-3">
-                                            <label for="participationDependent" class="form-label">Participação (%)*</label>
-                                            <input type="number" min="0" class="form-control" name="participationDependent[0]" placeholder="Participação (%)">
-                                            <div class="invalid-feedback">
-                                                Preenchimento obrigatório.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <div id="listDependents"></div>
                     </div>
 
                     <div id="addressData" class="hidden">
                         <div class="row">
-                            <div class="col-3">
+                            <div class="col-8">
+                                <label for="cep" class="form-label">CEP*</label>
                                 <div class="input-group mb-3">
-                                    <label for="cep" class="form-label">CEP*</label>
-                                    <input type="text" class="form-control cep" name="cep" placeholder="CEP" onchange="getCEP(this.value)">
-                                    <div class="input-group-append">
+                                    <input type="text" class="form-control cep" name="addresses[cep]" placeholder="CEP" onchange="getCEP(this.value)">
+                                    <div class="input-group-text hidden">
                                         <div class="spinner-border ml-2" role="status">
                                             <span class="visually-hidden">Carregando...</span>
                                         </div>
@@ -1858,7 +1792,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="address" class="form-label">Endereço*</label>
-                                    <input type="text" class="form-control" name="address" placeholder="Endereço">
+                                    <input type="text" class="form-control" name="addresses[address]" placeholder="Endereço">
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1867,7 +1801,7 @@
                             <div class="col-2">
                                 <div class="mb-3">
                                     <label for="addressNumber" class="form-label">Nº</label>
-                                    <input type="text" class="form-control" name="addressNumber" placeholder="Nº">
+                                    <input type="text" class="form-control" name="addresses[number]" placeholder="Nº">
                                 </div>
                             </div>
                         </div>
@@ -1875,7 +1809,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="neighborhood" class="form-label">Bairro*</label>
-                                    <input type="text" class="form-control" name="neighborhood" placeholder="Bairro">
+                                    <input type="text" class="form-control" name="addresses[neighborhood]" placeholder="Bairro">
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1884,7 +1818,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="city" class="form-label">Cidade*</label>
-                                    <input type="text" class="form-control" name="city" placeholder="Cidade">
+                                    <input type="text" class="form-control" name="addresses[city]" placeholder="Cidade">
                                     <div class="invalid-feedback">
                                         Preenchimento obrigatório.
                                     </div>
@@ -1893,7 +1827,7 @@
                             <div class="col-2">
                                 <div class="mb-3">
                                     <label for="state" class="form-label">UF*</label>
-                                    <select class="form-select" name="state">
+                                    <select class="form-select" name="addresses[state]">
                                         <option value="">Selecione...</option>
                                         <option value="AC">Acre</option>
                                         <option value="AL">Alagoas</option>
@@ -1931,12 +1865,12 @@
                         </div>
                     </div>
 
-                    <div id="otherInformation" class="">
+                    <div id="otherInformation" class="hidden">
                         <div class="row">
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="mainOccupation" class="form-label">Ocupação principal*</label>
-                                    <select class="form-select" name="mainOccupation">
+                                    <select class="form-select" name="otherInformations[mainOccupation]">
                                         <option value="">Digite para buscar...</option>
                                         <option value="252105">Administrador</option>
                                         <option value="252405">Analista de Recursos Humanos</option>
@@ -1967,7 +1901,7 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="category" class="form-label">Categoria*</label>
-                                    <select class="form-select" name="category">
+                                    <select class="form-select" name="otherInformations[category]">
                                         <option value="">Selecione...</option>
                                         <option value="Autônomo">Autônomo</option>
                                         <option value="Empregado">Empregado</option>
@@ -1986,11 +1920,11 @@
                                 <div class="mb-3">
                                     <label for="" class="form-label">Residente no Brasil?*</label>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="brazilianResident" id="brazilianResidentYes" value="1">
+                                        <input class="form-check-input" type="radio" name="otherInformations[brazilianResident]" id="brazilianResidentYes" value="1">
                                         <label class="form-check-label" for="brazilianResidentYes">Sim</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="brazilianResident" id="brazilianResidentNo" value="0">
+                                        <input class="form-check-input" type="radio" name="otherInformations[brazilianResident]" id="brazilianResidentNo" value="0">
                                         <label class="form-check-label" for="brazilianResidentNo">Não</label>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
@@ -2002,11 +1936,11 @@
                                 <div class="mb-3">
                                     <label for="" class="form-label">É pessoa politicamente exposta?*</label>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="politicallyExposed" id="politicallyExposedYes" value="1">
+                                        <input class="form-check-input" type="radio" name="otherInformations[politicallyExposed]" id="politicallyExposedYes" value="1">
                                         <label class="form-check-label" for="politicallyExposedYes">Sim</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="politicallyExposed" id="politicallyExposedNo" value="0">
+                                        <input class="form-check-input" type="radio" name="otherInformations[politicallyExposed]" id="politicallyExposedNo" value="0">
                                         <label class="form-check-label" for="politicallyExposedNo">Não</label>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
@@ -2018,11 +1952,11 @@
                                 <div class="mb-3">
                                     <label for="" class="form-label">Você tem obrigações fiscais com outros países?*</label>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="obligationOtherCountries" id="obligationOtherCountriesYes" value="1">
+                                        <input class="form-check-input" type="radio" name="otherInformations[obligationOtherCountries]" id="obligationOtherCountriesYes" value="1">
                                         <label class="form-check-label" for="obligationOtherCountriesYes">Sim</label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="obligationOtherCountries" id="obligationOtherCountriesNo" value="0">
+                                        <input class="form-check-input" type="radio" name="otherInformations[obligationOtherCountries]" id="obligationOtherCountriesNo" value="0">
                                         <label class="form-check-label" for="obligationOtherCountriesNo">Não</label>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
@@ -2046,6 +1980,7 @@
 <script>
     const localStorageKey = 'adesaoSulPrevidencia';
     let draftUUID = localStorage.getItem(localStorageKey);
+    let initialDataId = null;
 
     const registerPages = [{
             title: 'Dados iniciais',
@@ -2104,11 +2039,11 @@
         $('#registerModal #divLegalRepresentative input').removeAttr('required');
 
         if (planFor === 'Dependente') {
-            const name = $('#registerModal #personalData input[name="namePersonalData"]').val();
-            const cpf = $('#registerModal #personalData input[name="cpf"]').val();
+            const name = $('#registerModal #personalData input[name="personalData[name]"]').val();
+            const cpf = $('#registerModal #personalData input[name="personalData[cpf]"]').val();
 
-            $('#registerModal #personalData input[name="nameLegalRepresentative"]').val(name);
-            $('#registerModal #personalData input[name="cpfLegalRepresentative"]').val(cpf);
+            $('#registerModal #personalData input[name="personalData[nameLegalRepresentative]"]').val(name);
+            $('#registerModal #personalData input[name="personalData[cpfLegalRepresentative]"]').val(cpf);
             $('#registerModal #divLegalRepresentative input').attr('required', 'required');
             $('#registerModal #divLegalRepresentative').show('slow');
         }
@@ -2146,9 +2081,9 @@
                 jQuery('#registerModal #initialData').fadeIn().show();
                 break;
             case 1:
-                const name = $('#registerModal #initialData input[name="name"]').val();
+                const name = $('#registerModal #initialData input[name="initialData[name]"]').val();
 
-                $('#registerModal #personalData input[name="namePersonalData"]').val(name);
+                $('#registerModal #personalData input[name="personalData[name]"]').val(name);
 
                 jQuery('#registerModal #personalData').fadeIn().show();
                 break;
@@ -2187,7 +2122,7 @@
             return;
         }
 
-        // await saveForm(registerPages[registerPageIndex].id);
+        await saveForm(registerPages[registerPageIndex].id);
 
         registerPageIndex += 1;
 
@@ -2215,10 +2150,13 @@
                 headers: {
                     'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
                 },
-                data: formElements.serialize() + `&storage_uuid=${draftUUID}`,
+                data: formElements.serialize() + `&storageUuid=${draftUUID}${initialDataId !== null ? `&initialDataId=${initialDataId}` : ''}`,
                 dataType: 'json',
                 beforeSend: () => {},
                 success: (response) => {
+                    if (response?.success === true && response?.initialDataId)
+                        initialDataId = response.initialDataId;
+
                     resolve(response);
                 },
                 error: (error) => {
@@ -2239,18 +2177,142 @@
             type: 'GET',
             url: `https://viacep.com.br/ws/${cep}/json/`,
             beforeSend: () => {
-                $('#addressData .spinner-border').show();
+                $('#addressData .input-group-text').show();
             },
             success: (response) => {
-                $('#addressData .spinner-border').hide();
-                $('#addressData input[name="address"]').val(response?.logradouro);
-                $('#addressData input[name="neighborhood"]').val(response?.bairro);
-                $('#addressData input[name="city"]').val(response?.localidade);
-                $('#addressData select[name="state"]').val(response?.uf);
+                $('#addressData .input-group-text').hide();
+                $('#addressData input[name="addresses[address]"]').val(response?.logradouro);
+                $('#addressData input[name="addresses[neighborhood]"]').val(response?.bairro);
+                $('#addressData input[name="addresses[city]"]').val(response?.localidade);
+                $('#addressData select[name="addresses[state]"]').val(response?.uf);
             },
             error: () => {
                 alert('CEP não encontrado!');
             }
         })
+    }
+
+    function cpfCheck(cpf) {
+        let Soma = 0;
+        let Resto;
+        const strCPF = String(cpf).replace(/[^\d]/g, '');
+
+        if (strCPF.length !== 11)
+            return false;
+
+        if ([
+                '00000000000',
+                '11111111111',
+                '22222222222',
+                '33333333333',
+                '44444444444',
+                '55555555555',
+                '66666666666',
+                '77777777777',
+                '88888888888',
+                '99999999999',
+            ].indexOf(strCPF) !== -1)
+            return false;
+
+        for (i = 1; i <= 9; i++)
+            Soma = Soma + parseInt(strCPF.substring(i - 1, i)) * (11 - i);
+
+        Resto = (Soma * 10) % 11;
+
+        if ((Resto == 10) || (Resto == 11))
+            Resto = 0;
+
+        if (Resto != parseInt(strCPF.substring(9, 10)))
+            return false;
+
+        Soma = 0;
+
+        for (i = 1; i <= 10; i++)
+            Soma = Soma + parseInt(strCPF.substring(i - 1, i)) * (12 - i);
+
+        Resto = (Soma * 10) % 11;
+
+        if ((Resto == 10) || (Resto == 11))
+            Resto = 0;
+
+        if (Resto != parseInt(strCPF.substring(10, 11)))
+            return false;
+
+        return true;
+    }
+
+    const addDependent = () => {
+        const count = $('#listDependents .dependentDiv').length;
+
+        $('#listDependents').append(`
+        <div class="dependentDiv">
+            <div class="text-center"><strong>Dependente ${count + 1}</strong></div>
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="nameDependent" class="form-label">Nome*</label>
+                        <input type="text" class="form-control" name="dependents[${count}][name]" placeholder="Nome">
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="mb-3">
+                        <label for="kinshipDependent" class="form-label">Parentesco*</label>
+                        <select class="form-select" name="dependents[${count}][kinshipDependent]">
+                            <option value="">Selecione...</option>
+                            <option value="Avô(ó)">Avô(ó)</option>
+                            <option value="Companheiro(a)">Companheiro(a)</option>
+                            <option value="Cônjuge">Cônjuge</option>
+                            <option value="Filho(a)">Filho(a)</option>
+                            <option value="Irmão(ã)">Irmão(ã)</option>
+                            <option value="Mãe">Mãe</option>
+                            <option value="Nenhum">Nenhum</option>
+                            <option value="Neto(a)">Neto(a)</option>
+                            <option value="Pai">Pai</option>
+                            <option value="Sobrinho(a)">Sobrinho(a)</option>
+                            <option value="Tio(a)">Tio(a)</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="cpfDependent" class="form-label">CPF*</label>
+                        <input type="text" class="form-control cpf" name="dependents[${count}][cpf]" placeholder="CPF">
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="birthDateDependent" class="form-label">Data de nasc.*</label>
+                        <input type="date" max="9999-12-31" class="form-control" name="dependents[${count}][birthDate]" placeholder="Data de nascimento">
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="participationDependent" class="form-label">Participação (%)*</label>
+                        <input type="number" min="0" class="form-control" name="dependents[${count}][participation]" placeholder="Participação (%)">
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`);
+
+        $('.cpf').mask('000.000.000-00', {
+            reverse: true,
+        });
     }
 </script>

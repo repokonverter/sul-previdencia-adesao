@@ -31,10 +31,10 @@ class AdhesionInitialDatasTable extends Table
         $this->hasOne('AdhesionOtherInformations', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
-
-        $this->hasMany('AdhesionDocuments', [
+        $this->hasOne('AdhesionDocuments', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
+
         $this->hasMany('AdhesionDependents', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
