@@ -63,7 +63,7 @@ RUN chown -R www-data:www-data /var/www/html/tmp \
     && chmod -R 775 /var/www/html/logs
 
 # Configuração básica do Nginx para usar PHP-FPM
-COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY deploy/nginx.conf /etc/nginx/conf.d/sul-previdencia.conf
 
 # Comando de inicialização: Inicia o Nginx e o PHP-FPM
 CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]
