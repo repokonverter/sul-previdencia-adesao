@@ -18,9 +18,6 @@ COPY composer.json composer.lock ./
 # Este comando agora funciona pois o 'ext-intl' está instalado na CLI.
 RUN composer install --optimize-autoloader --no-interaction
 
-ARG BUILD_DATE=$(date +%s)
-RUN echo $BUILD_DATE > ./webroot/cache_buster.txt
-
 COPY . /app
 
 RUN rm -f /app/webroot/bootstrap_u_i
@@ -66,6 +63,10 @@ COPY --from=builder /app/webroot /var/www/html/webroot
 
 # COPIAMOS O RESTANTE DO CÓDIGO FONTE (src, templates, config)
 COPY . /var/www/html
+
+RUN ls -la /var/www/html/webroot
+
+RUN rm -f /var/www/html/webroot/bootstrap_u_i
 
 RUN ls -la /var/www/html/webroot
 
