@@ -22,12 +22,11 @@ COPY . /app
 
 RUN rm -f /app/webroot/bootstrap_u_i
 
-RUN mkdir -p /app/webroot/bootstrap_u_i
+# RUN mkdir -p /app/webroot/bootstrap_u_i
 
-RUN cp -R /app/vendor/friendsofcake/bootstrap-ui/webroot/. /app/webroot/bootstrap_u_i/
+# RUN cp -R /app/vendor/friendsofcake/bootstrap-ui/webroot/. /app/webroot/bootstrap_u_i/
 
-RUN ls -la ./webroot
-RUN ls -la /app/webroot
+RUN bin/cake bootstrap install
 
 # ----------------------------------------------------
 # 2. APPLICATION STAGE: Imagem final de runtime (Inclui Nginx e PHP-FPM)
