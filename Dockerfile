@@ -51,6 +51,7 @@ RUN apk add --no-cache nginx \
 WORKDIR /var/www/html
 # ⚠️ COPIAMOS A PASTA VENDOR DO ESTÁGIO 'builder'
 COPY --from=builder /app/vendor /var/www/html/vendor
+COPY --from=builder /app/webroot/bootstrap_u_i /var/www/html/webroot/bootstrap_u_i
 # COPIAMOS O CÓDIGO FONTE
 COPY . /var/www/html
 
