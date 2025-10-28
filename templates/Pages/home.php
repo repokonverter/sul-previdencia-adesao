@@ -1,4 +1,11 @@
-<?= $this->Html->css('application') ?>
+<?php
+/**
+ * @var \App\View\AppView $this
+ */
+
+$this->assign('title', 'Sul Previdência');
+$this->Html->css('application');
+?>
 
 <style>
     body {

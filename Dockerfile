@@ -20,10 +20,6 @@ COPY . /app
 
 RUN rm -f /app/webroot/bootstrap_u_i
 
-# RUN mkdir -p /app/webroot/bootstrap_u_i
-
-# RUN cp -R /app/vendor/friendsofcake/bootstrap-ui/webroot/. /app/webroot/bootstrap_u_i/
-
 RUN bin/cake bootstrap install
 
 # ----------------------------------------------------

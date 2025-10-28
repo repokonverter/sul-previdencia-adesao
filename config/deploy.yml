@@ -20,10 +20,10 @@ registry:
 
 env:
   secret:
-      - SECURITY_SALT
-      - DB_USER
-      - DB_PASSWORD
-      - DB_NAME
+    - SECURITY_SALT
+    - DB_USER
+    - DB_PASSWORD
+    - DB_NAME
   clear:
     DB_HOST: adesao-sulprev-db
     DEBUG: true
