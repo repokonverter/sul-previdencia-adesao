@@ -18,7 +18,7 @@ COPY composer.json composer.lock ./
 # Este comando agora funciona pois o 'ext-intl' está instalado na CLI.
 RUN composer install --optimize-autoloader --no-interaction
 
-RUN chmod +x vendor/bin/cake
+RUN chmod +x ./bin/cake
 
 RUN php vendor/bin/cake plugin assets copy --no-interaction
 
