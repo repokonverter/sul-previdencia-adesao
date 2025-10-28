@@ -57,14 +57,14 @@ RUN apk add --no-cache nginx \
 WORKDIR /var/www/html
 # ⚠️ COPIAMOS A PASTA VENDOR DO ESTÁGIO 'builder'
 COPY --from=builder /app/vendor /var/www/html/vendor
-
-# 🚨 COPIA A PASTA WEBROOT COMPLETA (que agora contém os assets físicos)
 COPY --from=builder /app/webroot /var/www/html/webroot
 
 # COPIAMOS O RESTANTE DO CÓDIGO FONTE (src, templates, config)
-COPY . /var/www/html
-
-RUN rm -f /var/www/html/webroot/bootstrap_u_i
+# Copiamos apenas as pastas necessárias, excluindo o webroot local problemático.
+COPY bin /var/www/html/bin
+COPY config /var/www/html/config
+COPY src /var/www/html/src
+COPY templates /var/www/html/templates
 
 # Cria e ajusta permissões para as pastas logs e tmp do CakePHP
 RUN mkdir -p /var/www/html/tmp \
