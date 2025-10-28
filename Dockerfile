@@ -23,20 +23,19 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # ----------------------------------------------------
 FROM php:8.3-fpm-alpine AS app
 
-# Instala o Nginx e TODAS as extensões necessárias para o runtime.
+# Instala o Nginx, icu-libs e a biblioteca de runtime do PostgreSQL (libpq)
 RUN apk add --no-cache nginx \
-    # icu-libs é a dependência de runtime do intl (Já corrigido, mas mantido)
     && apk add --no-cache icu-libs \
+    # 👇 ADICIONADO: libpq para o runtime do pdo_pgsql
+    && apk add --no-cache libpq \
     \
     # 1. Instala as dependências de compilação (necessárias para intl e pdo_pgsql)
-    # Tivemos que adicionar o icu-dev aqui de novo para o 'docker-php-ext-install intl' funcionar
     && apk add --no-cache --virtual .build-deps \
     postgresql-dev \
     build-base \
     icu-dev \
     \
     # 2. Compila e instala as extensões do PHP no runtime final
-    # 👇 INSTALAMOS TODAS AS EXTENSÕES AQUI (incluindo intl)
     && docker-php-ext-install pdo pdo_pgsql intl \
     \
     # 3. Limpa as dependências de build (para reduzir o tamanho da imagem)
@@ -47,7 +46,6 @@ RUN apk add --no-cache nginx \
 WORKDIR /var/www/html
 # ⚠️ COPIAMOS A PASTA VENDOR DO ESTÁGIO 'builder'
 COPY --from=builder /app/vendor /var/www/html/vendor
-# A cópia do INI do intl foi removida, pois 'docker-php-ext-install' faz isso.
 # COPIAMOS O CÓDIGO FONTE
 COPY . /var/www/html
 
