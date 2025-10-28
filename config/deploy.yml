@@ -7,6 +7,13 @@ servers:
     hosts:
       - 162.240.166.197
 
+secrets:
+  - APP_ENCRYPTION_KEY
+  - DB_HOST
+  - DB_USERNAME
+  - DB_PASSWORD
+  - DB_DATABASE
+
 proxy:
   ssl: true
   host: adesao.konverter.com.br
@@ -21,8 +28,6 @@ registry:
 env:
   clear:
     DB_HOST: adesao-sulprev-db
-    DB_USER: POSTGRES_USER # Nome da variável no secrets
-    DB_PASSWORD: POSTGRES_PASSWORD # Nome da variável no secrets
 
 builder:
   remote: "ssh://deploy@162.240.166.197:22022"
