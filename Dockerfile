@@ -5,10 +5,8 @@ FROM php:8.3-fpm-alpine AS builder
 
 # Instala ferramentas necessárias (git, build-base para compilação)
 # IMPORTANTE: Instalamos 'icu-dev' e a extensão 'intl' para satisfazer o Composer.
-RUN apk add --no-cache git build-base icu-dev \
-    # Instala a extensão INTL para satisfazer a verificação de plataforma do Composer
+RUN apk add --no-cache git build-base icu-dev nodejs npm \
     && docker-php-ext-install intl \
-    # Instala o Composer globalmente na imagem de build
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && rm -rf /var/cache/apk/*
 
