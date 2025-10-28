@@ -61,6 +61,9 @@ COPY --from=builder /app/vendor /var/www/html/vendor
 # 🚨 COPIA A PASTA WEBROOT COMPLETA (que agora contém os assets físicos)
 COPY --from=builder /app/webroot /var/www/html/webroot
 
+RUN ls -la /app/webroot
+RUN ls -la /var/www/html/webroot
+
 # COPIAMOS O RESTANTE DO CÓDIGO FONTE (src, templates, config)
 COPY . /var/www/html
 
