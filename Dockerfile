@@ -21,7 +21,7 @@ RUN composer install --optimize-autoloader --no-interaction
 COPY . .
 
 # 3. COPIA ASSETS DO PLUGIN (Este comando agora deve encontrar o contexto do CakePHP)
-RUN php vendor/bin/cake plugin assets copy --no-interaction
+RUN php bin/cake plugin assets copy --no-interaction
 
 # ----------------------------------------------------
 # 2. APPLICATION STAGE: Imagem final de runtime (Inclui Nginx e PHP-FPM)
