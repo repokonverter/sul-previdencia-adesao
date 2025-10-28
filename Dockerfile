@@ -20,6 +20,8 @@ RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
 
+RUN rm -f /app/webroot/bootstrap_u_i
+
 # Este comando agora é redundante, mas deixaremos para garantir a compatibilidade
 RUN php bin/cake plugin assets copy --no-interaction
 
