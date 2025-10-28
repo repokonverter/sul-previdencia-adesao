@@ -4,7 +4,8 @@
  */
 
 $this->assign('title', 'Sul Previdência');
-$this->Html->css('application');
+
+echo $this->Html->css('application');
 ?>
 
 <style>
