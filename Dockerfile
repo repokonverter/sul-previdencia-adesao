@@ -19,7 +19,7 @@ COPY composer.json composer.lock ./
 RUN composer install --optimize-autoloader --no-interaction
 
 ARG BUILD_DATE=$(date +%s)
-RUN echo $BUILD_DATE > webroot/cache_buster.txt
+RUN echo $BUILD_DATE > ./webroot/cache_buster.txt
 
 COPY . /app
 
