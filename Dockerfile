@@ -22,10 +22,11 @@ RUN rm -f ./webroot/bootstrap_u_i
 
 COPY . /app
 
+RUN rm -f /app/webroot/bootstrap_u_i
+
 RUN ls -la /app/webroot
 RUN ls -la ./webroot
 
-# RUN rm -f /app/webroot/bootstrap_u_i
 
 # Este comando agora é redundante, mas deixaremos para garantir a compatibilidade
 # RUN php bin/cake plugin assets copy --no-interaction
