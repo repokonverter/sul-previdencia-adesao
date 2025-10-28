@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App;
@@ -18,6 +19,8 @@ use Authentication\Middleware\AuthenticationMiddleware;
 use Authentication\AuthenticationService;
 use Authentication\AuthenticationServiceInterface;
 use Authentication\AuthenticationServiceProviderInterface;
+use Authentication\Identifier\AbstractIdentifier;
+use Cake\Routing\Router;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Application extends BaseApplication implements AuthenticationServiceProviderInterface
@@ -37,35 +40,56 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         $middlewareQueue
             ->add(new ErrorHandlerMiddleware(Configure::read('Error'), $this))
             ->add(new AssetMiddleware(['cacheTime' => Configure::read('Asset.cacheTime')]))
-            ->add(new AuthenticationMiddleware($this))
             ->add(new RoutingMiddleware($this))
             ->add(new BodyParserMiddleware())
+            ->add(new AuthenticationMiddleware($this))
             ->add(new CsrfProtectionMiddleware(['httponly' => true]));
 
         return $middlewareQueue;
     }
 
+    /**
+     * Returns a service provider instance.
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request Request
+     * @return \Authentication\AuthenticationServiceInterface
+     */
     public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
     {
-        // base da aplicação (ex: '' ou '/sul-previdencia-adesao')
-        $base = $request->getAttribute('base') ?: '';
+        $service = new AuthenticationService();
 
-        $service = new AuthenticationService([
-            'unauthenticatedRedirect' => $base . '/admin/users/login',
+        $service->setConfig([
+            'unauthenticatedRedirect' => [
+                'prefix' => false,
+                'plugin' => false,
+                'controller' => 'Admin/Users',
+                'action' => 'login',
+            ],
             'queryParam' => 'redirect',
         ]);
 
         $fields = [
-            'username' => 'email',
-            'password' => 'password',
+            AbstractIdentifier::CREDENTIAL_USERNAME => 'email',
+            AbstractIdentifier::CREDENTIAL_PASSWORD => 'password'
+        ];
+        $passwordIdentifier = [
+            'Authentication.Password' => [
+                'fields' => $fields,
+            ],
         ];
 
-        $service->loadIdentifier('Authentication.Password', compact('fields'));
-
-        $service->loadAuthenticator('Authentication.Session');
+        $service->loadAuthenticator('Authentication.Session', [
+            'identifier' => $passwordIdentifier,
+        ]);
         $service->loadAuthenticator('Authentication.Form', [
+            'identifier' => $passwordIdentifier,
             'fields' => $fields,
-            'loginUrl' => $base . '/admin/users/login',
+            'loginUrl' => Router::url([
+                'prefix' => false,
+                'plugin' => null,
+                'controller' => 'Admin/Users',
+                'action' => 'login',
+            ]),
         ]);
 
         return $service;
