@@ -22,11 +22,10 @@ COPY . /app
 
 RUN rm -f /app/webroot/bootstrap_u_i
 
-RUN ls -la /app/webroot
-
 # Este comando agora é redundante, mas deixaremos para garantir a compatibilidade
 RUN php bin/cake plugin assets copy --no-interaction
 
+RUN ls -la ./webroot
 RUN ls -la /app/webroot
 
 # ----------------------------------------------------
@@ -64,11 +63,7 @@ COPY --from=builder /app/webroot /var/www/html/webroot
 # COPIAMOS O RESTANTE DO CÓDIGO FONTE (src, templates, config)
 COPY . /var/www/html
 
-RUN ls -la /var/www/html/webroot
-
 RUN rm -f /var/www/html/webroot/bootstrap_u_i
-
-RUN ls -la /var/www/html/webroot
 
 # Cria e ajusta permissões para as pastas logs e tmp do CakePHP
 RUN mkdir -p /var/www/html/tmp \
