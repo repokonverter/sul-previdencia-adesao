@@ -4,8 +4,10 @@
 FROM php:8.3-fpm-alpine AS builder
 
 # Instala ferramentas necessárias (git, build-base para compilação)
-# IMPORTANTE: Apenas instalamos 'icu-dev' aqui para satisfazer as verificações de plataforma do Composer.
+# IMPORTANTE: Instalamos 'icu-dev' e a extensão 'intl' para satisfazer o Composer.
 RUN apk add --no-cache git build-base icu-dev \
+    # Instala a extensão INTL para satisfazer a verificação de plataforma do Composer
+    && docker-php-ext-install intl \
     # Instala o Composer globalmente na imagem de build
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && rm -rf /var/cache/apk/*
@@ -13,7 +15,7 @@ RUN apk add --no-cache git build-base icu-dev \
 # Instala as dependências do Composer
 WORKDIR /app
 COPY composer.json composer.lock ./
-# Este comando agora funciona pois o 'icu-dev' satisfaz o 'ext-intl'
+# Este comando agora funciona pois o 'ext-intl' está instalado na CLI.
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # ----------------------------------------------------
