@@ -18,12 +18,12 @@ COPY composer.json composer.lock ./
 # Este comando agora funciona pois o 'ext-intl' está instalado na CLI.
 RUN composer install --optimize-autoloader --no-interaction
 
-COPY . /app
+# COPY . /app
 
-RUN rm -f /app/webroot/bootstrap_u_i
+# RUN rm -f /app/webroot/bootstrap_u_i
 
 # Este comando agora é redundante, mas deixaremos para garantir a compatibilidade
-RUN php bin/cake plugin assets copy --no-interaction
+# RUN php bin/cake plugin assets copy --no-interaction
 
 # ----------------------------------------------------
 # 2. APPLICATION STAGE: Imagem final de runtime (Inclui Nginx e PHP-FPM)
