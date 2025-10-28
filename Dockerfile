@@ -29,7 +29,7 @@ FROM php:8.3-fpm-alpine AS app
 
 # Instala Nginx e as extensões PHP (intl já está instalada no estágio final da imagem base)
 RUN apk add --no-cache nginx \
-    # 👇 Adicione as bibliotecas de runtime do ICU para resolver o Warning do intl
+    # 👇 ADICIONADO: Bibliotecas de runtime do ICU para resolver o Warning do intl
     && apk add --no-cache icu-libs \
     \
     # 1. Instala as dependências de compilação para o PostgreSQL
@@ -53,6 +53,7 @@ COPY --from=builder /usr/local/etc/php/conf.d/docker-php-ext-intl.ini /usr/local
 # COPIAMOS O CÓDIGO FONTE (que agora é pequeno devido ao .dockerignore)
 COPY . /var/www/html
 
+# Cria e ajusta permissões para as pastas logs e tmp do CakePHP
 RUN mkdir -p /var/www/html/tmp \
     && mkdir -p /var/www/html/logs
 
@@ -62,9 +63,15 @@ RUN chown -R www-data:www-data /var/www/html/tmp \
     && chmod -R 775 /var/www/html/tmp \
     && chmod -R 775 /var/www/html/logs
 
-RUN rm -f /etc/nginx/conf.d/default.conf
+# 🛑 NOVO FLUXO DE CONFIGURAÇÃO DO NGINX
+# 1. Copia o seu bloco 'server' (deploy/nginx.conf) para um nome genérico
+#    que não causa conflito.
+COPY deploy/nginx.conf /etc/nginx/conf.d/app.conf
 
-COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+# 2. Copia o novo arquivo de configuração principal (nginx-master.conf)
+#    e substitui o arquivo mestre do Alpine, garantindo que ele inclua
+#    APENAS o seu 'app.conf' e o bloco 'http'.
+COPY deploy/nginx-master.conf /etc/nginx/nginx.conf
 
 # Comando de inicialização: Inicia o Nginx e o PHP-FPM
 CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]
