@@ -20,13 +20,7 @@ RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
 
-# 🚨 CORREÇÃO FINAL: Cria o diretório de destino
-# O cp -R precisa que o diretório de destino exista antes de copiar o conteúdo de webroot/*
-RUN mkdir -p /app/webroot/bootstrap_u_i/
-
-# 🚨 CORREÇÃO CRÍTICA DO LINK SIMBÓLICO:
-# Copia fisicamente os assets do BootstrapUI para o webroot do app
-RUN cp -R vendor/friendsofcake/bootstrap-ui/webroot/* /app/webroot/bootstrap_u_i/
+RUN cp -R vendor/friendsofcake/bootstrap-ui/webroot/. /app/webroot/bootstrap_u_i/
 
 # Este comando agora é redundante, mas deixaremos para garantir a compatibilidade
 RUN php bin/cake plugin assets copy --no-interaction
