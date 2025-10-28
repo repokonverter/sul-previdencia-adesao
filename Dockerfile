@@ -20,7 +20,12 @@ RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
 
-# 3. COPIA ASSETS DO PLUGIN (Este comando agora deve encontrar o contexto do CakePHP)
+# 🚨 CORREÇÃO CRÍTICA DO LINK SIMBÓLICO:
+# Copia fisicamente os assets do BootstrapUI para o webroot do app
+# Isso resolve o problema de 'link simbólico quebrado' (Broken Symlink) em ambientes Docker remotos.
+RUN cp -R vendor/friendsofcake/bootstrap-ui/webroot/* /app/webroot/bootstrap_u_i/
+
+# Este comando agora é redundante, mas deixaremos para garantir a compatibilidade
 RUN php bin/cake plugin assets copy --no-interaction
 
 # ----------------------------------------------------
@@ -51,8 +56,11 @@ RUN apk add --no-cache nginx \
 WORKDIR /var/www/html
 # ⚠️ COPIAMOS A PASTA VENDOR DO ESTÁGIO 'builder'
 COPY --from=builder /app/vendor /var/www/html/vendor
+
+# 🚨 COPIA A PASTA WEBROOT COMPLETA (que agora contém os assets físicos)
 COPY --from=builder /app/webroot /var/www/html/webroot
-# COPIAMOS O CÓDIGO FONTE
+
+# COPIAMOS O RESTANTE DO CÓDIGO FONTE (src, templates, config)
 COPY . /var/www/html
 
 # Cria e ajusta permissões para as pastas logs e tmp do CakePHP
