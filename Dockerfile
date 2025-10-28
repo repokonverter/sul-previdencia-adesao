@@ -16,7 +16,7 @@ RUN apk add --no-cache git build-base icu-dev \
 WORKDIR /app
 COPY composer.json composer.lock ./
 # Este comando agora funciona pois o 'ext-intl' está instalado na CLI.
-RUN composer install --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # ----------------------------------------------------
 # 2. APPLICATION STAGE: Imagem final de runtime (Inclui Nginx e PHP-FPM)
