@@ -1,44 +1,41 @@
 # ----------------------------------------------------
-# 1. BUILDER STAGE: Prepara a imagem base PHP-FPM
+# 1. BUILDER STAGE: Prepara a imagem base PHP-FPM (APENAS para instalar o Composer)
 # ----------------------------------------------------
-# MUDANÇA CRÍTICA: Usa PHP como base, não Composer.
-# O Composer será instalado DENTRO desta imagem base.
 FROM php:8.3-fpm-alpine AS builder
 
 # Instala ferramentas necessárias (git, build-base para compilação)
-RUN apk add --no-cache git build-base \
-    # Instala as dependências de desenvolvimento para a extensão INTL
-    && apk add --no-cache icu-dev \
-    # Instala a extensão INTL
-    && docker-php-ext-install intl \
+# IMPORTANTE: Apenas instalamos 'icu-dev' aqui para satisfazer as verificações de plataforma do Composer.
+RUN apk add --no-cache git build-base icu-dev \
     # Instala o Composer globalmente na imagem de build
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-    # Limpa dependências de build desnecessárias (exceto git, etc.)
     && rm -rf /var/cache/apk/*
 
 # Instala as dependências do Composer
 WORKDIR /app
 COPY composer.json composer.lock ./
-# O Composer é executado em um ambiente que AGORA tem a extensão intl.
+# Este comando agora funciona pois o 'icu-dev' satisfaz o 'ext-intl'
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # ----------------------------------------------------
-# 2. APPLICATION STAGE: Imagem final com PHP-FPM
+# 2. APPLICATION STAGE: Imagem final de runtime (Inclui Nginx e PHP-FPM)
 # ----------------------------------------------------
 FROM php:8.3-fpm-alpine AS app
 
-# Instala Nginx e as extensões PHP (intl já está instalada no estágio final da imagem base)
+# Instala o Nginx e TODAS as extensões necessárias para o runtime.
 RUN apk add --no-cache nginx \
-    # 👇 ADICIONADO: Bibliotecas de runtime do ICU para resolver o Warning do intl
+    # icu-libs é a dependência de runtime do intl (Já corrigido, mas mantido)
     && apk add --no-cache icu-libs \
     \
-    # 1. Instala as dependências de compilação para o PostgreSQL
+    # 1. Instala as dependências de compilação (necessárias para intl e pdo_pgsql)
+    # Tivemos que adicionar o icu-dev aqui de novo para o 'docker-php-ext-install intl' funcionar
     && apk add --no-cache --virtual .build-deps \
     postgresql-dev \
     build-base \
+    icu-dev \
     \
-    # 2. Compila e instala as extensões do PHP
-    && docker-php-ext-install pdo pdo_pgsql \
+    # 2. Compila e instala as extensões do PHP no runtime final
+    # 👇 INSTALAMOS TODAS AS EXTENSÕES AQUI (incluindo intl)
+    && docker-php-ext-install pdo pdo_pgsql intl \
     \
     # 3. Limpa as dependências de build (para reduzir o tamanho da imagem)
     && apk del .build-deps \
@@ -48,9 +45,8 @@ RUN apk add --no-cache nginx \
 WORKDIR /var/www/html
 # ⚠️ COPIAMOS A PASTA VENDOR DO ESTÁGIO 'builder'
 COPY --from=builder /app/vendor /var/www/html/vendor
-# ⚠️ COPIAMOS O ARQUIVO .ini DA EXTENSÃO INTL DO ESTÁGIO 'builder'
-COPY --from=builder /usr/local/etc/php/conf.d/docker-php-ext-intl.ini /usr/local/etc/php/conf.d/
-# COPIAMOS O CÓDIGO FONTE (que agora é pequeno devido ao .dockerignore)
+# A cópia do INI do intl foi removida, pois 'docker-php-ext-install' faz isso.
+# COPIAMOS O CÓDIGO FONTE
 COPY . /var/www/html
 
 # Cria e ajusta permissões para as pastas logs e tmp do CakePHP
@@ -63,14 +59,8 @@ RUN chown -R www-data:www-data /var/www/html/tmp \
     && chmod -R 775 /var/www/html/tmp \
     && chmod -R 775 /var/www/html/logs
 
-# 🛑 NOVO FLUXO DE CONFIGURAÇÃO DO NGINX
-# 1. Copia o seu bloco 'server' (deploy/nginx.conf) para um nome genérico
-#    que não causa conflito.
+# Configuração Nginx (Substituição do arquivo mestre)
 COPY deploy/nginx.conf /etc/nginx/conf.d/app.conf
-
-# 2. Copia o novo arquivo de configuração principal (nginx-master.conf)
-#    e substitui o arquivo mestre do Alpine, garantindo que ele inclua
-#    APENAS o seu 'app.conf' e o bloco 'http'.
 COPY deploy/nginx-master.conf /etc/nginx/nginx.conf
 
 # Comando de inicialização: Inicia o Nginx e o PHP-FPM
