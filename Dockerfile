@@ -18,8 +18,9 @@ COPY composer.json composer.lock ./
 # Este comando agora funciona pois o 'ext-intl' está instalado na CLI.
 RUN composer install --optimize-autoloader --no-interaction
 
-RUN chmod +x bin/cake
+COPY . .
 
+# 3. COPIA ASSETS DO PLUGIN (Este comando agora deve encontrar o contexto do CakePHP)
 RUN php vendor/bin/cake plugin assets copy --no-interaction
 
 # ----------------------------------------------------
