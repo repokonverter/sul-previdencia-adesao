@@ -7,13 +7,6 @@ servers:
     hosts:
       - 162.240.166.197
 
-secrets:
-  - APP_ENCRYPTION_KEY
-  - DB_HOST
-  - DB_USERNAME
-  - DB_PASSWORD
-  - DB_DATABASE
-
 proxy:
   ssl: true
   host: adesao.konverter.com.br
@@ -26,8 +19,14 @@ registry:
     - KAMAL_REGISTRY_PASSWORD
 
 env:
+  secret:
+      - SECURITY_SALT
+      - DB_USER
+      - DB_PASSWORD
+      - DB_NAME
   clear:
     DB_HOST: adesao-sulprev-db
+    DEBUG: true
 
 builder:
   remote: "ssh://deploy@162.240.166.197:22022"
