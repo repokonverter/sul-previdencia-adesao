@@ -20,9 +20,12 @@ RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
 
+# 🚨 CORREÇÃO FINAL: Cria o diretório de destino
+# O cp -R precisa que o diretório de destino exista antes de copiar o conteúdo de webroot/*
+RUN mkdir -p /app/webroot/bootstrap_u_i/
+
 # 🚨 CORREÇÃO CRÍTICA DO LINK SIMBÓLICO:
 # Copia fisicamente os assets do BootstrapUI para o webroot do app
-# Isso resolve o problema de 'link simbólico quebrado' (Broken Symlink) em ambientes Docker remotos.
 RUN cp -R vendor/friendsofcake/bootstrap-ui/webroot/* /app/webroot/bootstrap_u_i/
 
 # Este comando agora é redundante, mas deixaremos para garantir a compatibilidade
