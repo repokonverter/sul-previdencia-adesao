@@ -18,7 +18,7 @@ COPY composer.json composer.lock ./
 # Este comando agora funciona pois o 'ext-intl' está instalado na CLI.
 RUN composer install --optimize-autoloader --no-interaction
 
-RUN rm -f ./webroot/bootstrap_u_i
+# RUN rm -f ./webroot/bootstrap_u_i
 
 COPY . /app
 
