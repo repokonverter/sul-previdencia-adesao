@@ -20,7 +20,7 @@ RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
 
-RUN ls -la /app/webroot
+RUN ls -la .
 
 # RUN rm -f /app/webroot/bootstrap_u_i
 
