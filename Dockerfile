@@ -19,6 +19,8 @@ RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
 
+RUN cp config/app_local.example.php config/app_local.php
+
 RUN cp config/.env.example config/.env
 
 RUN bin/cake security regenerate_salt
