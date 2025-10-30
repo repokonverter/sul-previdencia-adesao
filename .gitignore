@@ -54,3 +54,5 @@ yarn-debug.log
 yarn-error.log
 # kamal
 .kamal/secrets
+# Bootstrap UI
+/webroot/bootstrap_u_i/*
