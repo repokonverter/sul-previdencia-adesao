@@ -19,15 +19,13 @@ RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
 
-RUN ls -la config/
-
 RUN cp config/app_local.example.php config/app_local.php
 
 RUN cp config/.env.example config/.env
 
-# RUN rm -f /app/webroot/bootstrap_u_i
+RUN ls -la config/
 
-RUN bin/cake bootstrap install
+# RUN bin/cake bootstrap install
 
 # ----------------------------------------------------
 # 2. APPLICATION STAGE: Imagem final de runtime (Inclui Nginx e PHP-FPM)
