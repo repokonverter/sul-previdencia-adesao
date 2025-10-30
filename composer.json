@@ -46,7 +46,10 @@
         "sort-packages": true
     },
     "scripts": {
-        "post-install-cmd": "App\\Console\\Installer::postInstall",
+        "post-install-cmd": [
+            "bin/cake bootstrap install",
+            "App\\Console\\Installer::postInstall"
+        ],
         "post-create-project-cmd": "App\\Console\\Installer::postInstall",
         "check": [
             "@test",
