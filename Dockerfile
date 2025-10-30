@@ -18,9 +18,7 @@ RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
 
-# RUN rm -f /app/webroot/bootstrap_u_i
-
-# RUN bin/cake bootstrap install
+RUN bin/cake bootstrap install
 
 # ----------------------------------------------------
 # 2. APPLICATION STAGE: Imagem final de runtime (Inclui Nginx e PHP-FPM)
