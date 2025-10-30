@@ -16,11 +16,11 @@ WORKDIR /app
 # COPY composer.json composer.lock ./
 COPY . /app
 
-RUN composer install --optimize-autoloader --no-interaction
-
 RUN cp config/app_local.example.php config/app_local.php
 
 RUN cp config/.env.example config/.env
+
+RUN composer install --optimize-autoloader --no-interaction
 
 RUN ls -la config/
 
