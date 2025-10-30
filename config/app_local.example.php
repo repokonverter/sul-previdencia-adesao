@@ -40,7 +40,7 @@ return [
      */
     'Datasources' => [
         'default' => [
-            'host' => getenv('DB_HOST') ?: 'pgsql-sul-prev',
+            'host' => env('DB_HOST') ?: 'pgsql-sul-prev',
             /*
              * CakePHP will use the default DB port based on the driver selected
              * MySQL on MAMP uses port 8889, MAMP users will want to uncomment
@@ -48,10 +48,10 @@ return [
              */
             //'port' => 'non_standard_port_number',
 
-            'username' => getenv('DB_USER') ?: 'admin',
-            'password' => getenv('DB_PASSWORD') ?: 'admin',
+            'username' => env('DB_USER') ?: 'admin',
+            'password' => env('DB_PASSWORD') ?: 'admin',
 
-            'database' => getenv('DB_NAME') ?: 'adesao-sulprev-db',
+            'database' => env('DB_NAME') ?: 'adesao-sulprev-db',
             /*
              * If not using the default 'public' schema with the PostgreSQL driver
              * set it here.
