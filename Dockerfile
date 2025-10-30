@@ -19,6 +19,8 @@ RUN composer install --optimize-autoloader --no-interaction
 COPY . /app
 
 RUN ls -la /app/webroot
+
+RUN ls -la /webroot
 # RUN rm -f /app/webroot/bootstrap_u_i
 
 # RUN bin/cake bootstrap install
