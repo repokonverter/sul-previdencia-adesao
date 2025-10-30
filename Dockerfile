@@ -12,11 +12,16 @@ RUN apk add --no-cache git build-base icu-dev nodejs npm \
 
 # Instala as dependências do Composer
 WORKDIR /app
+
 COPY composer.json composer.lock ./
-# Este comando agora funciona pois o 'ext-intl' está instalado na CLI.
+
 RUN composer install --optimize-autoloader --no-interaction
 
 COPY . /app
+
+RUN cp config/.env.example config/.env
+
+RUN bin/cake security regenerate_salt
 
 RUN rm -f /app/webroot/bootstrap_u_i
 
