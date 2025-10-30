@@ -13,11 +13,10 @@ RUN apk add --no-cache git build-base icu-dev nodejs npm \
 # Instala as dependências do Composer
 WORKDIR /app
 
-COPY composer.json composer.lock ./
+# COPY composer.json composer.lock ./
+COPY . /app
 
 RUN composer install --optimize-autoloader --no-interaction
-
-COPY . /app
 
 RUN cp config/app_local.example.php config/app_local.php
 
