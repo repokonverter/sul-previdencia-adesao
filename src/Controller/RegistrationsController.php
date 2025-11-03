@@ -46,7 +46,7 @@ class RegistrationsController extends AppController
      */
     public function save()
     {
-        $this->request->allowMethod(['post', 'ajax']);
+        $this->request->allowMethod(['get', 'ajax']);
 
         $data = $this->request->getData();
         $connection = $this->AdhesionInitialDatas->getConnection();

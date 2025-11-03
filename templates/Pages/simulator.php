@@ -511,9 +511,908 @@ $logoAssetPath = 'logo_sul_transparente.png';
             <div class="simulador-obs">
                 * Os valores acima são apenas estimativas e não garantem nenhum direito antecipado. Saiba mais...
             </div>
-            <button class="simulador-btn" id="simulador-continuar" onclick="window.location.href='<?= $this->Url->build(['controller' => 'SeuController', 'action' => 'alguma_acao', '?' => ['cadastro' => 1]]) ?>'">
+            <button class="simulador-btn" id="simulador-continuar">
                 Gostei, quero continuar <span style="font-size:1.3em;vertical-align:middle;">→</span>
             </button>
+        </div>
+    </div>
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <h4 class="mb-3"></h4>
+
+                    <form id="registerModalForm" novalidate>
+                        <div id="initialData" class="hidden">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Nome completo*</label>
+                                <input type="text" class="form-control" name="initialData[name]" placeholder="Nome completo" required>
+                                <div class="invalid-feedback">
+                                    Preenchimento obrigatório.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">E-mail</label>
+                                <input type="email" class="form-control" name="initialData[email]" placeholder="E-mail">
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Celular*</label>
+                                <input type="text" class="form-control phone" name="initialData[phone]" placeholder="(XX) XXXXX-XXXX" required>
+                                <div class="invalid-feedback">
+                                    Preenchimento obrigatório.
+                                </div>
+                            </div>
+                            <p class="form-text">
+                                Em conformidade com a Lei Geral de Proteção de Dados (LGPD), informamos que os dados fornecidos serão
+                                armazenados em nosso sistema e utilizados exclusivamente para fins de pesquisa de satisfação e suporte ao longo do processo.
+                                Ao clicar em “Concordo”, você concorda com o uso dessas informações para que possamos entrar em contato, caso necessário,
+                                para esclarecer dúvidas ou auxiliar em eventuais impedimentos.
+                            </p>
+                        </div>
+
+                        <div id="personalData" class="hidden">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="planFor" class="form-label">O plano é para*</label>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" id="planForD" name="personalData[planFor]" value="Dependente" onclick="planForHandle(this.value)">
+                                            <label class="form-check-label" for="planForD">Dependente</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" id="planForT" name="personalData[planFor]" value="Titular" onclick="planForHandle(this.value)" checked>
+                                            <label class="form-check-label" for="planForT">Titular</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Nome completo*</label>
+                                        <input type="text" class="form-control" name="personalData[name]" placeholder="Nome completo" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="cpf" class="form-label">CPF*</label>
+                                        <input type="text" class="form-control cpf" name="personalData[cpf]" placeholder="CPF" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="birthDate" class="form-label">Data de nasc.*</label>
+                                        <input type="date" max="9999-12-31" class="form-control" name="personalData[birthDate]" placeholder="Data de nascimento" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="nacionality" class="form-label">Nacionalidade</label>
+                                        <input type="text" class="form-control" name="personalData[nacionality]" placeholder="Nacionalidade">
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="gender" class="form-label">Gênero de nasc.*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="genderF" name="personalData[gender]" value="F" required>
+                                            <label class="form-check-label" for="genderF">Feminino</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="genderM" name="personalData[gender]" value="M" required>
+                                            <label class="form-check-label" for="genderM">Masculino</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="maritalStatus" class="form-label">Estado civil*</label>
+                                        <select class="form-select" name="personalData[maritalStatus]" required>
+                                            <option value="">Selecione...</option>
+                                            <option value="Casado">Casado</option>
+                                            <option value="Divorciado">Divorciado</option>
+                                            <option value="Separado">Separado</option>
+                                            <option value="Solteiro">Solteiro</option>
+                                            <option value="União estável">União estável</option>
+                                            <option value="Viúvo">Viúvo</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="numberChildren" class="form-label">Nº de filhos*</label>
+                                        <input type="number" min="0" class="form-control" name="personalData[numberChildren]" placeholder="Nº de filhos" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="motherName" class="form-label">Nome da mãe*</label>
+                                        <input type="text" class="form-control" name="personalData[motherName]" placeholder="Nome da mãe" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="fatherName" class="form-label">Nome do pai*</label>
+                                        <input type="text" class="form-control" name="personalData[fatherName]" placeholder="Nome do pai" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row hidden" id="divLegalRepresentative">
+                                <blockquote class="blockquote">
+                                    <p>Dados do representante legal</p>
+                                </blockquote>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="nameLegalRepresentative" class="form-label">Nome*</label>
+                                        <input type="text" class="form-control" name="personalData[nameLegalRepresentative]" placeholder="Nome">
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="cpfLegalRepresentative" class="form-label">CPF*</label>
+                                        <input type="text" class="form-control cpf" name="personalData[cpfLegalRepresentative]" placeholder="CPF">
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="affiliationLegalRepresentative" class="form-label">Filiação*</label>
+                                        <input type="text" class="form-control" name="personalData[affiliationLegalRepresentative]" placeholder="Filiação">
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="documents" class="hidden">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="documentType" class="form-label">Natureza do documento*</label>
+                                        <select class="form-select" name="documents[documentType]" required>
+                                            <option value="">Selecione...</option>
+                                            <option value="CNH">CNH</option>
+                                            <option value="RG">RG</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="documentNumber" class="form-label">Nº do documento*</label>
+                                        <input type="text" class="form-control" name="documents[documentNumber]" placeholder="Nº do documento" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="issueDate" class="form-label">Data de expedição*</label>
+                                        <input type="date" max="9999-12-31" class="form-control" name="documents[issueDate]" placeholder="Data de expedição" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="issuer" class="form-label">Órgão expedidor*</label>
+                                        <input type="text" class="form-control" name="documents[issuer]" placeholder="Órgão expedidor" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="placeBirth" class="form-label">Naturalidade*</label>
+                                        <input type="text" class="form-control" name="documents[placeBirth]" placeholder="Naturalidade" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="plan" class="hidden">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício*</label>
+                                        <input type="number" class="form-control" name="plans[benefitEntryAge]" placeholder="Idade para entrada em benefício" readonly>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="monthlyContribuitionAmount" class="form-label">Valor da contribuição mensal*</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" name="plans[monthlyContribuitionAmount]" placeholder="Valor da contribuição mensal" readonly>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="valueFoundingContribution" class="form-label">Valor da contribuição do instituidor*</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" name="plans[valueFoundingContribution]" placeholder="Valor da contribuição do instituidor" readonly>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div><strong>Benefício de risco</strong></div>
+                                    <ul>
+                                        <li>Morte (M)</li>
+                                        <li>Invalidez permanente total por acidente (IPTA)</li>
+                                        <li>Invalidez funcional permanente total por doença - antecipação (IFPDA)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="insuredCapital" class="form-label">Capital segurado*</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" name="plans[insuredCapital]" placeholder="Capital segurado" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="contribution" class="form-label">Contribuição*</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" name="plans[contribution]" placeholder="Contribuição" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col text-center">
+                                    <div>Contribuição total</div>
+                                    <div>R$ 100.000,00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="dependents" class="hidden">
+                            <div class="row">
+                                <div class="col d-flex justify-content-end"><button type="button" class="btn btn-success" onclick="addDependent();">Adicionar</button></div>
+                            </div>
+                            <div id="listDependents"></div>
+                        </div>
+
+                        <div id="addressData" class="hidden">
+                            <div class="row">
+                                <div class="col-8">
+                                    <label for="cep" class="form-label">CEP*</label>
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control cep" name="addresses[cep]" placeholder="CEP" onchange="getCEP(this.value)">
+                                        <div class="input-group-text hidden">
+                                            <div class="spinner-border ml-2" role="status">
+                                                <span class="visually-hidden">Carregando...</span>
+                                            </div>
+                                        </div>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label">Endereço*</label>
+                                        <input type="text" class="form-control" name="addresses[address]" placeholder="Endereço">
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-2">
+                                    <div class="mb-3">
+                                        <label for="addressNumber" class="form-label">Nº</label>
+                                        <input type="text" class="form-control" name="addresses[number]" placeholder="Nº">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="neighborhood" class="form-label">Bairro*</label>
+                                        <input type="text" class="form-control" name="addresses[neighborhood]" placeholder="Bairro">
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="city" class="form-label">Cidade*</label>
+                                        <input type="text" class="form-control" name="addresses[city]" placeholder="Cidade">
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-2">
+                                    <div class="mb-3">
+                                        <label for="state" class="form-label">UF*</label>
+                                        <select class="form-select" name="addresses[state]">
+                                            <option value="">Selecione...</option>
+                                            <option value="AC">Acre</option>
+                                            <option value="AL">Alagoas</option>
+                                            <option value="AP">Amapá</option>
+                                            <option value="AM">Amazonas</option>
+                                            <option value="BA">Bahia</option>
+                                            <option value="CE">Ceará</option>
+                                            <option value="DF">Distrito Federal</option>
+                                            <option value="ES">Espírito Santo</option>
+                                            <option value="GO">Goiás</option>
+                                            <option value="MA">Maranhão</option>
+                                            <option value="MT">Mato Grosso</option>
+                                            <option value="MS">Mato Grosso do Sul</option>
+                                            <option value="MG">Minas Gerais</option>
+                                            <option value="PA">Pará</option>
+                                            <option value="PB">Paraíba</option>
+                                            <option value="PR">Paraná</option>
+                                            <option value="PE">Pernambuco</option>
+                                            <option value="PI">Piauí</option>
+                                            <option value="RJ">Rio de Janeiro</option>
+                                            <option value="RN">Rio Grande do Norte</option>
+                                            <option value="RS">Rio Grande do Sul</option>
+                                            <option value="RO">Rondônia</option>
+                                            <option value="RR">Roraima</option>
+                                            <option value="SC">Santa Catarina</option>
+                                            <option value="SP">São Paulo</option>
+                                            <option value="SE">Sergipe</option>
+                                            <option value="TO">Tocantins</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="otherInformation" class="hidden">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="mainOccupation" class="form-label">Ocupação principal*</label>
+                                        <select class="form-select" name="otherInformations[mainOccupation]">
+                                            <option value="">Digite para buscar...</option>
+                                            <option value="252105">Administrador</option>
+                                            <option value="252405">Analista de Recursos Humanos</option>
+                                            <option value="212405">Analista de Sistemas</option>
+                                            <option value="411010">Assistente Administrativo</option>
+                                            <option value="514120">Bombeiro Civil</option>
+                                            <option value="252210">Contador</option>
+                                            <option value="513205">Cozinheiro Geral</option>
+                                            <option value="261515">Designer Gráfico</option>
+                                            <option value="212415">Desenvolvedor de Software (Programador)</option>
+                                            <option value="223505">Enfermeiro</option>
+                                            <option value="214205">Engenheiro Civil</option>
+                                            <option value="223605">Fisioterapeuta</option>
+                                            <option value="142305">Gerente Comercial</option>
+                                            <option value="142105">Gerente Administrativo</option>
+                                            <option value="225125">Médico Clínico Geral</option>
+                                            <option value="782310">Motorista de Furgão ou Veículo Similar</option>
+                                            <option value="223710">Nutricionista</option>
+                                            <option value="233115">Professor de Educação Física (no ensino fundamental)</option>
+                                            <option value="322205">Técnico de Enfermagem</option>
+                                            <option value="521110">Vendedor de Comércio Varejista</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="category" class="form-label">Categoria*</label>
+                                        <select class="form-select" name="otherInformations[category]">
+                                            <option value="">Selecione...</option>
+                                            <option value="Autônomo">Autônomo</option>
+                                            <option value="Empregado">Empregado</option>
+                                            <option value="Empregador">Empregador</option>
+                                            <option value="Servidor Público">Servidor Público</option>
+                                            <option value="Outros">Outros</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Residente no Brasil?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="otherInformations[brazilianResident]" id="brazilianResidentYes" value="1">
+                                            <label class="form-check-label" for="brazilianResidentYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="otherInformations[brazilianResident]" id="brazilianResidentNo" value="0">
+                                            <label class="form-check-label" for="brazilianResidentNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">É pessoa politicamente exposta?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="otherInformations[politicallyExposed]" id="politicallyExposedYes" value="1">
+                                            <label class="form-check-label" for="politicallyExposedYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="otherInformations[politicallyExposed]" id="politicallyExposedNo" value="0">
+                                            <label class="form-check-label" for="politicallyExposedNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Você tem obrigações fiscais com outros países?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="otherInformations[obligationOtherCountries]" id="obligationOtherCountriesYes" value="1">
+                                            <label class="form-check-label" for="obligationOtherCountriesYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="otherInformations[obligationOtherCountries]" id="obligationOtherCountriesNo" value="0">
+                                            <label class="form-check-label" for="obligationOtherCountriesNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="proponentStatement" class="hidden">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Encontra-se com algum problema de saúde ou faz uso de algum medicamento?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[healthProblem]" id="healthProblemYes" value="1" onclick="showHide(true, 'healthProblemObs')">
+                                            <label class="form-check-label" for="healthProblemYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[healthProblem]" id="healthProblemNo" value="0" onclick="showHide(false, 'healthProblemObs')">
+                                            <label class="form-check-label" for="healthProblemNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="healthProblemObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[healthProblemObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Sofre ou já sofreu de doenças do coração, hipertensão, circulatórias, do sangue, diabetes, pulmão, fígado, rins, infarto, acidente vascular cerebral, articulações, qualquer tipo de câncer ou HIV?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[heartDisease]" id="heartDiseaseYes" value="1" onclick="showHide(true, 'heartDiseaseObs')">
+                                            <label class="form-check-label" for="heartDiseaseYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[heartDisease]" id="heartDiseaseNo" value="0" onclick="showHide(false, 'heartDiseaseObs')">
+                                            <label class="form-check-label" for="heartDiseaseNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="heartDiseaseObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[heartDiseaseObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Sofre ou sofreu de deficiências de órgãos, membros ou sentidos, incluindo doenças ortopédicas relacionadas a esforço repetitivo (LER e DORT)?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[sufferedOrganDefects]" id="sufferedOrganDefectsYes" value="1" onclick="showHide(true, 'sufferedOrganDefectsObs')">
+                                            <label class="form-check-label" for="sufferedOrganDefectsYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[sufferedOrganDefects]" id="sufferedOrganDefectsNo" value="0" onclick="showHide(false, 'sufferedOrganDefectsObs')">
+                                            <label class="form-check-label" for="sufferedOrganDefectsNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="sufferedOrganDefectsObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[sufferedOrganDefectsObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Fez alguma cirurgia, biópsia ou esteve internado nos últimos cinco anos?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[surgery]" id="surgeryYes" value="1" onclick="showHide(true, 'surgeryObs')">
+                                            <label class="form-check-label" for="surgeryYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[surgery]" id="surgeryNo" value="0" onclick="showHide(false, 'surgeryObs')">
+                                            <label class="form-check-label" for="surgeryNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="surgeryObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[surgeryObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Está afastado(a) do trabalho ou aposentado por invalidez?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[away]" id="awayYes" value="1" onclick="showHide(true, 'awayObs')">
+                                            <label class="form-check-label" for="awayYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[away]" id="awayNo" value="0" onclick="showHide(false, 'awayObs')">
+                                            <label class="form-check-label" for="awayNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="awayObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[awayObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Pratica paraquedismo, motociclismo, boxe, asa delta, rodeio, alpinismo, voo livre, automobilismo, mergulho ou exerce atividade, em caráter profissional ou amador, a bordo de aeronaves, que não sejam de linhas regulares?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[practicesParachuting]" id="practicesParachutingYes" value="1" onclick="showHide(true, 'practicesParachutingObs')">
+                                            <label class="form-check-label" for="practicesParachutingYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[practicesParachuting]" id="practicesParachutingNo" value="0" onclick="showHide(false, 'practicesParachutingObs')">
+                                            <label class="form-check-label" for="practicesParachutingNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="practicesParachutingObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[practicesParachutingObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">É fumante?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[smoker]" id="smokerYes" value="1" onclick="showHide(true, 'smokerObs')">
+                                            <label class="form-check-label" for="smokerYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[smoker]" id="smokerNo" value="0" onclick="showHide(false, 'smokerObs')">
+                                            <label class="form-check-label" for="smokerNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="smokerObs" style="display: none;">
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="proponentStatement[smokerType]" id="smokerTypeYes" value="1" onclick="showHide(false, 'smokerTypeObs')">
+                                                    <label class="form-check-label" for="smokerTypeYes">Cigarro</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="proponentStatement[smokerType]" id="smokerTypeNo" value="0" onclick="showHide(true, 'smokerTypeObs')">
+                                                    <label class="form-check-label" for="smokerTypeNo">Outros</label>
+                                                    <div class="invalid-feedback">
+                                                        Preenchimento obrigatório.
+                                                    </div>
+                                                </div>
+                                                <div id="smokerTypeObs" class="mb-3" style="display: none;">
+                                                    <label for="" class="form-label">Especificar:*</label>
+                                                    <input type="text" class="form-control" name="proponentStatement[smokerTypeObs]" placeholder="Especificar">
+                                                    <div class="invalid-feedback">
+                                                        Preenchimento obrigatório.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="" class="form-label">Quantidade média/dia:*</label>
+                                                <input type="text" class="form-control" name="proponentStatement[smokerQty]" placeholder="Especificar">
+                                                <div class="invalid-feedback">
+                                                    Preenchimento obrigatório.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Informe peso e altura.*</label>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="input-group mb-3">
+                                                    <input type="text" class="form-control money" name="proponentStatement[healthProblemObs]">
+                                                    <span class="input-group-text" name="proponentStatement[weight]">Kg</span>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="input-group mb-3">
+                                                    <input type="text" class="form-control money" name="proponentStatement[healthProblemObs]">
+                                                    <span class="input-group-text" name="proponentStatement[height]">m</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Apresenta, no momento, sintomas de gripe, febre, cansaço, tosse, coriza, dores pelo corpo, dor de cabeça, dor de garganta, falta de ar, perda de olfato, perda de paladar ou está aguardando resultado do teste da COVID-19?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[gripe]" id="gripeYes" value="1" onclick="showHide(true, 'gripeObs')">
+                                            <label class="form-check-label" for="gripeYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[gripe]" id="gripeNo" value="0" onclick="showHide(false, 'gripeObs')">
+                                            <label class="form-check-label" for="gripeNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="gripeObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[gripeObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Foi diagnosticado(a) com infecção pelo novo CORONA VÍRUS ou COVID-19?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[covid]" id="covidYes" value="1" onclick="showHide(true, 'covidObs')">
+                                            <label class="form-check-label" for="covidYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[covid]" id="covidNo" value="0" onclick="showHide(false, 'covidObs')">
+                                            <label class="form-check-label" for="covidNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="covidObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[covidObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Apresenta, no momento, sequelas do COVID-19 diferente de perda de olfato e/ou paladar?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[covidSequelae]" id="covidSequelaeYes" value="1" onclick="showHide(true, 'covidSequelaeObs')">
+                                            <label class="form-check-label" for="covidSequelaeYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="proponentStatement[covidSequelae]" id="covidSequelaeNo" value="0" onclick="showHide(false, 'covidSequelaeObs')">
+                                            <label class="form-check-label" for="covidSequelaeNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="covidSequelaeObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar*</label>
+                                            <input type="text" class="form-control" name="proponentStatement[covidSequelaeObs]" placeholder="Especificar">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="pensionScheme" class="hidden">
+                            <div class="row">
+                                <div class="col" id="pensionSchemeAnyPensionSchema">
+                                    <div class="mb-3">
+                                        <label for="" class="form-label">Você está em algum regime de previdência?*</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pensionScheme[anyPensionSchema]" id="anyPensionSchemaYes" value="1" onclick="pensionSchema(true)">
+                                            <label class="form-check-label" for="anyPensionSchemaYes">Sim</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="pensionScheme[anyPensionSchema]" id="anyPensionSchemaNo" value="0" onclick="pensionSchema(false)">
+                                            <label class="form-check-label" for="anyPensionSchemaNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="pensionSchemeType" style="display: none;">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label id="pensionSchemeTypeLabel" class="form-label"></label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pensionScheme[pensionSchemeType]" id="pensionSchemeTypeGeral" value="Geral (INSS)" required>
+                                                <label class="form-check-label" for="pensionSchemeTypeGeral">Geral (INSS)</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pensionScheme[pensionSchemeType]" id="pensionSchemeTypeServidorPublico" value="Próprio (Servidor público)" required>
+                                                <label class="form-check-label" for="pensionSchemeTypeServidorPublico">Próprio (Servidor público)</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="pensionScheme[pensionSchemeType]" id="pensionSchemeTypeComplementar" value="Complementar (Fundos de pensão)" required>
+                                                <label class="form-check-label" for="pensionSchemeTypeComplementar">Complementar (Fundos de pensão)</label>
+                                                <div class="invalid-feedback">
+                                                    Preenchimento obrigatório.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="pensionSchemeTypeKinship" style="display: none;">
+                                        <div class="col">
+                                            <div class="mb-3">
+                                                <label class="form-label">Vinculado ao segurado*</label>
+                                                <input type="text" class="form-control" name="pensionScheme[name]" placeholder="Vinculado ao segurado">
+                                                <div class="invalid-feedback">
+                                                    Preenchimento obrigatório.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="mb-3">
+                                                <label class="form-label">CPF*</label>
+                                                <input type="text" class="form-control cpf" name="pensionScheme[cpf]" placeholder="CPF">
+                                                <div class="invalid-feedback">
+                                                    Preenchimento obrigatório.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="mb-3">
+                                                <label class="form-label">Grau de parentesco*</label>
+                                                <input type="text" class="form-control" name="pensionScheme[kinship]" placeholder="Grau de parentesco">
+                                                <div class="invalid-feedback">
+                                                    Preenchimento obrigatório.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-secondary" onclick="previousPage()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="nextPage()">Concordo</button>
+                </div>
+            </div>
         </div>
     </div>
     <script>
@@ -739,6 +1638,417 @@ $logoAssetPath = 'logo_sul_transparente.png';
                     console.error(error);
                 });
         });
+
+        const localStorageKey = 'adesaoSulPrevidencia';
+        let draftUUID = localStorage.getItem(localStorageKey);
+        let initialDataId = null;
+
+        const registerPages = [{
+                title: 'Dados iniciais',
+                id: 'initialData',
+            },
+            {
+                title: 'Dados pessoais',
+                id: 'personalData',
+            },
+            {
+                title: 'Documentos',
+                id: 'documents',
+            },
+            {
+                title: 'Plano',
+                id: 'plan',
+            },
+            {
+                title: 'Beneficiário(s)',
+                id: 'dependents',
+            },
+            {
+                title: 'Endereço',
+                id: 'addressData',
+            },
+            {
+                title: 'Outras informações',
+                id: 'otherInformation',
+            },
+            {
+                title: 'Declarações do proponente',
+                id: 'proponentStatement',
+            },
+            {
+                title: 'Regime de previdência',
+                id: 'pensionScheme',
+            },
+        ];
+        let registerPageIndex = 0
+        let registerModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const openModalBtn = document.getElementById('simulador-continuar');
+            const registerModalEl = document.getElementById('registerModal');
+            registerModal = new bootstrap.Modal(registerModalEl);
+
+            if (!draftUUID) {
+                draftUUID = self.crypto.randomUUID ? self.crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+                localStorage.setItem(localStorageKey, draftUUID);
+                console.log('Novo UUID gerado:', draftUUID);
+            }
+
+            openModalBtn.addEventListener('click', function() {
+                registerPageIndex = 8;
+
+                updatePage(registerPageIndex);
+
+                registerModal.show();
+            });
+        });
+
+        const planForHandle = (planFor) => {
+            $('#registerModal #divLegalRepresentative').hide('slow');
+            $('#registerModal #divLegalRepresentative input').removeAttr('required');
+
+            if (planFor === 'Dependente') {
+                const name = $('#registerModal #personalData input[name="personalData[name]"]').val();
+                const cpf = $('#registerModal #personalData input[name="personalData[cpf]"]').val();
+
+                $('#registerModal #personalData input[name="personalData[nameLegalRepresentative]"]').val(name);
+                $('#registerModal #personalData input[name="personalData[cpfLegalRepresentative]"]').val(cpf);
+                $('#registerModal #divLegalRepresentative input').attr('required', 'required');
+                $('#registerModal #divLegalRepresentative').show('slow');
+            }
+        }
+
+        const updateButtonPreviousNext = (pageIndex) => {
+            switch (pageIndex) {
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                    jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior');
+                    jQuery('#registerModal .modal-footer .btn-primary').text('Próximo');
+                    break;
+                default:
+                    jQuery('#registerModal .modal-footer .btn-secondary').text('Cancelar');
+                    jQuery('#registerModal .modal-footer .btn-primary').text('Concordo');
+                    break;
+            }
+        }
+
+        const updatePage = (pageIndex) => {
+            jQuery('#registerModal #initialData').hide();
+            jQuery('#registerModal #personalData').hide();
+            jQuery('#registerModal #documents').hide();
+            jQuery('#registerModal #plan').hide();
+            jQuery('#registerModal #dependents').hide();
+            jQuery('#registerModal #addressData').hide();
+            jQuery('#registerModal #otherInformation').hide();
+            jQuery('#registerModal #proponentStatement').hide();
+            jQuery('#registerModal #pensionScheme').hide();
+
+            switch (pageIndex) {
+                case 0:
+                    jQuery('#registerModal #initialData').fadeIn().show();
+                    break;
+                case 1:
+                    const name = $('#registerModal #initialData input[name="initialData[name]"]').val();
+
+                    $('#registerModal #personalData input[name="personalData[name]"]').val(name);
+
+                    jQuery('#registerModal #personalData').fadeIn().show();
+                    break;
+                case 2:
+                    jQuery('#registerModal #documents').fadeIn().show();
+                    break;
+                case 3:
+                    const age = calculateAge($('#registerModal input[name="personalData[birthDate]"]').val());
+                    const benefitEntry = age <= 55 ? 65 : age + 10;
+
+                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
+
+                    jQuery('#registerModal #plan').fadeIn().show();
+                    break;
+                case 4:
+                    jQuery('#registerModal #dependents').fadeIn().show();
+                    break;
+                case 5:
+                    jQuery('#registerModal #addressData').fadeIn().show();
+                    break;
+                case 6:
+                    jQuery('#registerModal #otherInformation').fadeIn().show();
+                case 7:
+                    jQuery('#registerModal #proponentStatement').fadeIn().show();
+                    break;
+                case 8:
+                    const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]').val();
+
+                    if (planFor === 'Dependente') {
+                        $('#registerModal #pensionSchemeAnyPensionSchema').hide();
+
+                        pensionSchema(false)
+                    } else {
+                        $('#registerModal #pensionSchemeType').hide();
+                        $('#registerModal #pensionSchemeAnyPensionSchema input[type="checkbox"]').prop('checked', false)
+                        $('#registerModal #pensionSchemeAnyPensionSchema').show();
+                    }
+
+                    jQuery('#registerModal #pensionScheme').fadeIn().show();
+                    break;
+            }
+
+            jQuery('#registerModal .modal-body h4').html(registerPages[registerPageIndex].title);
+            updateButtonPreviousNext(registerPageIndex);
+        }
+
+        const nextPage = async () => {
+            let isValid = true;
+            const form = document.querySelectorAll(`#${registerPages[registerPageIndex].id} input, #${registerPages[registerPageIndex].id} select`);
+
+            form.forEach((input) => {
+                if (!input.checkValidity())
+                    isValid = false;
+            })
+
+            if (!isValid) {
+                $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
+                return;
+            }
+
+            await saveForm(registerPages[registerPageIndex].id);
+
+            registerPageIndex += 1;
+
+            updatePage(registerPageIndex)
+        }
+
+        const previousPage = () => {
+            if (registerPageIndex === 0)
+                registerModal.hide();
+
+            if (registerPageIndex !== 0)
+                registerPageIndex -= 1;
+
+            updatePage(registerPageIndex)
+        }
+
+        const saveForm = async (id) => {
+            const formSelector = `#${id}`;
+            const formElements = $(`form ${formSelector} input, ${formSelector} select, ${formSelector} textarea`)
+
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    type: 'POST',
+                    url: `<?= $this->Url->build(['controller' => 'Registrations', 'action' => 'save']) ?>`,
+                    headers: {
+                        'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
+                    },
+                    data: formElements.serialize() + `&storageUuid=${draftUUID}${initialDataId !== null ? `&initialDataId=${initialDataId}` : ''}`,
+                    dataType: 'json',
+                    beforeSend: () => {},
+                    success: (response) => {
+                        if (response?.success === true && response?.initialDataId)
+                            initialDataId = response.initialDataId;
+
+                        resolve(response);
+                    },
+                    error: (error) => {
+                        alert('Erro ao avançar!');
+                        reject(error);
+                    }
+                })
+            })
+        }
+
+        const getCEP = (value) => {
+            const cep = value.replace(/[^0-9]/g, '');
+
+            if (cep.length < 8)
+                return;
+
+            $.ajax({
+                type: 'GET',
+                url: `https://viacep.com.br/ws/${cep}/json/`,
+                beforeSend: () => {
+                    $('#addressData .input-group-text').show();
+                },
+                success: (response) => {
+                    $('#addressData .input-group-text').hide();
+                    $('#addressData input[name="addresses[address]"]').val(response?.logradouro);
+                    $('#addressData input[name="addresses[neighborhood]"]').val(response?.bairro);
+                    $('#addressData input[name="addresses[city]"]').val(response?.localidade);
+                    $('#addressData select[name="addresses[state]"]').val(response?.uf);
+                },
+                error: () => {
+                    alert('CEP não encontrado!');
+                }
+            })
+        }
+
+        function cpfCheck(cpf) {
+            let Soma = 0;
+            let Resto;
+            const strCPF = String(cpf).replace(/[^\d]/g, '');
+
+            if (strCPF.length !== 11)
+                return false;
+
+            if ([
+                    '00000000000',
+                    '11111111111',
+                    '22222222222',
+                    '33333333333',
+                    '44444444444',
+                    '55555555555',
+                    '66666666666',
+                    '77777777777',
+                    '88888888888',
+                    '99999999999',
+                ].indexOf(strCPF) !== -1)
+                return false;
+
+            for (i = 1; i <= 9; i++)
+                Soma = Soma + parseInt(strCPF.substring(i - 1, i)) * (11 - i);
+
+            Resto = (Soma * 10) % 11;
+
+            if ((Resto == 10) || (Resto == 11))
+                Resto = 0;
+
+            if (Resto != parseInt(strCPF.substring(9, 10)))
+                return false;
+
+            Soma = 0;
+
+            for (i = 1; i <= 10; i++)
+                Soma = Soma + parseInt(strCPF.substring(i - 1, i)) * (12 - i);
+
+            Resto = (Soma * 10) % 11;
+
+            if ((Resto == 10) || (Resto == 11))
+                Resto = 0;
+
+            if (Resto != parseInt(strCPF.substring(10, 11)))
+                return false;
+
+            return true;
+        }
+
+        const addDependent = () => {
+            const count = $('#listDependents .dependentDiv').length;
+
+            $('#listDependents').append(`
+        <div class="dependentDiv">
+            <div class="text-center"><strong>Beneficiário ${count + 1}</strong></div>
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="nameDependent" class="form-label">Nome*</label>
+                        <input type="text" class="form-control" name="dependents[${count}][name]" placeholder="Nome">
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="mb-3">
+                        <label for="kinshipDependent" class="form-label">Parentesco*</label>
+                        <select class="form-select" name="dependents[${count}][kinshipDependent]">
+                            <option value="">Selecione...</option>
+                            <option value="Avô(ó)">Avô(ó)</option>
+                            <option value="Companheiro(a)">Companheiro(a)</option>
+                            <option value="Cônjuge">Cônjuge</option>
+                            <option value="Filho(a)">Filho(a)</option>
+                            <option value="Irmão(ã)">Irmão(ã)</option>
+                            <option value="Mãe">Mãe</option>
+                            <option value="Nenhum">Nenhum</option>
+                            <option value="Neto(a)">Neto(a)</option>
+                            <option value="Pai">Pai</option>
+                            <option value="Sobrinho(a)">Sobrinho(a)</option>
+                            <option value="Tio(a)">Tio(a)</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="cpfDependent" class="form-label">CPF*</label>
+                        <input type="text" class="form-control cpf" name="dependents[${count}][cpf]" placeholder="CPF">
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="birthDateDependent" class="form-label">Data de nasc.*</label>
+                        <input type="date" max="9999-12-31" class="form-control" name="dependents[${count}][birthDate]" placeholder="Data de nascimento">
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="participationDependent" class="form-label">Participação (%)*</label>
+                        <input type="number" min="0" class="form-control" name="dependents[${count}][participation]" placeholder="Participação (%)">
+                        <div class="invalid-feedback">
+                            Preenchimento obrigatório.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`);
+
+            $('.cpf').mask('000.000.000-00', {
+                reverse: true,
+            });
+        }
+
+        const showHide = (show, id) => {
+            if (show)
+                $(`#${id}`).show('slow');
+
+            if (!show)
+                $(`#${id}`).hide('slow');
+        }
+
+        const pensionSchema = (pensionSchema) => {
+            let declaration = '<strong>DECLADO</strong> sob pena da lei, que sou segurado do seguinte regime de previdência';
+
+            if (pensionSchema)
+                $('#pensionSchemeType #pensionSchemeTypeLabel').html(declaration);
+
+            if (!pensionSchema) {
+                let declaration = '<strong>DECLADO</strong> sob pena da lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao seguinte regime de previdência';
+                $('#pensionSchemeType #pensionSchemeTypeLabel').html(declaration);
+                $('#pensionSchemeTypeKinship').show('slow');
+            }
+
+            $('#pensionSchemeType').show('slow');
+        }
+
+        const calculateAge = (dateBirth) => {
+            const [day, month, year] = dateBirth.split('/');
+            const birthday = new Date(year, month - 1, day);
+            const currentDate = new Date();
+            let age = currentDate.getFullYear() - birthday.getFullYear();
+            const currentMonth = currentDate.getMonth();
+            const currentDay = currentDate.getDate();
+            const birthdayMonth = birthday.getMonth();
+            const birthdayDay = birthday.getDate();
+
+            if (currentMonth < birthdayMonth || (currentMonth === birthdayMonth && currentDay < birthdayDay))
+                age--;
+
+            return +age;
+        }
     </script>
 </body>
 

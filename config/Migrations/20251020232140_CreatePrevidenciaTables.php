@@ -47,7 +47,6 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();
 
-        // subscriptions
         $this->table('adhesion_plans')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
             ->addColumn('benefit_entry_age', 'tinyinteger', ['limit' => 3, 'null' => true])
@@ -70,7 +69,6 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();
 
-        // addresses
         $this->table('adhesion_addresses')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
             ->addColumn('cep', 'string', ['limit' => 12])
@@ -91,6 +89,46 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addColumn('brazilian_resident', 'boolean', ['default' => true, 'null' => true])
             ->addColumn('politically_exposed', 'boolean', ['default' => false, 'null' => true])
             ->addColumn('obligation_other_countries', 'boolean', ['default' => false, 'null' => true])
+            ->addTimestamps()
+            ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
+            ->create();
+
+        $this->table('adhesion_proponent_statement')
+            ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
+            ->addColumn('health_problem', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('health_problem_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('heart_disease', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('heart_disease_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('suffered_organ_defects', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('suffered_organ_defects_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('surgery', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('surgery_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('away', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('away_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('practices_parachuting', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('practices_parachuting_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('smoker', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('smoker_type', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('smoker_type_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('smoker_qty', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('weight', 'decimal', ['precision' => 10, 'scale' => 2, 'null' => true])
+            ->addColumn('height', 'decimal', ['precision' => 10, 'scale' => 2, 'null' => true])
+            ->addColumn('gripe', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('gripe_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('covid', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('covid_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('covid_sequelae', 'boolean', ['default' => true, 'null' => true])
+            ->addColumn('covid_sequelae_obs', 'string', ['limit' => 150, 'null' => true])
+            ->addTimestamps()
+            ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
+            ->create();
+
+        $this->table('adhesion_pension_scheme')
+            ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
+            ->addColumn('pension_scheme', 'string', ['limit' => 25])
+            ->addColumn('name', 'string', ['limit' => 100])
+            ->addColumn('cpf', 'string', ['limit' => 15])
+            ->addColumn('kinship', 'string', ['limit' => 100])
             ->addTimestamps()
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();
