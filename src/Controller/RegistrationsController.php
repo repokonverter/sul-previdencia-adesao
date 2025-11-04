@@ -23,6 +23,8 @@ class RegistrationsController extends AppController
     protected \App\Model\Table\AdhesionOtherInformationsTable $AdhesionOtherInformations;
     protected \App\Model\Table\AdhesionPersonalDatasTable $AdhesionPersonalDatas;
     protected \App\Model\Table\AdhesionPlansTable $AdhesionPlans;
+    protected \App\Model\Table\AdhesionProponentStatementsTable $AdhesionProponentStatements;
+    protected \App\Model\Table\AdhesionPensionSchemesTable $AdhesionPensionSchemes;
 
     public function initialize(): void
     {
@@ -32,18 +34,17 @@ class RegistrationsController extends AppController
         $this->AdhesionDependents = $this->fetchTable('AdhesionDependents');
         $this->AdhesionDocuments = $this->fetchTable('AdhesionDocuments');
         $this->AdhesionInitialDatas = $this->fetchTable('AdhesionInitialDatas');
-        $this->AdhesionOtherInformations = $this->fetchTable('AdhesionOtherInformations');
         $this->AdhesionPersonalDatas = $this->fetchTable('AdhesionPersonalDatas');
         $this->AdhesionPlans = $this->fetchTable('AdhesionPlans');
+        $this->AdhesionOtherInformations = $this->fetchTable('AdhesionOtherInformations');
+        $this->AdhesionProponentStatements = $this->fetchTable('AdhesionProponentStatements');
+        $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
 
         // $this->loadComponent('RequestHandler');
         $this->viewBuilder()->setClassName('Ajax');
         $this->autoRender = false;
     }
 
-    /**
-     * Salva a adesão completa (Subscription + People + Address + Dependents + Documents)
-     */
     public function save()
     {
         $this->request->allowMethod(['get', 'ajax']);
@@ -64,6 +65,8 @@ class RegistrationsController extends AppController
                         'AdhesionDependents',
                         'AdhesionAddresses',
                         'AdhesionOtherInformations',
+                        'AdhesionProponentStatements',
+                        'AdhesionPensionSchemes',
                     ]
                 ]);
             }
@@ -212,6 +215,62 @@ class RegistrationsController extends AppController
 
                 if (!$this->AdhesionOtherInformations->save($otherInformations))
                     throw new \Exception('Falha ao salvar as outras informações: ' . json_encode($otherInformations->getErrors()));
+            }
+
+            if (!empty($data['proponentStatement'])) {
+                $proponentStatementsData = $data['proponentStatement'];
+                $proponentStatements = !$initialDataAll->adhesion_proponent_statement ? $this->AdhesionProponentStatements->newEmptyEntity() : $this->AdhesionProponentStatements->get($initialDataAll->adhesion_proponent_statement->id, []);
+                $proponentStatements = $this->AdhesionProponentStatements->patchEntity(
+                    $proponentStatements,
+                    [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'health_problem' => $proponentStatementsData['healthProblem'] ?? false,
+                        'health_problem_obs' => $proponentStatementsData['healthProblemObs'] ?? '',
+                        'heart_disease' => $proponentStatementsData['heartDisease'] ?? false,
+                        'heart_disease_obs' => $proponentStatementsData['heartDiseaseObs'] ?? '',
+                        'suffered_organ_defects' => $proponentStatementsData['sufferedOrganDefects'] ?? false,
+                        'suffered_organ_defects_obs' => $proponentStatementsData['sufferedOrganDefectsObs'] ?? '',
+                        'surgery' => $proponentStatementsData['surgery'] ?? false,
+                        'surgery_obs' => $proponentStatementsData['surgeryObs'] ?? '',
+                        'away' => $proponentStatementsData['away'] ?? false,
+                        'away_obs' => $proponentStatementsData['awayObs'] ?? '',
+                        'practices_parachuting' => $proponentStatementsData['practicesParachuting'] ?? false,
+                        'practices_parachuting_obs' => $proponentStatementsData['practicesParachutingObs'] ?? '',
+                        'smoker' => $proponentStatementsData['smoker'] ?? false,
+                        'smoker_type' => $proponentStatementsData['smokerType'] ?? false,
+                        'smoker_type_obs' => $proponentStatementsData['smokerTypeObs'] ?? '',
+                        'smoker_qty' => $proponentStatementsData['smokerQty'] ?? '',
+                        'weight' => $proponentStatementsData['weight'] ?? null,
+                        'height' => $proponentStatementsData['height'] ?? null,
+                        'gripe' => $proponentStatementsData['gripe'] ?? false,
+                        'gripe_obs' => $proponentStatementsData['gripeObs'] ?? '',
+                        'covid' => $proponentStatementsData['covid'] ?? false,
+                        'covid_obs' => $proponentStatementsData['covidObs'] ?? '',
+                        'covid_sequelae' => $proponentStatementsData['covidSequelae'] ?? false,
+                        'covid_sequelae_obs' => $proponentStatementsData['covidSequelaeObs'] ?? '',
+                    ],
+                );
+
+                if (!$this->AdhesionProponentStatements->save($proponentStatements))
+                    throw new \Exception('Falha ao salvar as declarações do proponente: ' . json_encode($otherInformations->getErrors()));
+            }
+
+            if (!empty($data['pensionScheme'])) {
+                $pensionSchemesData = $data['pensionScheme'];
+                $pensionSchemes = !$initialDataAll->adhesion_pension_scheme ? $this->AdhesionPensionSchemes->newEmptyEntity() : $this->AdhesionPensionSchemes->get($initialDataAll->adhesion_pension_scheme->id, []);
+                $pensionSchemes = $this->AdhesionPensionSchemes->patchEntity(
+                    $pensionSchemes,
+                    [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'pension_scheme' => $pensionSchemesData['pensionSchemeType'] ?? '',
+                        'name' => $pensionSchemesData['name'] ?? '',
+                        'cpf' => $pensionSchemesData['cpf'] ?? false,
+                        'kinship' => $pensionSchemesData['kinship'] ?? false,
+                    ],
+                );
+
+                if (!$this->AdhesionPensionSchemes->save($pensionSchemes))
+                    throw new \Exception('Falha ao salvar o regime de previdência: ' . json_encode($otherInformations->getErrors()));
             }
 
             $connection->commit();

@@ -93,7 +93,7 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();
 
-        $this->table('adhesion_proponent_statement')
+        $this->table('adhesion_proponent_statements')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
             ->addColumn('health_problem', 'boolean', ['default' => true, 'null' => true])
             ->addColumn('health_problem_obs', 'string', ['limit' => 150, 'null' => true])
@@ -123,7 +123,7 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();
 
-        $this->table('adhesion_pension_scheme')
+        $this->table('adhesion_pension_schemes')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
             ->addColumn('pension_scheme', 'string', ['limit' => 25])
             ->addColumn('name', 'string', ['limit' => 100])
