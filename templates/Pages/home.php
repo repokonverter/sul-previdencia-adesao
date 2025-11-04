@@ -1181,7 +1181,7 @@ echo $this->Html->css('application');
             <p class="fintech-subtitle" style="color:#F47C20;">A previdência digital, simples e transparente para você.</p>
             <div class="botoes fintech-botoes">
                 <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" data-bs-toggle="modal" data-bs-target="#simulatorModal">Simular minha previdência</a>
-                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja" id="signUpButton">Faça sua adesão</a>
+                <a href="#" class="fintech-btn fintech-btn-lg btn-laranja hidden" id="signUpButton">Faça sua adesão</a>
             </div>
         </div>
 
@@ -1411,7 +1411,7 @@ echo $this->Html->css('application');
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    <button type="button" class="btn btn-primary" onclick="">Simular</button>
+                    <button type="button" class="btn btn-primary" onclick="simulate();">Simular</button>
                 </div>
             </div>
         </div>
@@ -1454,5 +1454,11 @@ echo $this->Html->css('application');
 </div>
 
 <script>
+    const simulate = () => {
+        const date = $('#simulatorModal input[name="dateBirth').val();
+        const value = $('#simulatorModal input[name="monthlyInvestment').val();
+        const simulatorUrl = '<?php echo $this->Url->build(['controller' => 'Products', 'action' => 'view', 123]); ?>';
 
+        window.location.href = redirectUrl;
+    }
 </script>
