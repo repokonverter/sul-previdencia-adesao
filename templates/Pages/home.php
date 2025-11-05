@@ -1383,7 +1383,7 @@ echo $this->Html->css('application');
                 </div>
                 <div class="modal-body">
                     <p class="mb-3"><strong>Para iniciar uma simulação, digite os dados abaixo:</strong></p>
-                    <form id="simulatorForm" data-turbo="false">
+                    <form id="simulatorForm">
                         <div class="row">
                             <div class="col">
                                 <div class="mb-3">
@@ -1399,7 +1399,7 @@ echo $this->Html->css('application');
                                     <label for="monthlyInvestment" class="form-label">Investimento mensal*</label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>
-                                        <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal">
+                                        <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal" required>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -1455,10 +1455,22 @@ echo $this->Html->css('application');
 
 <script>
     const simulate = () => {
+        let isValid = true;
         const date = $('#simulatorModal input[name="dateBirth').val();
-        const value = $('#simulatorModal input[name="monthlyInvestment').val();
-        const simulatorUrl = '<?php echo $this->Url->build(['controller' => 'Products', 'action' => 'view', 123]); ?>';
+        const value = $('#simulatorModal input[name="monthlyInvestment').val().replace('.', '').replace(',', '.');
+        const simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
+        const form = document.querySelectorAll(`#simulatorForm input`);
 
-        window.location.href = redirectUrl;
+        form.forEach((input) => {
+            if (!input.checkValidity())
+                isValid = false;
+        })
+
+        if (!isValid) {
+            $(`#simulatorForm`)[0].classList.add('was-validated')
+            return;
+        }
+
+        window.location.href = simulatorUrl;
     }
 </script>

@@ -13,16 +13,17 @@ class SimulatorController extends AppController
     {
         $connection = ConnectionManager::get('default');
         $data = $_GET;
-        dd($data);
-        $simulation = $connection->execute(
-            'SELECT *
-            FROM simulacao_previdencia(:date, :value)',
-            [
-                'date' => '2025-01-01',
-                'value' => 1000
-            ]
-        )->fetchAll('assoc');
+        $simulations = $connection
+            ->execute(
+                'SELECT *
+                FROM simulacao_previdencia(:date, :value)',
+                [
+                    'date' => $data['date'],
+                    'value' => $data['value'],
+                ]
+            )
+            ->fetchAll('assoc');
 
-        dd($teste);
+        $this->set(compact('simulations'));
     }
 }

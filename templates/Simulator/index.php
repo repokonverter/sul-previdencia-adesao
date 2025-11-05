@@ -5,6 +5,7 @@
  * @var string|null $csrfToken
  */
 
+use Cake\I18n\Number;
 use Cake\Utility\Text;
 
 // Define a variável para o token CSRF, se estiver disponível na view
@@ -13,6 +14,55 @@ $csrfToken = $this->request->getAttribute('csrfToken');
 
 // Define um nome para o asset de logo (assumindo que você o moveu para webroot/img/)
 $logoAssetPath = 'logo_sul_transparente.png';
+
+function createScenario($data, $type)
+{
+    $annualProfitabilityRate = floor($data['taxa_rentabilidade_anual'] * 100);
+
+    switch ($type) {
+        case 'death':
+            $mainValue = $data['cobertura_morte'];
+            $incomeValue = $data['renda_morte_mensal'];
+            break;
+        case 'disability':
+            $mainValue = $data['cobertura_invalidez'];
+            $incomeValue = $data['renda_invalidez_mensal'];
+            break;
+        default:
+            $mainValue = $data['saldo_acumulado'];
+            $incomeValue = $data['beneficio_mensal'];
+            break;
+    }
+
+    return '
+        <div class="cenario-item rentabilidade-' . $annualProfitabilityRate . '">
+            <div class="cenario-titulo">Rentabilidade </div>
+            <div class="cenario-valor ' . ($type === 'property' ? '' : 'verde') . '">' . Number::currency($mainValue) . '</div>
+            <div class="cenario-renda">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
+        </div>
+    ';
+}
+
+function createSecureCard($data, $type)
+{
+    switch ($type) {
+        case 'death':
+            $mainValue = $data['cobertura_morte'];
+            $incomeValue = $data['renda_morte_mensal'];
+            break;
+        case 'disability':
+            $mainValue = $data['cobertura_invalidez'];
+            $incomeValue = $data['renda_invalidez_mensal'];
+            break;
+    }
+
+    return '
+        <div style="text-align: center; padding: 16px 0;">
+            <div style="font-size: 1.8rem; font-weight: bold; color: #3B7A3B; margin-bottom: 12px;">' . Number::currency($mainValue) . '</div>
+            <div style="font-size: 1rem; color: #6c757d;">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
+        </div>
+    ';
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -78,7 +128,8 @@ $logoAssetPath = 'logo_sul_transparente.png';
             width: 100%;
             display: flex;
             align-items: center;
-            margin-bottom: 32px;
+            justify-content: space-between;
+            margin-bottom: 16px;
             background: none;
             height: auto;
             border-radius: 0;
@@ -105,8 +156,8 @@ $logoAssetPath = 'logo_sul_transparente.png';
             gap: 12px;
         }
 
-        .simulador-logo img {
-            height: 40px;
+        .logo-sul-prev {
+            height: 100px;
         }
 
         .simulador-form {
@@ -114,7 +165,6 @@ $logoAssetPath = 'logo_sul_transparente.png';
             display: flex;
             gap: 24px;
             justify-content: center;
-            margin-bottom: 32px;
             max-width: 600px;
         }
 
@@ -143,8 +193,8 @@ $logoAssetPath = 'logo_sul_transparente.png';
 
         .simulador-projeto-label {
             width: 100%;
-            text-align: left;
-            font-size: 1.15rem;
+            text-align: center;
+            font-size: 1.45rem;
             font-weight: 600;
             color: var(--text-color);
             margin-bottom: 12px;
@@ -327,7 +377,7 @@ $logoAssetPath = 'logo_sul_transparente.png';
             font-weight: bold;
             color: #fff;
             padding: 12px;
-            border-radius: 16px 16px 0 0;
+            border-radius: 16px 16px 0 0 !important;
             text-align: center;
         }
 
@@ -454,24 +504,27 @@ $logoAssetPath = 'logo_sul_transparente.png';
                     <button onclick="window.history.back()" style="background:none;border:none;cursor:pointer;padding:0;margin-right:8px;">
                         <span style="font-size:2rem;color:var(--primary-color);">←</span>
                     </button>
-                    <?= $this->Html->image($logoAssetPath, ['alt' => 'Sul Previdencia']) ?>
                 </div>
-                <div class="simulador-title">Bem-vindo à Adesão Digital da Sul Previdencia</div>
+                <div class="simulador-title">Simulação</div>
+                <div><?= $this->Html->image($logoAssetPath, ['alt' => 'Sul Previdencia', 'class' => 'logo-sul-prev']) ?></div>
             </div>
             <div class="simulador-subtitle">
                 Informe sua data de nascimento e quanto gostaria de investir mensalmente:
             </div>
             <form class="simulador-form" id="simulador-form">
                 <div class="simulador-form-group">
-                    <label for="data-nascimento">Data de Nascimento</label>
-                    <input type="date" id="data-nascimento" required />
+                    <label for="data-nascimento">Data de nascimento</label>
+                    <input type="date" max="9999-12-31" class="form-control" name="dateBirth" placeholder="XX/XX/XXXX" value="<?= $_GET['date']; ?>" required>
                 </div>
                 <div class="simulador-form-group">
-                    <label for="valor-investimento">Investimento Total Mensal</label>
-                    <input type="number" id="valor-investimento" min="1" step="0.01" placeholder="R$ 100,00" required />
+                    <label for="valor-investimento">Investimento mensal</label>
+                    <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal" value="<?= $_GET['value']; ?>" required>
                 </div>
             </form>
-            <div class="simulador-projeto-label"></div>
+            <button class="simulador-btn" style="margin-bottom: 2rem;" onclick="simulate();">
+                Simular novamente
+            </button>
+            <div class="simulador-projeto-label">Resultado</div>
             <div class="simulador-main-row">
                 <div class="simulador-resultados-row">
                     <div class="card-simulador">
@@ -479,8 +532,17 @@ $logoAssetPath = 'logo_sul_transparente.png';
                             Patrimônio | Previdência
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="patrimonio-cenarios"></div>
-                            <div class="descricao-secundaria" id="patrimonio-contribuicao"></div>
+                            <div class="cenarios-container" id="patrimonio-cenarios">
+                                <?php
+                                foreach ($simulations as $simulation) {
+                                    echo createScenario($simulation, 'property');
+                                }
+                                ?>
+                            </div>
+                            <div class="descricao-secundaria" id="patrimonio-contribuicao">
+                                Contribuição Mensal<br>
+                                <?= Number::currency($simulations[0]['contribuicao_aposentadoria']); ?>
+                            </div>
                         </div>
                     </div>
                     <div class="card-simulador">
@@ -488,8 +550,11 @@ $logoAssetPath = 'logo_sul_transparente.png';
                             Pensão por Morte
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="seguro-morte-cenarios"></div>
-                            <div class="descricao-secundaria" id="seguro-morte-contribuicao"></div>
+                            <div class="cenarios-container" id="seguro-morte-cenarios"><?= createSecureCard($simulation, 'death'); ?></div>
+                            <div class="descricao-secundaria" id="seguro-morte-contribuicao">
+                                Contribuição Mensal<br>
+                                <?= Number::currency($simulations[0]['contribuicao_morte']); ?>
+                            </div>
                         </div>
                     </div>
                     <div class="card-simulador">
@@ -497,8 +562,11 @@ $logoAssetPath = 'logo_sul_transparente.png';
                             Aposentadoria por Invalidez
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="seguro-invalidez-cenarios"></div>
-                            <div class="descricao-secundaria" id="seguro-invalidez-contribuicao"></div>
+                            <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= createSecureCard($simulation, 'disability'); ?></div>
+                            <div class="descricao-secundaria" id="seguro-invalidez-contribuicao">
+                                Contribuição Mensal<br>
+                                <?= Number::currency($simulations[0]['contribuicao_invalidez']); ?>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2048,6 +2116,26 @@ $logoAssetPath = 'logo_sul_transparente.png';
                 age--;
 
             return +age;
+        }
+
+        const simulate = () => {
+            let isValid = true;
+            const date = $('#simulador-form input[name="dateBirth').val();
+            const value = $('#simulador-form input[name="monthlyInvestment').val().replace('.', '').replace(',', '.');
+            const simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
+            const form = document.querySelectorAll(`#simulador-form input`);
+
+            form.forEach((input) => {
+                if (!input.checkValidity())
+                    isValid = false;
+            })
+
+            if (!isValid) {
+                $(`#simulador-form`)[0].classList.add('was-validated')
+                return;
+            }
+
+            window.location.href = simulatorUrl;
         }
     </script>
 </body>
