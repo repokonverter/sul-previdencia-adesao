@@ -6,13 +6,11 @@
  */
 
 use Cake\I18n\Number;
-use Cake\Utility\Text;
 
-// Define a variável para o token CSRF, se estiver disponível na view
-// No CakePHP 5, você pode acessar o token CSRF do Request.
+
+$this->assign('title', 'Sul Previdência - Simulador');
+
 $csrfToken = $this->request->getAttribute('csrfToken');
-
-// Define um nome para o asset de logo (assumindo que você o moveu para webroot/img/)
 $logoAssetPath = 'logo_sul_transparente.png';
 
 function createScenario($data, $type)
