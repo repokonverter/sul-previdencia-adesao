@@ -13,6 +13,8 @@ RUN apk add --no-cache git build-base icu-dev nodejs npm \
 # Instala as dependências do Composer
 WORKDIR /app
 
+ENV SECURITY_SALT="dc4ce4fc849f181765000f867543582de7564362bdfab5f85dc2f89aa534ab41"
+
 # COPY composer.json composer.lock ./
 COPY . /app
 
