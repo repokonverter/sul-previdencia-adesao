@@ -48,14 +48,14 @@ RUN apk add --no-cache nginx \
 
 # Copia as dependências e o código da aplicação
 WORKDIR /var/www/html
-# ⚠️ COPIAMOS A PASTA VENDOR DO ESTÁGIO 'builder'
+
 COPY --from=builder /app/vendor /var/www/html/vendor
 COPY --from=builder /app/webroot /var/www/html/webroot
+COPY --from=builder /app/config /var/www/html/config
 
 # COPIAMOS O RESTANTE DO CÓDIGO FONTE (src, templates, config)
 # Copiamos apenas as pastas necessárias, excluindo o webroot local problemático.
 COPY bin /var/www/html/bin
-COPY config /var/www/html/config
 COPY src /var/www/html/src
 COPY templates /var/www/html/templates
 
