@@ -20,7 +20,7 @@ registry:
 
 env:
   clear:
-    DB_HOST: adesao-sulprev-db
+    DB_HOST: sul-previdencia-adesao-db
     DEBUG: true
   secret:
     - SECURITY_SALT
