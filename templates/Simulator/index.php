@@ -34,7 +34,7 @@ function createScenario($data, $type)
 
     return '
         <div class="cenario-item rentabilidade-' . $annualProfitabilityRate . '">
-            <div class="cenario-titulo">Rentabilidade </div>
+            <div class="cenario-titulo">Rentabilidade ' . $annualProfitabilityRate . '%</div>
             <div class="cenario-valor ' . ($type === 'property' ? '' : 'verde') . '">' . Number::currency($mainValue) . '</div>
             <div class="cenario-renda">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
         </div>
