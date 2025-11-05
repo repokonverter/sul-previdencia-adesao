@@ -6,7 +6,6 @@ servers:
   web:
     hosts:
       - 162.240.166.197
-    network: kamal
 
 proxy:
   ssl: true
