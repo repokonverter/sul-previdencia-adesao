@@ -739,7 +739,7 @@ function createSecureCard($data, $type)
                                     </div>
                                 </div>
                             </div>
-                            <div class="row hidden" id="divLegalRepresentative">
+                            <div class="row hidden" id="divLegalRepresentative" style="display: none;">
                                 <blockquote class="blockquote">
                                     <p>Dados do representante legal</p>
                                 </blockquote>
