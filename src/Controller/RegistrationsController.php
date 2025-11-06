@@ -57,8 +57,8 @@ class RegistrationsController extends AppController
             $initialDataId = isset($data['initialDataId']) ? $data['initialDataId'] : null;
 
             if ($initialDataId !== null) {
-                $initialDataAll = $this->AdhesionInitialDatas->get($initialDataId, [
-                    'contain' => [
+                $initialDataAll = $this->AdhesionInitialDatas->get($initialDataId, 
+                    contain: [
                         'AdhesionPersonalDatas',
                         'AdhesionDocuments',
                         'AdhesionPlans',
@@ -68,12 +68,12 @@ class RegistrationsController extends AppController
                         'AdhesionProponentStatements',
                         'AdhesionPensionSchemes',
                     ]
-                ]);
+                );
             }
 
             if (isset($data['initialData'])) {
                 $initialData = $data['initialData'];
-                $initial = $initialDataId === null ? $this->AdhesionInitialDatas->newEmptyEntity() : $this->AdhesionInitialDatas->get($initialDataId, []);
+                $initial = $initialDataId === null ? $this->AdhesionInitialDatas->newEmptyEntity() : $this->AdhesionInitialDatas->get($initialDataId);
                 $initial = $this->AdhesionInitialDatas->patchEntity(
                     $initial,
                     [
@@ -91,7 +91,7 @@ class RegistrationsController extends AppController
 
             if (isset($data['personalData'])) {
                 $personalData = $data['personalData'];
-                $personal = !$initialDataAll->adhesion_personal_data ? $this->AdhesionPersonalDatas->newEmptyEntity() : $this->AdhesionPersonalDatas->get($initialDataAll->adhesion_personal_data->id, []);
+                $personal = !$initialDataAll->adhesion_personal_data ? $this->AdhesionPersonalDatas->newEmptyEntity() : $this->AdhesionPersonalDatas->get($initialDataAll->adhesion_personal_data->id);
                 $personal = $this->AdhesionPersonalDatas->patchEntity(
                     $personal,
                     [
@@ -118,7 +118,7 @@ class RegistrationsController extends AppController
 
             if (isset($data['documents'])) {
                 $documentsData = $data['documents'];
-                $documents = !$initialDataAll->adhesion_documents ? $this->AdhesionDocuments->newEmptyEntity() : $this->AdhesionDocuments->get($initialDataAll->adhesion_documents->id, []);
+                $documents = !$initialDataAll->adhesion_documents ? $this->AdhesionDocuments->newEmptyEntity() : $this->AdhesionDocuments->get($initialDataAll->adhesion_documents->id);
                 $documents = $this->AdhesionDocuments->patchEntity(
                     $documents,
                     [
@@ -137,7 +137,7 @@ class RegistrationsController extends AppController
 
             if (isset($data['plans'])) {
                 $planData = $data['plans'];
-                $plans = !$initialDataAll->adhesion_plans ? $this->AdhesionPlans->newEmptyEntity() : $this->AdhesionPlans->get($initialDataAll->adhesion_plans->id, []);
+                $plans = !$initialDataAll->adhesion_plans ? $this->AdhesionPlans->newEmptyEntity() : $this->AdhesionPlans->get($initialDataAll->adhesion_plans->id);
                 $plans = $this->AdhesionPlans->patchEntity(
                     $plans,
                     [
@@ -179,7 +179,7 @@ class RegistrationsController extends AppController
 
             if (!empty($data['addresses'])) {
                 $addrData = $data['addresses'];
-                $address = !$initialDataAll->adhesion_address ? $this->AdhesionAddresses->newEmptyEntity() : $this->AdhesionAddresses->get($initialDataAll->adhesion_address->id, []);
+                $address = !$initialDataAll->adhesion_address ? $this->AdhesionAddresses->newEmptyEntity() : $this->AdhesionAddresses->get($initialDataAll->adhesion_address->id);
                 $address = $this->AdhesionAddresses->patchEntity(
                     $address,
                     [
@@ -200,7 +200,7 @@ class RegistrationsController extends AppController
 
             if (!empty($data['otherInformations'])) {
                 $otherInformationsData = $data['otherInformations'];
-                $otherInformations = !$initialDataAll->adhesion_other_information ? $this->AdhesionOtherInformations->newEmptyEntity() : $this->AdhesionOtherInformations->get($initialDataAll->adhesion_other_information->id, []);
+                $otherInformations = !$initialDataAll->adhesion_other_information ? $this->AdhesionOtherInformations->newEmptyEntity() : $this->AdhesionOtherInformations->get($initialDataAll->adhesion_other_information->id);
                 $otherInformations = $this->AdhesionOtherInformations->patchEntity(
                     $otherInformations,
                     [
@@ -219,7 +219,7 @@ class RegistrationsController extends AppController
 
             if (!empty($data['proponentStatement'])) {
                 $proponentStatementsData = $data['proponentStatement'];
-                $proponentStatements = !$initialDataAll->adhesion_proponent_statement ? $this->AdhesionProponentStatements->newEmptyEntity() : $this->AdhesionProponentStatements->get($initialDataAll->adhesion_proponent_statement->id, []);
+                $proponentStatements = !$initialDataAll->adhesion_proponent_statement ? $this->AdhesionProponentStatements->newEmptyEntity() : $this->AdhesionProponentStatements->get($initialDataAll->adhesion_proponent_statement->id);
                 $proponentStatements = $this->AdhesionProponentStatements->patchEntity(
                     $proponentStatements,
                     [
@@ -257,7 +257,7 @@ class RegistrationsController extends AppController
 
             if (!empty($data['pensionScheme'])) {
                 $pensionSchemesData = $data['pensionScheme'];
-                $pensionSchemes = !$initialDataAll->adhesion_pension_scheme ? $this->AdhesionPensionSchemes->newEmptyEntity() : $this->AdhesionPensionSchemes->get($initialDataAll->adhesion_pension_scheme->id, []);
+                $pensionSchemes = !$initialDataAll->adhesion_pension_scheme ? $this->AdhesionPensionSchemes->newEmptyEntity() : $this->AdhesionPensionSchemes->get($initialDataAll->adhesion_pension_scheme->id);
                 $pensionSchemes = $this->AdhesionPensionSchemes->patchEntity(
                     $pensionSchemes,
                     [

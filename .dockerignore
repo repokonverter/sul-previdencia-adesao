@@ -2,6 +2,7 @@
 /node_modules
 /tests/
 /vendor
+/webroot/bootstrap_u_i
 
 # Excluir arquivos de versionamento e IDEs
 /.git
