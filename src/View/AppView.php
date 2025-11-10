@@ -45,6 +45,7 @@ class AppView extends View
         parent::initialize();
 
         $this->loadHelper('Authentication.Identity');
+        $this->addHelper('Bank');
 
         $this->initializeUI(['layout' => false]);
     }

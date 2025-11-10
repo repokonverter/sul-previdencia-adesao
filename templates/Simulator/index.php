@@ -604,7 +604,7 @@ function createSecureCard($data, $type)
                             </div>
                             <div class="mb-3">
                                 <label for="email" class="form-label">E-mail</label>
-                                <input type="email" class="form-control" name="initialData[email]" placeholder="E-mail">
+                                <input type="email" class="form-control" name="initialData[email]" placeholder="E-mail" required>
                             </div>
                             <div class="mb-3">
                                 <label for="phone" class="form-label">Celular*</label>
@@ -1472,8 +1472,92 @@ function createSecureCard($data, $type)
                                 </div>
                             </div>
                         </div>
-                    </form>
 
+                        <div id="paymentDetail" class="hidden">
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label class="form-label">Dia do vencimento</label>
+                                        <input type="text" class="form-control" name="paymentDetail[due_date]" placeholder="Dia do vencimento" value="10" readonly>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label class="form-label">Total da contribuição - R$ (1+2)</label>
+                                        <input type="text" class="form-control money" name="paymentDetail[total_contribution]" placeholder="Total da contribuição - R$ (1+2)">
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label class="form-label">Meio de pagamento</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="paymentDetail[payment_type]" id="paymentTypeDebitoConta" value="Débito em conta" onclick="paymentType(this.value);" required>
+                                            <label class="form-check-label" for="paymentTypeDebitoConta">Débito em conta (Somente BB)</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="paymentDetail[payment_type]" id="paymentTypeBoletoBancario" value="Boleto bancário" onclick="paymentType(this.value);" required>
+                                            <label class="form-check-label" for="paymentTypeBoletoBancario">Boleto bancário</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="directDebitType" style="display: none;">
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome do correntista</label>
+                                            <input type="text" class="form-control" name="paymentDetail[account_holder_name]" placeholder="Nome do correntista">
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">CPF do correntista</label>
+                                            <input type="text" class="form-control cpf" name="paymentDetail[account_holder_cpf]" placeholder="CPF do correntista">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label">Banco</label>
+                                            <select class="form-select" name="paymentDetail[bank_number]" disabled>
+                                                <option value="">Selecione...</option>
+                                                <?php foreach ($this->Bank->getList() as $bankNumber => $bankName) { ?>
+                                                    <option value="<?= $bankNumber; ?>" <?= $bankNumber === '001' ? 'selected' : ''; ?>><?= $bankName; ?></option>
+                                                <?php } ?>
+                                            </select>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="mb-3">
+                                            <label class="form-label">Agência</label>
+                                            <input type="text" class="form-control" name="paymentDetail[branch_number]" placeholder="Agência">
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="mb-3">
+                                            <label class="form-label">Conta corrente</label>
+                                            <input type="text" class="form-control" name="paymentDetail[account_number]" placeholder="Conta corrente">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="conclusion" class="hidden">
+                            <div class="row">
+                                <div class="col">
+                                    <p>Enviamos para o e-mail "<span id="conclusionEmail"></span>" a proposta para assinatura e abaixo o pix para adesão, utilize o QR Code/pix copia e cola para realizar o pagamento.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-secondary" onclick="previousPage()">Cancelar</button>
@@ -1523,6 +1607,14 @@ function createSecureCard($data, $type)
                 title: 'Regime de previdência',
                 id: 'pensionScheme',
             },
+            {
+                title: 'Dados para pagamento',
+                id: 'paymentDetail',
+            },
+            {
+                title: 'Conclusão',
+                id: 'conclusion',
+            },
         ];
         let registerPageIndex = 0
         let registerModal;
@@ -1539,7 +1631,7 @@ function createSecureCard($data, $type)
             }
 
             openModalBtn.addEventListener('click', function() {
-                registerPageIndex = 0;
+                registerPageIndex = 10;
 
                 updatePage(registerPageIndex);
 
@@ -1630,7 +1722,7 @@ function createSecureCard($data, $type)
         });
 
         const planForHandle = (planFor) => {
-            $('#registerModal #divLegalRepresentative').hide('slow');
+            $('#registerModal #divLegalRepresentative').slideToggle();
             $('#registerModal #divLegalRepresentative input').removeAttr('required');
 
             if (planFor === 'Dependente') {
@@ -1640,7 +1732,7 @@ function createSecureCard($data, $type)
                 $('#registerModal #personalData input[name="personalData[nameLegalRepresentative]"]').val(name);
                 $('#registerModal #personalData input[name="personalData[cpfLegalRepresentative]"]').val(cpf);
                 $('#registerModal #divLegalRepresentative input').attr('required', 'required');
-                $('#registerModal #divLegalRepresentative').show('slow');
+                $('#registerModal #divLegalRepresentative').slideToggle();
             }
         }
 
@@ -1654,6 +1746,8 @@ function createSecureCard($data, $type)
                 case 6:
                 case 7:
                 case 8:
+                case 9:
+                case 10:
                     jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior');
                     jQuery('#registerModal .modal-footer .btn-primary').text('Próximo');
                     break;
@@ -1665,29 +1759,31 @@ function createSecureCard($data, $type)
         }
 
         const updatePage = (pageIndex) => {
-            jQuery('#registerModal #initialData').hide();
-            jQuery('#registerModal #personalData').hide();
-            jQuery('#registerModal #documents').hide();
-            jQuery('#registerModal #plan').hide();
-            jQuery('#registerModal #dependents').hide();
-            jQuery('#registerModal #addressData').hide();
-            jQuery('#registerModal #otherInformation').hide();
-            jQuery('#registerModal #proponentStatement').hide();
-            jQuery('#registerModal #pensionScheme').hide();
+            $('#registerModal #initialData').hide();
+            $('#registerModal #personalData').hide();
+            $('#registerModal #documents').hide();
+            $('#registerModal #plan').hide();
+            $('#registerModal #dependents').hide();
+            $('#registerModal #addressData').hide();
+            $('#registerModal #otherInformation').hide();
+            $('#registerModal #proponentStatement').hide();
+            $('#registerModal #pensionScheme').hide();
+            $('#registerModal #paymentDetail').hide();
+            $('#registerModal #conclusion').hide();
 
             switch (pageIndex) {
                 case 0:
-                    jQuery('#registerModal #initialData').fadeIn().show();
+                    $('#registerModal #initialData').fadeIn().show();
                     break;
                 case 1:
                     const name = $('#registerModal #initialData input[name="initialData[name]"]').val();
 
                     $('#registerModal #personalData input[name="personalData[name]"]').val(name);
 
-                    jQuery('#registerModal #personalData').fadeIn().show();
+                    $('#registerModal #personalData').fadeIn().show();
                     break;
                 case 2:
-                    jQuery('#registerModal #documents').fadeIn().show();
+                    $('#registerModal #documents').fadeIn().show();
                     break;
                 case 3:
                     const age = calculateAge($('#registerModal input[name="personalData[birthDate]"]').val());
@@ -1695,18 +1791,18 @@ function createSecureCard($data, $type)
 
                     $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
 
-                    jQuery('#registerModal #plan').fadeIn().show();
+                    $('#registerModal #plan').fadeIn().show();
                     break;
                 case 4:
-                    jQuery('#registerModal #dependents').fadeIn().show();
+                    $('#registerModal #dependents').fadeIn().show();
                     break;
                 case 5:
-                    jQuery('#registerModal #addressData').fadeIn().show();
+                    $('#registerModal #addressData').fadeIn().show();
                     break;
                 case 6:
-                    jQuery('#registerModal #otherInformation').fadeIn().show();
+                    $('#registerModal #otherInformation').fadeIn().show();
                 case 7:
-                    jQuery('#registerModal #proponentStatement').fadeIn().show();
+                    $('#registerModal #proponentStatement').fadeIn().show();
                     break;
                 case 8:
                     const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]').val();
@@ -1721,11 +1817,20 @@ function createSecureCard($data, $type)
                         $('#registerModal #pensionSchemeAnyPensionSchema').show();
                     }
 
-                    jQuery('#registerModal #pensionScheme').fadeIn().show();
+                    $('#registerModal #pensionScheme').fadeIn().show();
+                    break;
+                case 9:
+                    $('#registerModal #paymentDetail').fadeIn().show();
+                    break;
+                case 10:
+                    const email = $('#registerModal #initialData input[name="initialData[email]"]').val();
+
+                    $('#registerModal #conclusionEmail').html(email);
+                    $('#registerModal #conclusion').fadeIn().show();
                     break;
             }
 
-            jQuery('#registerModal .modal-body h4').html(registerPages[registerPageIndex].title);
+            $('#registerModal .modal-body h4').html(registerPages[registerPageIndex].title);
             updateButtonPreviousNext(registerPageIndex);
         }
 
@@ -1994,6 +2099,16 @@ function createSecureCard($data, $type)
             }
 
             window.location.href = simulatorUrl;
+        }
+
+        const paymentType = (type) => {
+            if (type === 'Débito em conta') {
+                $('#directDebitType').slideToggle();
+
+                return;
+            }
+
+            $('#directDebitType').slideToggle();
         }
     </script>
 </body>

@@ -132,5 +132,20 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addTimestamps()
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();
+
+        $this->table('adhesion_payment_details')
+            ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
+            ->addColumn('due_date', 'integer', ['null' => true])
+            ->addColumn('total_contribution', 'decimal', ['precision' => 10, 'scale' => 2, 'null' => true])
+            ->addColumn('payment_type', 'string', ['limit' => 50])
+            ->addColumn('account_holder_name', 'string', ['limit' => 150])
+            ->addColumn('account_holder_cpf', 'string', ['limit' => 15])
+            ->addColumn('bank_number', 'string', ['limit' => 4])
+            ->addColumn('bank_name', 'string', ['limit' => 200])
+            ->addColumn('branch_number', 'string', ['limit' => 5])
+            ->addColumn('account_number', 'string', ['limit' => 8])
+            ->addTimestamps()
+            ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
+            ->create();
     }
 }

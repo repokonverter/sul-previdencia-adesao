@@ -25,6 +25,7 @@ class RegistrationsController extends AppController
     protected \App\Model\Table\AdhesionPlansTable $AdhesionPlans;
     protected \App\Model\Table\AdhesionProponentStatementsTable $AdhesionProponentStatements;
     protected \App\Model\Table\AdhesionPensionSchemesTable $AdhesionPensionSchemes;
+    protected \App\Model\Table\AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
 
     public function initialize(): void
     {
@@ -39,6 +40,7 @@ class RegistrationsController extends AppController
         $this->AdhesionOtherInformations = $this->fetchTable('AdhesionOtherInformations');
         $this->AdhesionProponentStatements = $this->fetchTable('AdhesionProponentStatements');
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
+        $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
 
         // $this->loadComponent('RequestHandler');
         $this->viewBuilder()->setClassName('Ajax');
@@ -57,7 +59,8 @@ class RegistrationsController extends AppController
             $initialDataId = isset($data['initialDataId']) ? $data['initialDataId'] : null;
 
             if ($initialDataId !== null) {
-                $initialDataAll = $this->AdhesionInitialDatas->get($initialDataId, 
+                $initialDataAll = $this->AdhesionInitialDatas->get(
+                    $initialDataId,
                     contain: [
                         'AdhesionPersonalDatas',
                         'AdhesionDocuments',
@@ -67,6 +70,7 @@ class RegistrationsController extends AppController
                         'AdhesionOtherInformations',
                         'AdhesionProponentStatements',
                         'AdhesionPensionSchemes',
+                        'AdhesionPaymentDetails',
                     ]
                 );
             }
@@ -252,7 +256,7 @@ class RegistrationsController extends AppController
                 );
 
                 if (!$this->AdhesionProponentStatements->save($proponentStatements))
-                    throw new \Exception('Falha ao salvar as declarações do proponente: ' . json_encode($otherInformations->getErrors()));
+                    throw new \Exception('Falha ao salvar as declarações do proponente: ' . json_encode($proponentStatements->getErrors()));
             }
 
             if (!empty($data['pensionScheme'])) {
@@ -262,7 +266,7 @@ class RegistrationsController extends AppController
                     $pensionSchemes,
                     [
                         'adhesion_initial_data_id' => $initialDataId,
-                        'pension_scheme' => $pensionSchemesData['pensionSchemeType'] ?? '',
+                        'due_date' => $pensionSchemesData['pensionSchemeType'] ?? '',
                         'name' => $pensionSchemesData['name'] ?? '',
                         'cpf' => $pensionSchemesData['cpf'] ?? false,
                         'kinship' => $pensionSchemesData['kinship'] ?? false,
@@ -270,7 +274,30 @@ class RegistrationsController extends AppController
                 );
 
                 if (!$this->AdhesionPensionSchemes->save($pensionSchemes))
-                    throw new \Exception('Falha ao salvar o regime de previdência: ' . json_encode($otherInformations->getErrors()));
+                    throw new \Exception('Falha ao salvar o regime de previdência: ' . json_encode($pensionSchemes->getErrors()));
+            }
+
+            if (!empty($data['paymentDetail'])) {
+                $paymentDetailsData = $data['paymentDetail'];
+                $paymentDetails = !$initialDataAll->adhesion_payment_detail ? $this->AdhesionPaymentDetails->newEmptyEntity() : $this->AdhesionPaymentDetails->get($initialDataAll->adhesion_payment_detail->id);
+                $paymentDetails = $this->AdhesionPaymentDetails->patchEntity(
+                    $paymentDetails,
+                    [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'due_date' => $paymentDetailsData['due_date'] ?? '',
+                        'total_contribution' => $paymentDetailsData['total_contribution'] ?? null,
+                        'payment_type' => $paymentDetailsData['payment_type'] ?? '',
+                        'account_holder_name' => $paymentDetailsData['account_holder_name'] ?? '',
+                        'account_holder_cpf' => $paymentDetailsData['account_holder_cpf'] ?? '',
+                        'bank_number' => $paymentDetailsData['bank_number'] ?? '',
+                        'bank_name' => $paymentDetailsData['bank_number'] ? $this->Bank->getName($paymentDetailsData['bank_number']) : '',
+                        'branch_number' => $paymentDetailsData['branch_number'] ?? '',
+                        'account_number' => $paymentDetailsData['account_number'] ?? '',
+                    ],
+                );
+
+                if (!$this->AdhesionPaymentDetails->save($paymentDetails))
+                    throw new \Exception('Falha ao salvar o dado de pagamento: ' . json_encode($paymentDetails->getErrors()));
             }
 
             $connection->commit();
