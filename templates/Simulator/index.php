@@ -576,7 +576,7 @@ function createSecureCard($data, $type)
                 </div>
             </div>
             <div class="simulador-obs">
-                * Os valores acima são apenas estimativas e não garantem nenhum direito antecipado. Saiba mais...
+                <strong>*Os valores acima são apenas estimativas de capital acumulado aos 65 anos e não garantem nenhum direito antecipado.</strong>
             </div>
             <button class="simulador-btn" id="simulador-continuar">
                 Gostei, quero continuar <span style="font-size:1.3em;vertical-align:middle;">→</span>
@@ -627,11 +627,11 @@ function createSecureCard($data, $type)
                                     <div class="mb-3">
                                         <label for="planFor" class="form-label">O plano é para*</label>
                                         <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" id="planForD" name="personalData[planFor]" value="Dependente" onclick="planForHandle(this.value)">
+                                            <input class="form-check-input" type="radio" id="planForD" name="personalData[planFor]" value="Dependente" onclick="planForHandle(this)">
                                             <label class="form-check-label" for="planForD">Dependente</label>
                                         </div>
                                         <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" id="planForT" name="personalData[planFor]" value="Titular" onclick="planForHandle(this.value)" checked>
+                                            <input class="form-check-input" type="radio" id="planForT" name="personalData[planFor]" value="Titular" onclick="planForHandle(this)" checked>
                                             <label class="form-check-label" for="planForT">Titular</label>
                                         </div>
                                     </div>
@@ -915,8 +915,8 @@ function createSecureCard($data, $type)
                                 <div class="col-8">
                                     <label for="cep" class="form-label">CEP*</label>
                                     <div class="input-group mb-3">
-                                        <input type="text" class="form-control cep" name="addresses[cep]" placeholder="CEP" onchange="getCEP(this.value)">
-                                        <div class="input-group-text hidden">
+                                        <input type="text" class="form-control cep" name="addresses[cep]" placeholder="CEP" onchange="getCEP(this.value)" required>
+                                        <div class="input-group-text" style="display: none;">
                                             <div class="spinner-border ml-2" role="status">
                                                 <span class="visually-hidden">Carregando...</span>
                                             </div>
@@ -931,7 +931,7 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="address" class="form-label">Endereço*</label>
-                                        <input type="text" class="form-control" name="addresses[address]" placeholder="Endereço">
+                                        <input type="text" class="form-control" name="addresses[address]" placeholder="Endereço" required>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -947,8 +947,8 @@ function createSecureCard($data, $type)
                             <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
-                                        <label for="neighborhood" class="form-label">Bairro*</label>
-                                        <input type="text" class="form-control" name="addresses[neighborhood]" placeholder="Bairro">
+                                        <label for="complement" class="form-label">Complemento</label>
+                                        <input type="text" class="form-control" name="addresses[complement]" placeholder="Bairro">
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -956,17 +956,28 @@ function createSecureCard($data, $type)
                                 </div>
                                 <div class="col">
                                     <div class="mb-3">
-                                        <label for="city" class="form-label">Cidade*</label>
-                                        <input type="text" class="form-control" name="addresses[city]" placeholder="Cidade">
+                                        <label for="neighborhood" class="form-label">Bairro*</label>
+                                        <input type="text" class="form-control" name="addresses[neighborhood]" placeholder="Bairro" required>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-2">
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="city" class="form-label">Cidade*</label>
+                                        <input type="text" class="form-control" name="addresses[city]" placeholder="Cidade" required>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
                                     <div class="mb-3">
                                         <label for="state" class="form-label">UF*</label>
-                                        <select class="form-select" name="addresses[state]">
+                                        <select class="form-select" name="addresses[state]" required>
                                             <option value="">Selecione...</option>
                                             <option value="AC">Acre</option>
                                             <option value="AL">Alagoas</option>
@@ -1105,6 +1116,7 @@ function createSecureCard($data, $type)
                                 </div>
                             </div>
                         </div>
+
                         <div id="proponentStatement" class="hidden">
                             <div class="row">
                                 <div class="col">
@@ -1570,7 +1582,6 @@ function createSecureCard($data, $type)
         const localStorageKey = 'adesaoSulPrevidencia';
         let draftUUID = localStorage.getItem(localStorageKey);
         let initialDataId = null;
-
         const registerPages = [{
                 title: 'Dados iniciais',
                 id: 'initialData',
@@ -1631,7 +1642,7 @@ function createSecureCard($data, $type)
             }
 
             openModalBtn.addEventListener('click', function() {
-                registerPageIndex = 10;
+                registerPageIndex = 0;
 
                 updatePage(registerPageIndex);
 
@@ -1663,8 +1674,8 @@ function createSecureCard($data, $type)
                         {
                             label: 'Contribuições Rentabilizadas',
                             data: contribuicoesRentabilizadas,
-                            borderColor: 'rgb(255, 99, 132)', // Laranja/Vermelho
-                            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                            borderColor: 'rgba(255, 193, 7, 1)', // Laranja/Vermelho
+                            backgroundColor: 'rgba(255, 193, 7, 0.5)',
                             borderWidth: 2,
                             tension: 0.2, // Curvatura da linha
                             pointRadius: 0, // Ocultar os pontos de dados
@@ -1722,18 +1733,19 @@ function createSecureCard($data, $type)
         });
 
         const planForHandle = (planFor) => {
-            $('#registerModal #divLegalRepresentative').slideToggle();
-            $('#registerModal #divLegalRepresentative input').removeAttr('required');
-
-            if (planFor === 'Dependente') {
+            if (planFor.value === 'Dependente') {
                 const name = $('#registerModal #personalData input[name="personalData[name]"]').val();
                 const cpf = $('#registerModal #personalData input[name="personalData[cpf]"]').val();
 
                 $('#registerModal #personalData input[name="personalData[nameLegalRepresentative]"]').val(name);
                 $('#registerModal #personalData input[name="personalData[cpfLegalRepresentative]"]').val(cpf);
                 $('#registerModal #divLegalRepresentative input').attr('required', 'required');
-                $('#registerModal #divLegalRepresentative').slideToggle();
+                $('#registerModal #divLegalRepresentative').slideDown();
+                return;
             }
+
+            $('#registerModal #divLegalRepresentative').slideUp();
+            $('#registerModal #divLegalRepresentative input').removeAttr('required');
         }
 
         const updateButtonPreviousNext = (pageIndex) => {
@@ -1801,6 +1813,7 @@ function createSecureCard($data, $type)
                     break;
                 case 6:
                     $('#registerModal #otherInformation').fadeIn().show();
+                    break;
                 case 7:
                     $('#registerModal #proponentStatement').fadeIn().show();
                     break;
@@ -1838,17 +1851,17 @@ function createSecureCard($data, $type)
             let isValid = true;
             const form = document.querySelectorAll(`#${registerPages[registerPageIndex].id} input, #${registerPages[registerPageIndex].id} select`);
 
-            form.forEach((input) => {
-                if (!input.checkValidity())
-                    isValid = false;
-            })
+            // form.forEach((input) => {
+            //     if (!input.checkValidity())
+            //         isValid = false;
+            // })
 
             if (!isValid) {
                 $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
                 return;
             }
 
-            await saveForm(registerPages[registerPageIndex].id);
+            // await saveForm(registerPages[registerPageIndex].id);
 
             registerPageIndex += 1;
 
