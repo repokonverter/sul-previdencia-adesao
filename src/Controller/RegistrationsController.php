@@ -128,6 +128,7 @@ class RegistrationsController extends AppController
                     [
                         'adhesion_initial_data_id' => $initialDataId,
                         'type' => $documentsData['documentType'],
+                        'type_other' => $documentsData['type_other'],
                         'document_number' => $documentsData['documentNumber'],
                         'issue_date' => $documentsData['issueDate'] ?? null,
                         'issuer' => $documentsData['issuer'] ?? null,
