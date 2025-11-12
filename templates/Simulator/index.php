@@ -2181,7 +2181,6 @@ function createSecureCard($data, $type)
             for (let age = currentAge; age <= RETIREMENT_AGE; age++) {
                 // Apenas acumula se a pessoa ainda estiver trabalhando (até 65 anos)
                 if (age < RETIREMENT_AGE) {
-                    // Contribuição Pura (Montante * anos)
                     totalContribuicaoPura += contribuicaoAnualPura;
 
                     // Contribuição Rentabilizada (Acúmulo mês a mês)
@@ -2212,7 +2211,7 @@ function createSecureCard($data, $type)
                 data: {
                     labels: labels,
                     datasets: [{
-                            label: 'Contribuição Pura',
+                            label: 'Contribuição pura',
                             data: pureData,
                             borderColor: 'rgb(59, 130, 246)',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
