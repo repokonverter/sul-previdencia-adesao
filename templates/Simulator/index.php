@@ -576,7 +576,7 @@ function createSecureCard($data, $type)
                 </div>
             </div>
             <div class="simulador-obs">
-                <strong>*Os valores acima são apenas estimativas de capital acumulado aos 65 anos e não garantem nenhum direito antecipado.</strong>
+                <p><strong>*Os valores acima são apenas estimativas de capital acumulado aos 65 anos e não garantem nenhum direito antecipado.</strong></p>
             </div>
             <button class="simulador-btn" id="simulador-continuar">
                 Gostei, quero continuar <span style="font-size:1.3em;vertical-align:middle;">→</span>
@@ -1667,89 +1667,6 @@ function createSecureCard($data, $type)
             });
 
             simulationChart();
-            return;
-
-            const ctx = $('#simulador-chart');
-            const labels = Array.from({
-                length: 21
-            }, (v, i) => `Ano ${i}`);
-            const contribuicoesPuras = labels.map((_, i) => i * 2000);
-            const contribuicoesRentabilizadas = labels.map((_, i) => Math.pow(1.3, i) * 5000 + i * 1000);
-
-            contribuicoesRentabilizadas[contribuicoesRentabilizadas.length - 1] = 900000;
-
-            new Chart(ctx, {
-                type: 'line', // Tipo de gráfico: Linha
-                data: {
-                    labels: labels,
-                    datasets: [{
-                            label: 'Contribuições Puras',
-                            data: contribuicoesPuras,
-                            borderColor: 'rgb(54, 162, 235)', // Azul
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderWidth: 2,
-                            tension: 0.2, // Curvatura da linha (um pouco mais suave)
-                            pointRadius: 0, // Ocultar os pontos de dados
-                        },
-                        {
-                            label: 'Contribuições Rentabilizadas',
-                            data: contribuicoesRentabilizadas,
-                            borderColor: 'rgba(255, 193, 7, 1)', // Laranja/Vermelho
-                            backgroundColor: 'rgba(255, 193, 7, 0.5)',
-                            borderWidth: 2,
-                            tension: 0.2, // Curvatura da linha
-                            pointRadius: 0, // Ocultar os pontos de dados
-                            // Para replicar o pico no final
-                            spanGaps: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Evolução Comparativa das Contribuições',
-                            font: {
-                                size: 18,
-                                weight: 'bold'
-                            }
-                        },
-                        legend: {
-                            display: true,
-                            position: 'bottom', // Colocar a legenda na parte inferior
-                        }
-                    },
-                    scales: {
-                        y: {
-                            // Configuração do Eixo Y (Valores Monetários)
-                            beginAtZero: true,
-                            max: 1000000, // Definir um máximo para o eixo Y
-                            ticks: {
-                                // Formatação para mostrar como R$ 0, R$ 200.000, etc.
-                                callback: function(value, index, values) {
-                                    if (value === 0) return 'R$ 0';
-                                    if (value >= 1000000) return 'R$ 1.000.000';
-                                    return 'R$ ' + (value / 1000).toLocaleString('pt-BR', {
-                                        minimumFractionDigits: 0
-                                    }) + '.000';
-                                },
-                                stepSize: 200000 // A cada R$ 200.000
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)' // Linhas de grade mais claras
-                            }
-                        },
-                        x: {
-                            // Configuração do Eixo X (Tempo/Anos)
-                            display: false, // Ocultar o eixo X para um visual mais limpo (como na imagem)
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
         });
 
         const planForHandle = (planFor) => {
@@ -1871,10 +1788,10 @@ function createSecureCard($data, $type)
             let isValid = true;
             const form = document.querySelectorAll(`#${registerPages[registerPageIndex].id} input, #${registerPages[registerPageIndex].id} select`);
 
-            // form.forEach((input) => {
-            //     if (!input.checkValidity())
-            //         isValid = false;
-            // })
+            form.forEach((input) => {
+                if (!input.checkValidity())
+                    isValid = false;
+            })
 
             if (!isValid) {
                 $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
