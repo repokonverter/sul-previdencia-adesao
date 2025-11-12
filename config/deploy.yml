@@ -9,7 +9,7 @@ servers:
 
 proxy:
   ssl: true
-  host: adesao.konverter.com.br
+  host: plenoprev.konverter.com.br
   app_port: 80
 
 registry:
