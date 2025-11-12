@@ -2067,7 +2067,7 @@ function createSecureCard($data, $type)
                 <div class="col">
                     <div class="mb-3">
                         <label for="participationDependent" class="form-label">Participação (%)*</label>
-                        <input type="number" min="0" class="form-control" name="dependents[${count}][participation]" placeholder="Participação (%)" value="${participation}">
+                        <input type="number" min="0" max="100" class="form-control" name="dependents[${count}][participation]" placeholder="Participação (%)" value="${participation}">
                         <div class="invalid-feedback">
                             Preenchimento obrigatório.
                         </div>
