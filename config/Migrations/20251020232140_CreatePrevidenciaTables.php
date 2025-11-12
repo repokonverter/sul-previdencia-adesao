@@ -39,6 +39,7 @@ class CreatePrevidenciaTables extends BaseMigration
         $this->table('adhesion_documents')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
             ->addColumn('type', 'string', ['limit' => 50])
+            ->addColumn('type_other', 'string', ['limit' => 100])
             ->addColumn('document_number', 'string', ['limit' => 255])
             ->addColumn('issue_date', 'date', ['null' => true])
             ->addColumn('issuer', 'string', ['limit' => 50, 'null' => true])
