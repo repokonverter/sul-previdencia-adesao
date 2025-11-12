@@ -223,7 +223,7 @@ function createSecureCard($data, $type)
             border-radius: 16px;
             box-shadow: var(--card-shadow);
             padding: 16px;
-            width: 320px;
+            width: 90%;
             flex: 0 0 auto;
             display: flex;
             align-items: center;
@@ -569,9 +569,10 @@ function createSecureCard($data, $type)
                     </div>
                 </div>
             </div>
+            <div class="simulador-projeto-label">Evolução Comparativa das Contribuições</div>
             <div class="simulador-grafico-centralizado">
                 <div class="simulador-grafico">
-                    <canvas id="simulador-chart" width="320" height="220"></canvas>
+                    <canvas id="simulador-chart" height="300"></canvas>
                 </div>
             </div>
             <div class="simulador-obs">
@@ -1665,6 +1666,9 @@ function createSecureCard($data, $type)
                 registerModal.show();
             });
 
+            simulationChart();
+            return;
+
             const ctx = $('#simulador-chart');
             const labels = Array.from({
                 length: 21
@@ -2105,19 +2109,15 @@ function createSecureCard($data, $type)
         }
 
         const calculateAge = (dateBirth) => {
-            const [day, month, year] = dateBirth.split('/');
-            const birthday = new Date(year, month - 1, day);
-            const currentDate = new Date();
-            let age = currentDate.getFullYear() - birthday.getFullYear();
-            const currentMonth = currentDate.getMonth();
-            const currentDay = currentDate.getDate();
-            const birthdayMonth = birthday.getMonth();
-            const birthdayDay = birthday.getDate();
+            const birthDate = new Date(dateBirth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
 
-            if (currentMonth < birthdayMonth || (currentMonth === birthdayMonth && currentDay < birthdayDay))
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate()))
                 age--;
 
-            return +age;
+            return age;
         }
 
         const simulate = () => {
@@ -2148,6 +2148,148 @@ function createSecureCard($data, $type)
             }
 
             $('#directDebitType').slideToggle();
+        }
+
+        const simulationChart = () => {
+            const ANNUAL_RATE = 0.0803;
+            const MONTHLY_RATE = Math.pow(1 + ANNUAL_RATE, 1 / 12) - 1;
+            const RETIREMENT_AGE = 65;
+            const RETIREMENT_ALLOCATION = 0.74; // 100% - 16% Morte - 10% Invalidez
+            const dateBirth = $('.simulador-form-group input[name="dateBirth"]').val();
+            const contribution = parseFloat(<?= $_GET['value']; ?>);
+
+            if (!dateBirth || contribution <= 0) {
+                alert('Por favor, insira uma data de nascimento e uma contribuição mensal válidas.');
+                return;
+            }
+
+            const currentAge = calculateAge(dateBirth);
+
+            if (currentAge >= RETIREMENT_AGE) {
+                alert('A idade atual é igual ou superior à idade de aposentadoria (65 anos). Não há projeção futura.');
+                return;
+            }
+
+            let currentSaldoAcumulado = 0;
+            let totalContribuicaoPura = 0;
+            const labels = [];
+            const pureData = [];
+            const compoundedData = [];
+            const contribuicaoAposentadoria = contribution * RETIREMENT_ALLOCATION;
+            const contribuicaoAnualPura = contribution * 12;
+
+            for (let age = currentAge; age <= RETIREMENT_AGE; age++) {
+                // Apenas acumula se a pessoa ainda estiver trabalhando (até 65 anos)
+                if (age < RETIREMENT_AGE) {
+                    // Contribuição Pura (Montante * anos)
+                    totalContribuicaoPura += contribuicaoAnualPura;
+
+                    // Contribuição Rentabilizada (Acúmulo mês a mês)
+                    for (let month = 0; month < 12; month++) {
+                        // Saldo anterior rentabilizado + nova contribuição
+                        currentSaldoAcumulado = currentSaldoAcumulado * (1 + MONTHLY_RATE) + contribuicaoAposentadoria;
+                    }
+                }
+
+                labels.push(age);
+                pureData.push(Math.round(totalContribuicaoPura));
+                compoundedData.push(Math.round(currentSaldoAcumulado));
+
+                // Parar a simulação se o saldo rentabilizado for muito alto (evitar overflow)
+                if (currentSaldoAcumulado > 1e12) break;
+            }
+
+            // Renderiza o gráfico
+            renderChart(labels, pureData, compoundedData);
+        }
+
+        const renderChart = (labels, pureData, compoundedData) => {
+            let chartInstance = null;
+            const ctx = document.getElementById('simulador-chart').getContext('2d');
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                            label: 'Contribuição Pura',
+                            data: pureData,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 3,
+                            pointRadius: 3
+                        },
+                        {
+                            label: 'Contribuição rentabilizada',
+                            data: compoundedData,
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 3,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Montante Acumulado (R$)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) return 'R$' + (value / 1000000).toFixed(1) + 'M';
+                                    if (value >= 1000) return 'R$' + (value / 1000).toFixed(0) + 'K';
+                                    return 'R$' + value.toFixed(0);
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Idade',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL'
+                                        }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
     </script>
 </body>
