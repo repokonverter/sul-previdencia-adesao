@@ -147,10 +147,11 @@ class RegistrationsController extends AppController
                     [
                         'adhesion_initial_data_id' => $initialDataId,
                         'benefit_entry_age' => $planData['benefitEntryAge'] ?? null,
-                        'monthly_contribuition_amount' => str_replace(',', '.', str_replace('.', '', $planData['monthlyContribuitionAmount'])) ?? null,
-                        'value_founding_contribution' => str_replace(',', '.', str_replace('.', '', $planData['valueFoundingContribution'])) ?? null,
-                        'insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['insuredCapital'])) ?? null,
-                        'contribution' => str_replace(',', '.', str_replace('.', '', $planData['contribution'])) ?? null,
+                        'monthly_retirement_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_retirement_contribution'])) ?? null,
+                        'monthly_survivors_pension_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_survivors_pension_contribution'])) ?? null,
+                        'survivors_pension_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['survivors_pension_insured_capital'])) ?? null,
+                        'monthly_disability_retirement_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_disability_retirement_contribution'])) ?? null,
+                        'disability_retirement_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['disability_retirement_insured_capital'])) ?? null,
                     ],
                 );
 

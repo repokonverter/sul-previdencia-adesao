@@ -7,7 +7,6 @@
 
 use Cake\I18n\Number;
 
-
 $this->assign('title', 'Sul Previdência - Simulador');
 
 $csrfToken = $this->request->getAttribute('csrfToken');
@@ -540,7 +539,7 @@ function createSecureCard($data, $type)
                             </div>
                             <div class="descricao-secundaria" id="patrimonio-contribuicao">
                                 Contribuição Mensal<br>
-                                <?= Number::currency($simulations[0]['contribuicao_aposentadoria']); ?>
+                                <?= Number::currency($simulations[1]['contribuicao_aposentadoria']); ?>
                             </div>
                         </div>
                     </div>
@@ -549,10 +548,10 @@ function createSecureCard($data, $type)
                             Pensão por Morte
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="seguro-morte-cenarios"><?= createSecureCard($simulation, 'death'); ?></div>
+                            <div class="cenarios-container" id="seguro-morte-cenarios"><?= createSecureCard($simulations[1], 'death'); ?></div>
                             <div class="descricao-secundaria" id="seguro-morte-contribuicao">
                                 Contribuição Mensal<br>
-                                <?= Number::currency($simulations[0]['contribuicao_morte']); ?>
+                                <?= Number::currency($simulations[1]['contribuicao_morte']); ?>
                             </div>
                         </div>
                     </div>
@@ -561,7 +560,7 @@ function createSecureCard($data, $type)
                             Aposentadoria por Invalidez
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= createSecureCard($simulation, 'disability'); ?></div>
+                            <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= createSecureCard($simulations[1], 'disability'); ?></div>
                             <div class="descricao-secundaria" id="seguro-invalidez-contribuicao">
                                 Contribuição Mensal<br>
                                 <?= Number::currency($simulations[0]['contribuicao_invalidez']); ?>
@@ -780,8 +779,12 @@ function createSecureCard($data, $type)
                                         <label for="documentType" class="form-label">Natureza do documento*</label>
                                         <select class="form-select" name="documents[documentType]" required>
                                             <option value="">Selecione...</option>
+                                            <option value="Certificado de reservista">Certificado de reservista</option>
                                             <option value="CNH">CNH</option>
+                                            <option value="CTPS">CTPS</option>
+                                            <option value="Passaporte">Passaporte</option>
                                             <option value="RG">RG</option>
+                                            <option value="Outro">Outro</option>
                                         </select>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
@@ -833,7 +836,7 @@ function createSecureCard($data, $type)
                             <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
-                                        <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício*</label>
+                                        <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício</label>
                                         <input type="number" class="form-control" name="plans[benefitEntryAge]" placeholder="Idade para entrada em benefício" readonly>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
@@ -842,22 +845,10 @@ function createSecureCard($data, $type)
                                 </div>
                                 <div class="col">
                                     <div class="mb-3">
-                                        <label for="monthlyContribuitionAmount" class="form-label">Valor da contribuição mensal*</label>
+                                        <label for="monthly_retirement_contribution" class="form-label">Contribuição mensal aposentadoria</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[monthlyContribuitionAmount]" placeholder="Valor da contribuição mensal" readonly>
-                                            <div class="invalid-feedback">
-                                                Preenchimento obrigatório.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="mb-3">
-                                        <label for="valueFoundingContribution" class="form-label">Valor da contribuição do instituidor*</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[valueFoundingContribution]" placeholder="Valor da contribuição do instituidor" readonly>
+                                            <input type="text" class="form-control money" name="plans[monthly_retirement_contribution]" value="<?= number_format($simulations[1]['contribuicao_aposentadoria'], 2, '.', ''); ?>" readonly>
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -867,38 +858,60 @@ function createSecureCard($data, $type)
                             </div>
                             <div class="row">
                                 <div class="col">
-                                    <div><strong>Benefício de risco</strong></div>
-                                    <ul>
-                                        <li>Morte (M)</li>
-                                        <li>Invalidez permanente total por acidente (IPTA)</li>
-                                        <li>Invalidez funcional permanente total por doença - antecipação (IFPDA)</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col">
                                     <div class="mb-3">
-                                        <label for="insuredCapital" class="form-label">Capital segurado*</label>
+                                        <label for="monthly_survivors_pension_contribution" class="form-label">Contribuição mensal pensão por morte</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[insuredCapital]" placeholder="Capital segurado" readonly>
+                                            <input type="text" class="form-control money" name="plans[monthly_survivors_pension_contribution]" value="<?= number_format($simulations[1]['contribuicao_morte'], 2, '.', ''); ?>" readonly>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col">
                                     <div class="mb-3">
-                                        <label for="contribution" class="form-label">Contribuição*</label>
+                                        <label for="survivors_pension_insured_capital" class="form-label">Capital segurado pensão por morte</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[contribution]" placeholder="Contribuição" readonly>
+                                            <input type="text" class="form-control money" name="plans[survivors_pension_insured_capital]" value="<?= number_format($simulations[1]['cobertura_morte'], 2, '.', ''); ?>" readonly>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="monthly_disability_retirement_contribution" class="form-label">Contribuição mensal aposentadoria por invalidez</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" name="plans[monthly_disability_retirement_contribution]" value="<?= number_format($simulations[1]['contribuicao_invalidez'], 2, '.', ''); ?>" readonly>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="disability_retirement_insured_capital" class="form-label">Capital segurado aposentadoria por invalidez</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" name="plans[disability_retirement_insured_capital]" value="<?= number_format($simulations[1]['cobertura_invalidez'], 2, '.', ''); ?>" readonly>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col text-center">
-                                    <div>Contribuição total</div>
-                                    <div>R$ 100.000,00</div>
+                                    <div>Total de contribuição mensal</div>
+                                    <div><?= Number::currency($totalMonthlyContributionPlan, null); ?></div>
                                 </div>
                             </div>
                         </div>
@@ -948,7 +961,7 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="complement" class="form-label">Complemento</label>
-                                        <input type="text" class="form-control" name="addresses[complement]" placeholder="Bairro">
+                                        <input type="text" class="form-control" name="addresses[complement]" placeholder="Complemento">
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -1495,8 +1508,11 @@ function createSecureCard($data, $type)
                                 </div>
                                 <div class="col">
                                     <div class="mb-3">
-                                        <label class="form-label">Total da contribuição - R$ (1+2)</label>
-                                        <input type="text" class="form-control money" name="paymentDetail[total_contribution]" placeholder="Total da contribuição - R$ (1+2)">
+                                        <label class="form-label">Total da contribuição</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" name="paymentDetail[total_contribution]" placeholder="Total da contribuição - R$ (1+2)" value="<?= $totalMonthlyContributionPlan; ?>" readonly>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col">
@@ -1982,6 +1998,16 @@ function createSecureCard($data, $type)
 
         const addDependent = () => {
             const count = $('#listDependents .dependentDiv').length;
+            let participation = 100;
+            console.log(count);
+
+            if (count > 0) {
+                participation = 100 / (count + 1);
+
+                for (let index = 0; index < count; index++) {
+                    $(`#listDependents .dependentDiv input[name="dependents[${index}][participation]"]`).val(participation);
+                }
+            }
 
             $('#listDependents').append(`
         <div class="dependentDiv">
@@ -2041,7 +2067,7 @@ function createSecureCard($data, $type)
                 <div class="col">
                     <div class="mb-3">
                         <label for="participationDependent" class="form-label">Participação (%)*</label>
-                        <input type="number" min="0" class="form-control" name="dependents[${count}][participation]" placeholder="Participação (%)">
+                        <input type="number" min="0" class="form-control" name="dependents[${count}][participation]" placeholder="Participação (%)" value="${participation}">
                         <div class="invalid-feedback">
                             Preenchimento obrigatório.
                         </div>

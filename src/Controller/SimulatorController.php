@@ -23,7 +23,8 @@ class SimulatorController extends AppController
                 ]
             )
             ->fetchAll('assoc');
+        $totalMonthlyContributionPlan = $data['value'];
 
-        $this->set(compact('simulations'));
+        $this->set(compact('simulations', 'totalMonthlyContributionPlan'));
     }
 }
