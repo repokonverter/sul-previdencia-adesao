@@ -53,6 +53,9 @@
             <a class="nav-link" href="<?= $this->Url->build('/admin/users') ?>">Usuários</a>
         </li>
         <li class="nav-item">
+            <a class="nav-link" href="<?= $this->Url->build('/admin/adhesions') ?>">Adesões</a>
+        </li>
+        <li class="nav-item">
             <a class="nav-link" href="<?= $this->Url->build('/admin/users/logout') ?>">Sair</a>
         </li>
     </ul>

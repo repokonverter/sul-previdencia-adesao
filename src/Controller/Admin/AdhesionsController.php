@@ -67,7 +67,10 @@ class AdhesionsController extends AppController
                 'AdhesionDependents',
                 'AdhesionPlans',
                 'AdhesionDocuments',
-                'AdhesionOtherInformations'
+                'AdhesionOtherInformations',
+                'AdhesionPaymentDetails',        // NOVO
+                'AdhesionPensionSchemes',        // NOVO
+                'AdhesionProponentStatements'    // NOVO
             ]
         ]);
 

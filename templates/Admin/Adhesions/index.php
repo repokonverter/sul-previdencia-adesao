@@ -2,7 +2,7 @@
     <h2 class="fw-bold text-primary">Clientes / Adesões</h2>
 
     <?= $this->Html->link(
-        '<i class="bi bi-plus-circle me-1"></i> Novo Cliente',
+        '<i class="bi bi-plus-circle me-1"></i> Nova Adesão',
         ['action' => 'add'],
         ['escape' => false, 'class' => 'btn btn-primary']
     ) ?>

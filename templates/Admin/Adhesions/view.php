@@ -18,10 +18,14 @@
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dependentes">Dependentes</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#documentos">Documentos</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#plano">Plano</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pagamento">Pagamento</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#beneficiarios">Beneficiários</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#declaracoes">Declarações do Proponente</a></li>
+
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#outras-infos">Outras Informações</a></li>
 </ul>
 
-<div class="tab-content">
+<div class="tab-content" style="margin-bottom: 80px !important;">
 
     <!-- DADOS INICIAIS -->
     <div id="dados-iniciais" class="tab-pane fade show active">
@@ -183,6 +187,108 @@
         </div>
     </div>
 
+    <!-- PAGAMENTO -->
+    <div id="pagamento" class="tab-pane fade">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">
+                <i class="bi bi-cash-stack"></i> Detalhes de Pagamento
+            </h5>
+
+            <?php $p = $adhesion->adhesion_payment_detail ?? null; ?>
+
+            <?php if ($p): ?>
+                <p><strong>Tipo de Pagamento:</strong> <?= h($p->payment_type ?? '—') ?></p>
+                <p><strong>Dia de Vencimento:</strong> <?= h($p->due_date ?? '—') ?></p>
+                <p><strong>Contribuição Total:</strong>
+                    R$ <?= number_format($p->total_contribution, 2, ',', '.') ?>
+                </p>
+
+                <hr>
+
+                <p><strong>Titular da Conta:</strong> <?= h($p->account_holder_name ?? '—') ?></p>
+                <p><strong>CPF do Titular:</strong> <?= h($p->account_holder_cpf ?? '—') ?></p>
+
+                <p><strong>Banco:</strong> <?= h($p->bank_number . ' - ' . $p->bank_name) ?></p>
+                <p><strong>Agência:</strong> <?= h($p->branch_number ?? '—') ?></p>
+                <p><strong>Conta:</strong> <?= h($p->account_number ?? '—') ?></p>
+            <?php else: ?>
+                <p class="text-muted fst-italic">Nenhuma informação de pagamento.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- BENEFICIÁRIOS / PENSÃO -->
+    <div id="beneficiarios" class="tab-pane fade">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">
+                <i class="bi bi-people-fill"></i> Beneficiários / Pensão
+            </h5>
+
+            <?php if (!empty($adhesion->adhesion_pension_schemes)): ?>
+                <?php foreach ($adhesion->adhesion_pension_schemes as $p): ?>
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <p><strong>Tipo de Beneficiário:</strong> <?= h($p->pension_scheme ?? '—') ?></p>
+                        <p><strong>Nome:</strong> <?= h($p->name ?? '—') ?></p>
+                        <p><strong>CPF:</strong> <?= h($p->cpf ?? '—') ?></p>
+                        <p><strong>Parentesco:</strong> <?= h($p->kinship ?? '—') ?></p>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p class="text-muted fst-italic">Nenhum beneficiário cadastrado.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- DECLARAÇÕES DO PROPONENTE -->
+    <div id="declaracoes" class="tab-pane fade">
+        <div class="card p-4 shadow-sm">
+
+            <h5 class="fw-bold mb-3 text-primary">
+                <i class="bi bi-file-earmark-text"></i> Declarações do Proponente
+            </h5>
+
+            <?php $s = $adhesion->adhesion_proponent_statement ?? null; ?>
+
+            <?php if ($s): ?>
+
+                <?php
+                $fields = [
+                    "health_problem" => "Possui problemas de saúde?",
+                    "heart_disease" => "Possui doenças cardíacas?",
+                    "suffered_organ_defects" => "Possui defeitos/lesões em órgão?",
+                    "surgery" => "Já passou por cirurgias?",
+                    "away" => "Está afastado atualmente?",
+                    "practices_parachuting" => "Pratica paraquedismo?",
+                    "smoker" => "É fumante?",
+                    "gripe" => "Teve gripe recentemente?",
+                    "covid" => "Teve COVID?",
+                    "covid_sequelae" => "Tem sequelas de COVID?"
+                ];
+                ?>
+
+                <?php foreach ($fields as $key => $label): ?>
+                    <p>
+                        <strong><?= $label ?>:</strong>
+                        <?= isset($s->$key) ? ($s->$key ? 'Sim' : 'Não') : '—' ?>
+
+                        <?php $obs = $key . "_obs"; ?>
+
+                        <?php if (!empty($s->$obs)): ?>
+                            <br><strong>Observação:</strong> <?= h($s->$obs) ?>
+                        <?php endif; ?>
+                    </p>
+                    <hr>
+                <?php endforeach; ?>
+
+                <p><strong>Peso:</strong> <?= h($s->weight ?? '—') ?></p>
+                <p><strong>Altura:</strong> <?= h($s->height ?? '—') ?></p>
+
+            <?php else: ?>
+                <p class="text-muted fst-italic">Nenhuma declaração registrada.</p>
+            <?php endif; ?>
+
+        </div>
+    </div>
 
     <!-- OUTRAS INFORMACOES -->
     <div id="outras-infos" class="tab-pane fade">
