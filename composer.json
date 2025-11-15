@@ -60,7 +60,7 @@
         "test": "phpunit --colors=always",
         "migrate": "bin/cake migrations migrate",
         "migrate:rollback": "bin/cake migrations rollback",
-        "seed": "php vendor/bin/phinx seed:run",
+        "seed": "bin/cake migrations seed",
         "docker:start": "docker-compose up -d",
         "docker:stop": "docker-compose down"
     }
