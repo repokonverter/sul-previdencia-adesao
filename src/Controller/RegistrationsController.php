@@ -5,27 +5,35 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Controller\AppController;
-use Cake\Event\EventInterface;
-use Cake\Datasource\Exception\RecordNotFoundException;
+use App\Model\Table\AdhesionAddressesTable;
+use App\Model\Table\AdhesionDependentsTable;
+use App\Model\Table\AdhesionDocumentsTable;
+use App\Model\Table\AdhesionInitialDatasTable;
+use App\Model\Table\AdhesionOtherInformationsTable;
+use App\Model\Table\AdhesionPaymentDetailsTable;
+use App\Model\Table\AdhesionPensionSchemesTable;
+use App\Model\Table\AdhesionPersonalDatasTable;
+use App\Model\Table\AdhesionPlansTable;
+use App\Model\Table\AdhesionProponentStatementsTable;
+use App\Service\ClicksignService;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
-use Cake\ORM\TableRegistry;
-use Cake\Utility\Text;
 use Cake\Log\Log;
 use Cake\Http\Client;
 
 class RegistrationsController extends AppController
 {
-    protected \App\Model\Table\AdhesionAddressesTable $AdhesionAddresses;
-    protected \App\Model\Table\AdhesionDependentsTable $AdhesionDependents;
-    protected \App\Model\Table\AdhesionDocumentsTable $AdhesionDocuments;
-    protected \App\Model\Table\AdhesionInitialDatasTable $AdhesionInitialDatas;
-    protected \App\Model\Table\AdhesionOtherInformationsTable $AdhesionOtherInformations;
-    protected \App\Model\Table\AdhesionPersonalDatasTable $AdhesionPersonalDatas;
-    protected \App\Model\Table\AdhesionPlansTable $AdhesionPlans;
-    protected \App\Model\Table\AdhesionProponentStatementsTable $AdhesionProponentStatements;
-    protected \App\Model\Table\AdhesionPensionSchemesTable $AdhesionPensionSchemes;
-    protected \App\Model\Table\AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
+    protected AdhesionAddressesTable $AdhesionAddresses;
+    protected AdhesionDependentsTable $AdhesionDependents;
+    protected AdhesionDocumentsTable $AdhesionDocuments;
+    protected AdhesionInitialDatasTable $AdhesionInitialDatas;
+    protected AdhesionOtherInformationsTable $AdhesionOtherInformations;
+    protected AdhesionPersonalDatasTable $AdhesionPersonalDatas;
+    protected AdhesionPlansTable $AdhesionPlans;
+    protected AdhesionProponentStatementsTable $AdhesionProponentStatements;
+    protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
+    protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
+    public ClicksignService $ClicksignService;
 
     public function initialize(): void
     {
@@ -41,6 +49,8 @@ class RegistrationsController extends AppController
         $this->AdhesionProponentStatements = $this->fetchTable('AdhesionProponentStatements');
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
+
+        $this->ClicksignService = $this->fetchService(ClicksignService::class);
 
         // $this->loadComponent('RequestHandler');
         $this->viewBuilder()->setClassName('Ajax');
@@ -355,24 +365,18 @@ class RegistrationsController extends AppController
             ]));
     }
 
-    /**
-     * Lista de planos disponíveis (mock ou tabela)
-     */
-    public function plans()
+    public function upload()
     {
-        $this->request->allowMethod(['get', 'ajax']);
+        // ... lógica para obter o arquivo, nome e metadados ...
 
-        // Pode vir de uma tabela "plans" futuramente
-        $plans = [
-            ['id' => 1, 'name' => 'Plano Essencial', 'value' => 150.00, 'periodicity' => 'mensal'],
-            ['id' => 2, 'name' => 'Plano Premium', 'value' => 300.00, 'periodicity' => 'mensal'],
-            ['id' => 3, 'name' => 'Plano Master', 'value' => 500.00, 'periodicity' => 'mensal'],
-        ];
+        try {
+            $base64File = '...'; // Seu arquivo em base64
+            $response = $this->ClicksignService->createDocument('contrato.pdf', $base64File, ['order_id' => 123]);
 
-        return $this->response->withType('application/json')
-            ->withStringBody(json_encode([
-                'success' => true,
-                'plans' => $plans
-            ]));
+            $this->Flash->success('Documento enviado! Chave: ' . $response['document']['key']);
+            return $this->redirect(['action' => 'status', $response['document']['key']]);
+        } catch (\Exception $e) {
+            $this->Flash->error('Erro ao enviar documento: ' . $e->getMessage());
+        }
     }
 }

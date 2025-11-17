@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App;
 
+use App\Service\ClicksignService;
 use Cake\Core\Configure;
 use Cake\Core\ContainerInterface;
 use Cake\Datasource\FactoryLocator;
@@ -95,5 +96,13 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         return $service;
     }
 
-    public function services(ContainerInterface $container): void {}
+    public function services(ContainerInterface $container): void
+    {
+        $container->add(ClicksignService::class, function () {
+            $baseUrl = Configure::read('Clicksign.baseUrl');
+            $accessToken = Configure::read('Clicksign.accessToken');
+
+            return new ClicksignService($baseUrl, $accessToken);
+        });
+    }
 }

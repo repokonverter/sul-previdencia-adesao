@@ -1659,7 +1659,7 @@ function createSecureCard($data, $type)
             }
 
             openModalBtn.addEventListener('click', function() {
-                registerPageIndex = 0;
+                registerPageIndex = 4;
 
                 updatePage(registerPageIndex);
 
@@ -1798,6 +1798,14 @@ function createSecureCard($data, $type)
                 return;
             }
 
+            if (registerPageIndex === 4) {
+                if (!checkDependents()) {
+                    alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
+
+                    return;
+                }
+            }
+
             // await saveForm(registerPages[registerPageIndex].id);
 
             registerPageIndex += 1;
@@ -1920,10 +1928,16 @@ function createSecureCard($data, $type)
         const addDependent = () => {
             const count = $('#listDependents .dependentDiv').length;
             let participation = 100;
-            console.log(count);
+
+            if (count === 3) {
+                alert('Limite de beneficiáios excedido, caso queira adicionar mais de 3 beneficiários, será necessário solicitar depois do plano efetuado.');
+
+                return;
+            }
 
             if (count > 0) {
                 participation = 100 / (count + 1);
+                participation = participation.toFixed(2);
 
                 for (let index = 0; index < count; index++) {
                     $(`#listDependents .dependentDiv input[name="dependents[${index}][participation]"]`).val(participation);
@@ -1988,7 +2002,7 @@ function createSecureCard($data, $type)
                 <div class="col">
                     <div class="mb-3">
                         <label for="participationDependent" class="form-label">Participação (%)*</label>
-                        <input type="number" min="0" max="100" class="form-control" name="dependents[${count}][participation]" placeholder="Participação (%)" value="${participation}">
+                        <input type="number" min="0" max="100" class="form-control participation" name="dependents[${count}][participation]" placeholder="Participação (%)" value="${participation}">
                         <div class="invalid-feedback">
                             Preenchimento obrigatório.
                         </div>
@@ -2065,6 +2079,21 @@ function createSecureCard($data, $type)
             }
 
             $('#directDebitType').slideToggle();
+        }
+
+        const checkDependents = () => {
+            let total = 0;
+
+            $('#listDependents .participation').each(function() {
+                let value = $(this).val();
+
+                total += parseFloat(value) || 0;
+            });
+
+            if (total < 100 || total > 100)
+                return false;
+
+            return true;
         }
 
         const simulationChart = () => {

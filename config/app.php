@@ -456,4 +456,9 @@ return [
         'errorLevel' => null,
         'fixtureStrategy' => null,
     ],
+
+    'Clicksign' => [
+        'baseUrl' => env('CLICKSIGN_BASE_URL', 'https://sandbox.clicksign.com/api/v1'),
+        'accessToken' => env('CLICKSIGN_ACCESS_TOKEN'),
+    ],
 ];
