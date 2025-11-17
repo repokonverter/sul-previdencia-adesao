@@ -1659,7 +1659,7 @@ function createSecureCard($data, $type)
             }
 
             openModalBtn.addEventListener('click', function() {
-                registerPageIndex = 4;
+                registerPageIndex = 0;
 
                 updatePage(registerPageIndex);
 
