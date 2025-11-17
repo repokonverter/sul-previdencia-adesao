@@ -1937,12 +1937,15 @@ function createSecureCard($data, $type)
 
             if (count > 0) {
                 participation = 100 / (count + 1);
-                participation = participation.toFixed(2);
+                participation = participation.toFixed(0);
 
                 for (let index = 0; index < count; index++) {
                     $(`#listDependents .dependentDiv input[name="dependents[${index}][participation]"]`).val(participation);
                 }
             }
+
+            if (count === 2)
+                participation = 34;
 
             $('#listDependents').append(`
         <div class="dependentDiv">
