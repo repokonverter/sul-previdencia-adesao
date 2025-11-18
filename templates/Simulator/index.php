@@ -1696,12 +1696,15 @@ function createSecureCard($data, $type)
                 case 7:
                 case 8:
                 case 9:
-                case 10:
-                    jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior');
+                    jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior').show();
                     jQuery('#registerModal .modal-footer .btn-primary').text('Próximo');
                     break;
+                case 10:
+                    jQuery('#registerModal .modal-footer .btn-secondary').hide();
+                    jQuery('#registerModal .modal-footer .btn-primary').text('Fechar');
+                    break;
                 default:
-                    jQuery('#registerModal .modal-footer .btn-secondary').text('Cancelar');
+                    jQuery('#registerModal .modal-footer .btn-secondary').text('Cancelar').show();
                     jQuery('#registerModal .modal-footer .btn-primary').text('Concordo');
                     break;
             }
@@ -1755,14 +1758,14 @@ function createSecureCard($data, $type)
                     $('#registerModal #proponentStatement').fadeIn().show();
                     break;
                 case 8:
-                    const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]').val();
+                    const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]:checked').val();
 
                     if (planFor === 'Dependente') {
                         $('#registerModal #pensionSchemeAnyPensionSchema').hide();
 
                         pensionSchema(false)
                     } else {
-                        $('#registerModal #pensionSchemeType').hide();
+                        $('#registerModal #pensionSchemeType').slideUp();
                         $('#registerModal #pensionSchemeAnyPensionSchema input[type="checkbox"]').prop('checked', false)
                         $('#registerModal #pensionSchemeAnyPensionSchema').show();
                     }
@@ -1785,12 +1788,33 @@ function createSecureCard($data, $type)
         }
 
         const nextPage = async () => {
+            if (registerPageIndex === registerPages.length - 1)
+                window.location.reload();
+
             let isValid = true;
             const form = document.querySelectorAll(`#${registerPages[registerPageIndex].id} input, #${registerPages[registerPageIndex].id} select`);
 
             form.forEach((input) => {
                 if (!input.checkValidity())
                     isValid = false;
+
+                if (input.classList.contains('cpf') && input.offsetParent !== null) {
+                    const feedbackDiv = input.nextElementSibling;
+                    const cpfValue = input.value.replace(/\D/g, '');
+
+                    if (feedbackDiv && feedbackDiv.classList.contains('invalid-feedback')) {
+                        const originalText = 'Preenchimento obrigatório.';
+
+                        if (cpfValue.length < 11 || !cpfCheck(cpfValue)) {
+                            isValid = false;
+                            input.setCustomValidity('CPF inválido.');
+                            feedbackDiv.textContent = 'O número de CPF informado é inválido.';
+                        } else {
+                            input.setCustomValidity('');
+                            feedbackDiv.textContent = originalText;
+                        }
+                    }
+                }
             })
 
             if (!isValid) {
@@ -2028,18 +2052,20 @@ function createSecureCard($data, $type)
         }
 
         const pensionSchema = (pensionSchema) => {
-            let declaration = '<strong>DECLADO</strong> sob pena da lei, que sou segurado do seguinte regime de previdência';
+            let declaration = '<strong>DECLARO</strong> sob pena da lei, que sou segurado do seguinte regime de previdência';
 
-            if (pensionSchema)
+            if (pensionSchema) {
                 $('#pensionSchemeType #pensionSchemeTypeLabel').html(declaration);
-
-            if (!pensionSchema) {
-                let declaration = '<strong>DECLADO</strong> sob pena da lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao seguinte regime de previdência';
-                $('#pensionSchemeType #pensionSchemeTypeLabel').html(declaration);
-                $('#pensionSchemeTypeKinship').show('slow');
+                $('#pensionSchemeTypeKinship').slideUp();
             }
 
-            $('#pensionSchemeType').show('slow');
+            if (!pensionSchema) {
+                let declaration = '<strong>DECLARO</strong> sob pena da lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao seguinte regime de previdência';
+                $('#pensionSchemeType #pensionSchemeTypeLabel').html(declaration);
+                $('#pensionSchemeTypeKinship').slideDown();
+            }
+
+            $('#pensionSchemeType').slideDown('slow');
         }
 
         const calculateAge = (dateBirth) => {
@@ -2076,18 +2102,22 @@ function createSecureCard($data, $type)
 
         const paymentType = (type) => {
             if (type === 'Débito em conta') {
-                $('#directDebitType').slideToggle();
+                $('#directDebitType').slideDown();
 
                 return;
             }
 
-            $('#directDebitType').slideToggle();
+            $('#directDebitType').slideUp();
         }
 
         const checkDependents = () => {
             let total = 0;
+            const dependents = $('#listDependents .participation');
 
-            $('#listDependents .participation').each(function() {
+            if (dependents.length === 0)
+                return true;
+
+            dependents.each(function() {
                 let value = $(this).val();
 
                 total += parseFloat(value) || 0;
