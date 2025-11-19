@@ -24,7 +24,23 @@ class SimulatorController extends AppController
             )
             ->fetchAll('assoc');
         $totalMonthlyContributionPlan = $data['value'];
+        $age = $this->calculateAge($data['date']);
 
-        $this->set(compact('simulations', 'totalMonthlyContributionPlan'));
+        if ($age < 16) {
+            $simulations[1]['contribuicao_aposentadoria'] = $data['value'];
+            $simulations[1]['contribuicao_morte'] = 0;
+            $simulations[1]['contribuicao_invalidez'] = 0;
+        }
+
+        $this->set(compact('simulations', 'totalMonthlyContributionPlan', 'age'));
+    }
+
+    private function calculateAge($birthDate) {
+        $birthDateObj = new \DateTime($birthDate);
+        $currentDateObj = new \DateTime('today');
+
+        $ageInterval = $currentDateObj->diff($birthDateObj);
+
+        return $ageInterval->y;
     }
 }
