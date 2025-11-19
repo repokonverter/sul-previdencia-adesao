@@ -4,6 +4,12 @@
     </h2>
 
     <?= $this->Html->link(
+            ' Gerar PDF',
+            ['action' => 'generatePdf', $adhesion->id], // Ajuste o nome da variável de ID conforme necessário (ex: $id ou $entity->id)
+            ['escape' => false, 'class' => 'btn btn-primary']
+    ) ?>
+
+    <?= $this->Html->link(
         '<i class="bi bi-arrow-left"></i> Voltar',
         ['action' => 'index'],
         ['escape' => false, 'class' => 'btn btn-outline-secondary']

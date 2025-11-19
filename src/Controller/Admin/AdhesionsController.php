@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
+use Dompdf\Dompdf;
+use DateTime;
 
 class AdhesionsController extends AppController
 {
@@ -130,4 +132,47 @@ class AdhesionsController extends AppController
 
         return $this->redirect(['action' => 'index']);
     }
+
+    public function generatePdf($id)
+    {
+        $adhesion = $this->AdhesionInitialDatas->get($id, [
+            'contain' => [
+                'AdhesionPersonalDatas',
+                'AdhesionAddresses',
+                'AdhesionDependents',
+                'AdhesionPlans',
+                'AdhesionDocuments',
+                'AdhesionOtherInformations',
+                'AdhesionPaymentDetails',
+                'AdhesionPensionSchemes',
+                'AdhesionProponentStatements'
+            ]
+        ]);
+
+        // Calcular idade
+        $birthDate = new DateTime($adhesion->adhesion_personal_data->birth_date->format('Y-m-d'));
+        $today = new DateTime();
+        $age = $today->diff($birthDate)->y;
+
+        // Número da proposta
+        $proposalNumber = 'BFX-' . $id . '-' . date('m-Y');
+
+        // Passar dados à view
+        $this->set(compact('adhesion', 'age', 'proposalNumber'));
+
+        // Renderizar a view em HTML
+        $this->viewBuilder()->disableAutoLayout();
+        $html = $this->render('pdf_template')->getBody();
+
+        // DOMPDF
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->stream("proposta-plenoprev-$proposalNumber.pdf", [
+            'Attachment' => true
+        ]);
+    }
+
 }
