@@ -563,7 +563,7 @@ function createSecureCard($data, $type)
                             <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= createSecureCard($simulations[1], 'disability'); ?></div>
                             <div class="descricao-secundaria" id="seguro-invalidez-contribuicao">
                                 Contribuição Mensal<br>
-                                <?= Number::currency($simulations[0]['contribuicao_invalidez']); ?>
+                                <?= Number::currency($simulations[1]['contribuicao_invalidez']); ?>
                             </div>
                         </div>
                     </div>
