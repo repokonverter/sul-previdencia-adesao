@@ -42,25 +42,59 @@
             </tr>
             <tr>
                 <td>Sexo</td>
-                <td class="checkbox">
-                    <?= ($adhesion->adhesion_personal_data->gender ?? '') == 'F' ? '&#x2611; F &#x2610; M' : '&#x2610; F &#x2611; M' ?>
+                <td>
+                    <span class="checkbox <?= (($adhesion->adhesion_personal_data->gender ?? '') == 'F') ? 'checked' : '' ?>"></span> F
+                    &nbsp;&nbsp;
+                    <span class="checkbox <?= (($adhesion->adhesion_personal_data->gender ?? '') == 'M') ? 'checked' : '' ?>"></span> M
                 </td>
+
                 <td>Estado Civil</td>
                 <td>
-                    <?php
+                <?php
                     $marital = $adhesion->adhesion_personal_data->marital_status ?? '';
-                    $options = ['Solteiro' => 'Solteiro', 'Casado' => 'Casado', 'Divorciado' => 'Divorciado', 'Viúvo' => 'Viúvo', 'Separado' => 'Separado', 'União Estável' => 'União Estável'];
+
+                    $options = [
+                        'Solteiro' => 'Solteiro',
+                        'Casado' => 'Casado',
+                        'Divorciado' => 'Divorciado',
+                        'Viúvo' => 'Viúvo',
+                        'Separado' => 'Separado',
+                        'União Estável' => 'União Estável'
+                    ];
+
                     foreach ($options as $key => $label) {
-                        echo ($marital == $key ? '&#x2611;' : '&#x2610;') . ' ' . $label . ' ';
+                        $checked = ($marital == $key) ? 'checked' : '';
+                        echo '<span class="checkbox ' . $checked . '"></span> ' . $label . '&nbsp;&nbsp;';
                     }
-                    ?>
-                </td>
+                ?>
+            </td>
+
             </tr>
             <tr>
                 <td>Nº de Filhos</td>
                 <td><?= $adhesion->adhesion_personal_data->number_childrens ?? 0 ?></td>
                 <td>CPF</td>
-                <td><?= $adhesion->adhesion_personal_data->cpf ?? '' ?> (<?= ($adhesion->adhesion_personal_data->plan_for ?? '') == 'Titular' ? '&#x2611; Titular &#x2610; Dependente' : '&#x2610; Titular &#x2611; Dependente' ?>)</td>
+                <td>
+                <?= $adhesion->adhesion_personal_data->cpf ?? '' ?>
+                (
+
+                <?php
+                    $planFor = $adhesion->adhesion_personal_data->plan_for ?? '';
+
+                    // Titular
+                    $checkedTitular = ($planFor === 'Titular') ? 'checked' : '';
+                    echo '<span class="checkbox ' . $checkedTitular . '"></span> Titular';
+
+                    echo '&nbsp;&nbsp;';
+
+                    // Dependente
+                    $checkedDep = ($planFor === 'Dependente') ? 'checked' : '';
+                    echo '<span class="checkbox ' . $checkedDep . '"></span> Dependente';
+                ?>
+
+                )
+            </td>
+
             </tr>
             <tr>
                 <td>Nacionalidade</td>
@@ -81,7 +115,25 @@
             </tr>
             <tr>
                 <td>Ocupação Principal</td>
-                <td>Código: <?= $adhesion->adhesion_other_information->main_occupation ?? '' ?> (<?= isset($adhesion->adhesion_other_information) ? '&#x2611; Ativo &#x2610; Inativo' : '' ?>)</td> <!-- Ajustar baseado em dados -->
+                <td>
+                    Código: <?= $adhesion->adhesion_other_information->main_occupation ?? '' ?>
+
+                    <?php
+                        // Recupera o status
+                        $status = $adhesion->adhesion_other_information->status ?? null;
+
+                        // Define checked para Ativo / Inativo
+                        $checkedAtivo   = ($status === 'Ativo')   ? 'checked' : '';
+                        $checkedInativo = ($status === 'Inativo') ? 'checked' : '';
+                    ?>
+
+                    (&nbsp;
+                        <span class="checkbox <?= $checkedAtivo ?>"></span> Ativo
+                        &nbsp;&nbsp;
+                        <span class="checkbox <?= $checkedInativo ?>"></span> Inativo
+                    &nbsp;)
+                </td>
+
                 <td>Empresa em que Trabalha</td>
                 <td></td> <!-- Não mapeado; assumir vazio -->
             </tr>
@@ -89,13 +141,22 @@
                 <td>Categoria</td>
                 <td>
                     <?php
-                    $category = $adhesion->adhesion_other_information->category ?? '';
-                    $catOptions = ['Empregado' => 'Empregado', 'Servidor Público' => 'Servidor Público', 'Outros' => 'Outros', 'Empregador' => 'Empregador', 'Autônomo' => 'Autônomo'];
-                    foreach ($catOptions as $key => $label) {
-                        echo ($category == $key ? '&#x2611;' : '&#x2610;') . ' ' . $label . ' ';
-                    }
+                        $category = $adhesion->adhesion_other_information->category ?? '';
+                        $catOptions = [
+                            'Empregado'        => 'Empregado',
+                            'Servidor Público' => 'Servidor Público',
+                            'Outros'           => 'Outros',
+                            'Empregador'       => 'Empregador',
+                            'Autônomo'         => 'Autônomo'
+                        ];
+
+                        foreach ($catOptions as $key => $label) {
+                            $checked = ($category === $key) ? 'checked' : '';
+                            echo '<span class="checkbox ' . $checked . '"></span> ' . $label . '&nbsp;&nbsp;';
+                        }
                     ?>
                 </td>
+
                 <td>Renda Mensal Bruta</td>
                 <td></td> <!-- Não mapeado -->
             </tr>
@@ -143,7 +204,11 @@
             </tr>
             <tr>
                 <td>É participante?</td>
-                <td>Sim &#x2610; Não &#x2610;</td> <!-- Ajustar se mapeado -->
+                <td>
+                    <span class="checkbox"></span> Sim
+                    &nbsp;&nbsp;
+                    <span class="checkbox"></span> Não
+                </td>
                 <td colspan="2"></td>
             </tr>
             <tr>
@@ -159,6 +224,13 @@
                 <td colspan="3">Mãe: <?= $adhesion->adhesion_personal_data->mother_name ?? '' ?> Pai: <?= $adhesion->adhesion_personal_data->father_name ?? '' ?></td>
             </tr>
         </table>
+        <p class="small-note">
+            <b>¹ Pessoas politicamente expostas:</b> Consideram-se pessoas politicamente expostas os agentes públicos que desempenham ou tenham desempenhado, nos 5 (cinco) anos anteriores, empregos ou funções públicas relevantes, assim como funções relevantes em organizações internacionais, cargos, empregos ou funções públicas, assim como seus representantes, familiares ou outras pessoas de seu relacionamento próximo. São considerados familiares os parentes, na linha direta, até o primeiro grau, o cônjuge, o companheiro, a companheira, o enteado e a enteada, conforme definido na Circular SUSEP nº 612/2020.
+        </p>
+        <p class="small-note">
+            <b>² A Lei de Conformidade Tributária de Contas Estrangeiras [Foreign Account Tax Compliance Act (FATCA)]</b>  é uma lei federal norte-americana que prevê a obrigatoriedade de 
+instituições bancárias estrangeiras fornecerem dados de seus correntistas às autoridades americanas, desde que esses correntistas sejam também cidadãos norte-americanos.
+        </p>
 
         <!-- Plano de Benefícios -->
         <h2 class="section-title">PLANO DE BENEFÍCIOS</h2>
@@ -171,7 +243,7 @@
         <p>Inscrição do plano no Cadastro Nacional de Planos de Benefícios (CNPB) nº 2011/0017-65.</p>
 
         <!-- Beneficiários -->
-        <h2 class="section-title">BENEFICIÁRIOS DO PLANO</h2>
+        <h2 class="section-title">BENEFICIÁRIOS DO PLANO</h2><h3> (inexistindo indicação de beneficiários, será observado o art. 792 do Código Civil)</h3>
         <table>
             <tr><th>Nome Completo</th><th>Data de Nascimento</th><th>Parentesco*</th><th>Participação</th></tr>
             <?php foreach ($adhesion->adhesion_dependents as $dependent): ?>
@@ -227,18 +299,53 @@
     <!-- Page 2 -->
     <div>
         <p>Espaço para relógio protocolo</p>
-        <p>A aceitação estará sujeita à análise do risco e a MONGERAL AEGON tem o prazo de até 15 dias, contados da data que vier a ser registrada pelo relógio protocolo, para manifestar-se em relação à aceitação ou recusa desta proposta. Este prazo será suspenso quando necessária a requisição de outros documentos ou dados para análise do risco. Essa eventual suspensão terminará quando forem protocolados os documentos ou dados para análise do risco. Caso não haja manifestação de recusa desta proposta pela MONGERAL AEGON no prazo antes referido, a aceitação da proposta se dará automaticamente. No caso de não aceitação da proposta, o valor aportado será devolvido, atualizado até a data da efetiva restituição, de acordo com a regulamentação em vigor.</p>
+        <p>Espaço para relógio protocolo
+ A aceitação estará sujeita à análise do risco e a MONGERAL AEGON tem o prazo de até 15 dias, contados da data que vier a ser registrada pelo relógio protocolo, 
+para manifestar-se em relação à aceitação ou recusa desta proposta. Este prazo será suspenso quando necessária a requisição de outros documentos ou 
+dados para análise do risco. Essa eventual suspensão terminará quando forem protocolados os documentos ou dados para análise do risco. Caso não haja 
+manifestação de recusa desta proposta pela MONGERAL AEGON no prazo antes referido, a aceitação da proposta se dará automaticamente. No caso de não 
+aceitação da proposta, o valor aportado será devolvido, atualizado até a data da efetiva restituição, de acordo com a regulamentação em vigor. </p>
 
         <h2 class="section-title">PARA USO DA SEGURADORA</h2>
-        <table>
-            <tr><td>Nome do Proponente</td><td><?= $adhesion->adhesion_personal_data->name ?? '' ?></td></tr>
-            <tr><td>CPF</td><td><?= $adhesion->adhesion_personal_data->cpf ?? '' ?></td></tr>
-            <!-- Outros campos administrativos vazios -->
-        </table>
+        <table class="seg-table">
+            <tr>
+                <th style="width: 30%;">Nome do Proponente</th>
+                <th style="width: 20%;">CPF</th>
+                <th style="width: 25%;">Código do Órgão</th>
+                <th style="width: 25%;">A partir de</th>
+            </tr>
+            <tr>
+                <td>__________________</td>
+                <td>__________________</td>
+                <td>__________________</td>
+                <td>__________________</td>
+            </tr>
 
-        <h2 class="section-title">PARA USO DO CORRETOR</h2>
-        <table>
-            <!-- Campos vazios -->
+            <tr>
+                <th>Convênio Adesão</th>
+                <th>Ação de Marketing</th>
+                <th>Alternativa</th>
+                <th>Sucursal</th>
+            </tr>
+            <tr>
+                <td>__________________</td>
+                <td>__________________</td>
+                <td>__________________</td>
+                <td>__________________</td>
+            </tr>
+
+            <tr>
+                <th>Gerente Comercial</th>
+                <th>Agente</th>
+                <th>Corretor 1</th>
+                <th>Corretor 2</th>
+            </tr>
+            <tr>
+                <td>__________________</td>
+                <td>__________________</td>
+                <td>__________________</td>
+                <td>__________________</td>
+            </tr>
         </table>
 
         <h2 class="section-title">DECLARAÇÕES DO PROPONENTE Declaração Pessoal de Saúde</h2>
@@ -300,12 +407,33 @@
             </tr>
         </table>
 
-        <p>Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano PlenoPrev, bem como o material explicativo sobre o referido plano. [...] (copiar texto legal completo do PDF original)</p>
+        <p>Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano PlenoPrev, bem como o material explicativo sobre o referido 
+plano. Declaro também que tive prévio e expresso conhecimento e estou de acordo com os termos dos regulamentos dos planos de pecúlio, contratados 
+pela Sul Previdência na MAG Seguros, e por mim custeados, que determinam como único beneficiário a Sul Previdência, o que não poderá ser alterado. 
+Entendo que a responsabilidade pelo pagamento das rendas mensais de aposentadoria programada, aposentadoria por invalidez e pensão será da Sul 
+Previdência. Desta maneira, reconheço que a minha assinatura na presente proposta implica na minha automática adesão aos referidos regulamentos, 
+sabendo, desde já, que a aceitação dos planos de risco está sujeita à análise do risco. Declaro, ainda, que as informações por mim fornecidas são 
+verdadeiras e ciente estou de que quaisquer omissões ou falsidades tornarão nula esta proposta, nos termos do Art. 766 do Código Civil, podendo vir a 
+responder civil e criminalmente pelas inveracidades eventualmente verificadas. Autorizo, desde já, médicos, hospitais, clínicas ou quaisquer entidades 
+públicas ou privadas a prestar à MAG Seguros informações relacionadas ao meu estado de saúde ou moléstias que eu possa sofrer ou ter sofrido, 
+bem como resultados de exames e tratamentos instituídos, isentando-os, desde já, de qualquer responsabilidade que implique em ofensa ou sigilo 
+profissional. Comprometo-me a informar à Sul Previdência a minha condição de pessoa politicamente exposta, mesmo que ocorrida após a assinatura da 
+proposta, durante a vigência do plano, conforme os termos definidos na IN MPS nº 34/2020 e na Circular SUSEP nº 612/2020.</p>
 
         <!-- Assinaturas -->
-        <table>
-            <tr><td>Local e Data</td><td>Assinatura do Proponente ou Representante Legal</td></tr>
-            <tr><td>Local e Data</td><td>Assinatura do Representante da Sul Previdência</td></tr>
+        <table class="signature-table invisible-table">
+            <tr>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="signature-label">Local e Data</td>
+                <td class="signature-label">Assinatura do Proponente ou Representante Legal</td>
+            </tr>
         </table>
         <p>Gestor do plano: Sociedade de Previdência Complementar Sul Previdência - CNPJ: 12.148.125/0001-42</p>
     </div>
@@ -316,10 +444,46 @@
     <div>
         <!-- Repetir seções administrativas e declarações semelhantes à página 2, ajustando conforme screenshots -->
         <h2 class="section-title">PARA USO DA SEGURADORA</h2>
-        <!-- Campos semelhantes -->
+        <table class="seg-table">
+            <tr>
+                <th style="width: 30%;">Nome do Proponente</th>
+                <th style="width: 20%;">CPF</th>
+                <th style="width: 25%;">Código do Órgão</th>
+                <th style="width: 25%;">A partir de</th>
+            </tr>
+            <tr>
+                <td>______________________________</td>
+                <td>______________________________</td>
+                <td>______________________________</td>
+                <td>______________________________</td>
+            </tr>
 
-        <h2 class="section-title">PARA USO DO CORRETOR</h2>
-        <!-- Campos vazios -->
+            <tr>
+                <th>Convênio Adesão</th>
+                <th>Ação de Marketing</th>
+                <th>Alternativa</th>
+                <th>Sucursal</th>
+            </tr>
+            <tr>
+                <td>______________________________</td>
+                <td>______________________________</td>
+                <td>______________________________</td>
+                <td>______________________________</td>
+            </tr>
+
+            <tr>
+                <th>Gerente Comercial</th>
+                <th>Agente</th>
+                <th>Corretor 1</th>
+                <th>Corretor 2</th>
+            </tr>
+            <tr>
+                <td>______________________________</td>
+                <td>______________________________</td>
+                <td>______________________________</td>
+                <td>______________________________</td>
+            </tr>
+        </table>
 
         <h2 class="section-title">DECLARAÇÕES DO PROPONENTE</h2>
         <p>Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano PlenoPrev, bem como material explicativo sobre o 
@@ -348,80 +512,138 @@ de demais informações e documentos relacionados com o Plano.</p>
 
         <!-- Autorização de débito -->
         
+        <!-- LINHAS DE ASSINATURA EM DUAS COLUNAS -->
+        <table class="signature-table invisible-table">
+            <tr>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="signature-label">Local e Data</td>
+                <td class="signature-label">Assinatura do Proponente ou Representante Legal</td>
+            </tr>
+        </table>
+
 
         <!-- Assinaturas -->
         <h2 style="font-size:14px; margin-top:35px; font-weight:bold;">PARA USO DA SUL PREVIDÊNCIA</h2>
+        <p>Autorizo o banco designado no anverso a debitar na conta corrente, por mim indicada, o valor correspondente às contribuições do plano contratado 
+nesta proposta. Estou ciente de que os débitos em conta corrente serão comandados tendo por base as informações enviadas diretamente pela 
+Sul Previdência ao banco. Comprometo-me, desde já, a manter saldo suficiente para a finalidade, isentando o banco de qualquer responsabilidade 
+caso a conta não comporte o valor do documento a liquidar. Declaro-me ciente de que o banco poderá, mediante aviso, com antecedência mínima 
+de 15 (quinze) dias do vencimento do encargo ou da próxima parcela, tornar sem efeito a presente autorização, reservando-me adotar o mesmo 
+procedimento, quando do meu interesse. Declaro que as informações prestadas são verdadeiras, não havendo responsabilidade da Sul Previdência 
+ou do banco informado nesta proposta pela não efetivação dos débitos em função de informações incorretas.</p>
 
-<table style="width:100%; margin-bottom:20px;">
-    <tr>
-        <td style="width:120px;"> 
-            <div class="light-box">Conferido em</div>
-        </td>
-        <td style="width:150px;">
-            <div class="light-box">Visto</div>
-        </td>
-    </tr>
-</table>
+        <table class="signature-table invisible-table">
+            <tr>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="signature-label">Local e Data</td>
+                <td class="signature-label">Assinatura do Correntista</td>
+            </tr>
+        </table>
 
-<p style="font-size:11px;">De acordo com a solicitação do proponente.</p>
+        <h2 style="font-size:14px; margin-top:35px; font-weight:bold;">PARA USO DA SUL PREVIDÊNCIA</h2>
+        <table style="width:100%; margin-bottom:20px;">
+            <tr>
+                <td style="width:120px;"> 
+                    <div class="light-box">Conferido em</div>
+                </td>
+                <td style="width:150px;">
+                    <div class="light-box">Visto</div>
+                </td>
+            </tr>
+        </table>      
+        <p style="font-size:11px;">De acordo com a solicitação do proponente.</p>
 
-<!-- LINHAS DE ASSINATURA EM DUAS COLUNAS -->
-<table class="signature-table">
-    <tr>
-        <td class="signature-cell">
-            <!-- linha de assinatura 1 -->
-        </td>
-        <td class="signature-cell">
-            <!-- linha de assinatura 2 -->
-        </td>
-    </tr>
-    <tr>
-        <td class="signature-label">Local e Data</td>
-        <td class="signature-label">Assinatura do Correntista</td>
-    </tr>
-</table>
+        <!-- LINHAS DE ASSINATURA EM DUAS COLUNAS -->
+        <table class="signature-table invisible-table">
+            <tr>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="signature-label">Local e Data</td>
+                <td class="signature-label"> Assinatura do Representante da Sul Previdência</td>
+            </tr>
+        </table>
 
-<table class="signature-table" style="margin-top:25px;">
-    <tr>
-        <td class="signature-cell">
-            <!-- linha de assinatura 3 -->
-        </td>
-    </tr>
-    <tr>
-        <td class="signature-label">Assinatura do Representante da Sul Previdência</td>
-    </tr>
-</table>
-
-<!-- RODAPÉ OFICIAL -->
-<div class="footer-text">
-    Gestor do plano: Sociedade de Previdência Complementar Sul Previdência - CNPJ: 12.148.125/0001-42<br>
-    Rua Vidal Ramos nº 31 - Sala 602 - Centro - Florianópolis - SC - CEP.: 88.010-320<br>
-    www.sulprevidencia.org.br
-</div>
+        <!-- RODAPÉ OFICIAL -->
+        <div class="footer-text">
+            Gestor do plano: Sociedade de Previdência Complementar Sul Previdência - CNPJ: 12.148.125/0001-42<br>
+            Rua Vidal Ramos nº 31 - Sala 602 - Centro - Florianópolis - SC - CEP.: 88.010-320<br>
+            www.sulprevidencia.org.br
+        </div>
     </div>
 </body>
 </html>
 
 <style>
-    .signature-table {
+    .seg-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 30px;
+        table-layout: fixed; /* FUNDAMENTAL */
         font-size: 12px;
     }
 
-    .signature-cell {
-        width: 50%;
-        vertical-align: bottom;
-        padding-bottom: 40px; /* espaço para assinatura */
-        text-align: center;
+    .seg-table th,
+    .seg-table td {
+        border: 1px solid #000;
+        padding: 4px;
+    }
+    /* Torna a tabela completamente invisível */
+    .invisible-table,
+    .invisible-table tr,
+    .invisible-table td {
+        border: none !important;
+        background: transparent !important;
     }
 
+    /* Configuração para que o DOMPDF respeite alinhamento */
+    .signature-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    /* Célula alinhada e sem borda */
+    .signature-cell {
+        width: 50%;
+        padding: 25px 10px 5px 10px;
+        text-align: center;
+        vertical-align: bottom;
+    }
+
+    /* Linha de assinatura */
+    .signature-line {
+        border-bottom: 1px solid #000;
+        width: 90%;
+        height: 18px;
+        margin: 0 auto;
+    }
+
+    /* Label abaixo */
     .signature-label {
-        font-weight: bold;
-        border-top: 1px solid #000;
+        text-align: center;
+        font-size: 12px;
         padding-top: 5px;
     }
+
 
     .footer-text {
         font-size: 11px;
@@ -454,5 +676,13 @@ de demais informações e documentos relacionados com o Plano.</p>
 
     .checkbox.checked::after {
         content: "✓"; /* check seguro */
+    }
+
+    .small-note {
+        font-size: 9px;        /* menor, como no PDF original */
+        line-height: 1.2;
+        margin-top: 4px;
+        margin-bottom: 2px;
+        font-family: DejaVu Sans, sans-serif;
     }
 </style>
