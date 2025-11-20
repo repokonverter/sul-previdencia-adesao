@@ -160,9 +160,16 @@ class AdhesionsController extends AppController
         // Passar dados à view
         $this->set(compact('adhesion', 'age', 'proposalNumber'));
 
-        // Renderizar a view em HTML
+        // Renderizar HTML (converte Stream para string)
         $this->viewBuilder()->disableAutoLayout();
-        $html = $this->render('pdf_template')->getBody();
+        $html = (string)$this->render('pdf_template')->getBody();
+
+        // Preview em HTML
+        if ($this->request->getQuery('preview') == 1) {
+            return $this->response
+                ->withType('html')
+                ->withStringBody($html);
+        }
 
         // DOMPDF
         $dompdf = new Dompdf();

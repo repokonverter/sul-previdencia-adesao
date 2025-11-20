@@ -322,12 +322,32 @@
         <!-- Campos vazios -->
 
         <h2 class="section-title">DECLARAÇÕES DO PROPONENTE</h2>
-        <p>Declaro ter recebido o exemplar [...] (texto legal)</p>
+        <p>Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano PlenoPrev, bem como material explicativo sobre o 
+referido plano. Declaro também que tive prévio e expresso conhecimento e estou de acordo com os termos dos regulamentos dos planos de Pecúlio, 
+contratados pela Sul Previdência junto à MAG Seguros, e por mim custeados, que determinam como único beneficiário a Sul Previdência, o que não 
+poderá ser alterado. Entendo que a responsabilidade pelo pagamento das rendas mensais de aposentadoria programada, aposentadoria por invalidez 
+e pensão será da Sul Previdência. Desta maneira, reconheço que a minha assinatura na presente proposta implica na minha automática adesão aos 
+referidos regulamentos, sabendo, desde já, que a aceitação dos planos de risco está sujeita à análise do risco.</p>
 
-        <p>Concordo em receber eletronicamente o Relatório Anual [...] Sim &#x2610; Não &#x2610;</p>
+        <p> Declaro, ainda, que as informações por mim fornecidas são verdadeiras e ciente estou de que quaisquer omissões ou falsidades tornarão nula esta 
+proposta, nos termos do Artigo 766 do Código Civil, podendo vir a responder civil e criminalmente pelas inveracidades eventualmente verificadas. 
+Autorizo, desde já, médicos, hospitais, clínicas ou quaisquer entidades públicas ou privadas a prestar à MAG Seguros informações relacionadas ao meu 
+estado de saúde ou moléstias que eu possa sofrer ou ter sofrido, bem como resultados de exames e tratamentos instituídos, isentando-os, desde já, 
+de qualquer responsabilidade que implique em ofensa ou sigilo profissional.</p>
+
+        <p> Comprometo-me a informar à Sul Previdência a minha condição de pessoa politicamente exposta, mesmo que ocorrida após a assinatura da proposta, 
+durante a vigência do plano, conforme os termos definidos na IN MPS nº 34/2020 e na Circular SUSEP nº 612/2020.</p>
+
+        <p> Concordo em receber eletronicamente o Relatório Anual com informações do Plano, bem como autorizo a utilização do endereço eletrônico para envio 
+de demais informações e documentos relacionados com o Plano.</p>
+
+        <p>
+            <span class="checkbox checked"></span> Sim  
+            <span class="checkbox"></span> Não
+        </p>
 
         <!-- Autorização de débito -->
-        <p>Autorizo o banco [...] (texto legal)</p>
+        
 
         <!-- Assinaturas -->
         <h2 style="font-size:14px; margin-top:35px; font-weight:bold;">PARA USO DA SUL PREVIDÊNCIA</h2>
@@ -416,5 +436,23 @@
         width: 160px;
         padding: 4px 6px;
         font-size: 11px;
+    }
+
+    .checkbox {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 1px solid #000;
+        margin-right: 4px;
+        vertical-align: middle;
+        text-align: center;
+        line-height: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        font-family: DejaVu Sans, sans-serif; /* garante o ✓ */
+    }
+
+    .checkbox.checked::after {
+        content: "✓"; /* check seguro */
     }
 </style>
