@@ -182,4 +182,38 @@ class AdhesionsController extends AppController
         ]);
     }
 
+    public function generateFormPdf($id)
+    {
+        $adhesion = $this->AdhesionInitialDatas->get($id, [
+            'contain' => [
+                'AdhesionPersonalDatas',
+                'AdhesionAddresses',
+                'AdhesionDependents',
+                'AdhesionPlans',
+                'AdhesionDocuments',
+                'AdhesionOtherInformations',
+                'AdhesionPaymentDetails',
+                'AdhesionPensionSchemes',
+                'AdhesionProponentStatements'
+            ]
+        ]);
+
+        $this->set(compact('adhesion'));
+
+        // Render HTML
+        $this->viewBuilder()->disableAutoLayout();
+        $html = $this->render('pdf_form_template')->getBody();
+
+        // DOMPDF
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->stream("formulario-inscricao-$id.pdf", [
+            "Attachment" => true
+        ]);
+    }
+
+
 }
