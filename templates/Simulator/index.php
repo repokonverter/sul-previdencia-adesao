@@ -2129,11 +2129,23 @@ function createSecureCard($data, $type)
             return true;
         }
 
+        function calculateMonthsDifference(date1, date2) {
+            let months;
+            months = (date2.getFullYear() - date1.getFullYear()) * 12;
+            months -= date1.getMonth();
+            months += date2.getMonth();
+
+            if (date2.getDate() < date1.getDate())
+                months--;
+
+            return months >= 0 ? months : 0;
+        }
+
         const simulationChart = () => {
             const ANNUAL_RATE = 0.0803;
-            const MONTHLY_RATE = Math.pow(1 + ANNUAL_RATE, 1 / 12) - 1;
+            const MONTHLY_RATE = Math.pow(1 + ANNUAL_RATE, 1.0 / 12) - 1;
             const RETIREMENT_AGE = 65;
-            const RETIREMENT_ALLOCATION = 0.74; // 100% - 16% Morte - 10% Invalidez
+            const RETIREMENT_ALLOCATION = 0.74;
             const dateBirth = $('.simulador-form-group input[name="dateBirth"]').val();
             const contribution = parseFloat(<?= $_GET['value']; ?>);
 
@@ -2142,42 +2154,63 @@ function createSecureCard($data, $type)
                 return;
             }
 
+            const birthDate = new Date(dateBirth);
             const currentAge = calculateAge(dateBirth);
+            const today = new Date();
+            const retirementDate = new Date(birthDate.getFullYear() + RETIREMENT_AGE, birthDate.getMonth(), birthDate.getDate());
 
             if (currentAge >= RETIREMENT_AGE) {
                 alert('A idade atual é igual ou superior à idade de aposentadoria (65 anos). Não há projeção futura.');
                 return;
             }
 
-            let currentSaldoAcumulado = 0;
-            let totalContribuicaoPura = 0;
             const labels = [];
             const pureData = [];
             const compoundedData = [];
+
             const contribuicaoAposentadoria = contribution * RETIREMENT_ALLOCATION;
-            const contribuicaoAnualPura = contribution * 12;
 
-            for (let age = currentAge; age <= RETIREMENT_AGE; age++) {
-                // Apenas acumula se a pessoa ainda estiver trabalhando (até 65 anos)
-                if (age < RETIREMENT_AGE) {
-                    totalContribuicaoPura += contribuicaoAnualPura;
+            let currentSaldoAcumulado = 0;
+            let totalContribuicaoPura = 0;
+            let totalMonthsContributed = 0;
 
-                    // Contribuição Rentabilizada (Acúmulo mês a mês)
-                    for (let month = 0; month < 12; month++) {
-                        // Saldo anterior rentabilizado + nova contribuição
+            for (let age = currentAge + 1; age <= RETIREMENT_AGE; age++) {
+                let monthsInCycle = 0;
+                let nextAnniversaryDate = new Date(birthDate.getFullYear() + age + 1, birthDate.getMonth(), birthDate.getDate());
+
+                if (age === currentAge) {
+                    monthsInCycle = calculateMonthsDifference(today, nextAnniversaryDate);
+                } else if (age < RETIREMENT_AGE) {
+                    monthsInCycle = 12;
+
+                } else if (age === RETIREMENT_AGE) {
+                    monthsInCycle = calculateMonthsDifference(nextAnniversaryDate, retirementDate);
+
+                    if (monthsInCycle <= 0) break;
+                } else {
+                    break;
+                }
+
+                if (totalMonthsContributed + monthsInCycle > calculateMonthsDifference(today, retirementDate)) {
+                    monthsInCycle = calculateMonthsDifference(today, retirementDate) - totalMonthsContributed;
+                }
+
+                if (monthsInCycle > 0) {
+                    for (let month = 0; month < monthsInCycle; month++) {
                         currentSaldoAcumulado = currentSaldoAcumulado * (1 + MONTHLY_RATE) + contribuicaoAposentadoria;
                     }
+
+                    totalContribuicaoPura += contribuicaoAposentadoria * monthsInCycle;
+                    totalMonthsContributed += monthsInCycle;
                 }
 
                 labels.push(age);
                 pureData.push(Math.round(totalContribuicaoPura));
-                compoundedData.push(Math.round(currentSaldoAcumulado));
+                compoundedData.push(Math.round(currentSaldoAcumulado * 100) / 100);
 
-                // Parar a simulação se o saldo rentabilizado for muito alto (evitar overflow)
-                if (currentSaldoAcumulado > 1e12) break;
+                if (age >= RETIREMENT_AGE) break;
             }
 
-            // Renderiza o gráfico
             renderChart(labels, pureData, compoundedData);
         }
 
