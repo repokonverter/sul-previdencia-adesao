@@ -1830,7 +1830,7 @@ function createSecureCard($data, $type)
                 }
             }
 
-            // await saveForm(registerPages[registerPageIndex].id);
+            await saveForm(registerPages[registerPageIndex].id);
 
             registerPageIndex += 1;
 

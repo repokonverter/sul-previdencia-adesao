@@ -33,7 +33,7 @@ class RegistrationsController extends AppController
     protected AdhesionProponentStatementsTable $AdhesionProponentStatements;
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
-    public ClicksignService $ClicksignService;
+    private ClicksignService $clicksignService;
 
     public function initialize(): void
     {
@@ -49,9 +49,6 @@ class RegistrationsController extends AppController
         $this->AdhesionProponentStatements = $this->fetchTable('AdhesionProponentStatements');
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
-
-        $this->ClicksignService = $this->fetchService(ClicksignService::class);
-
         // $this->loadComponent('RequestHandler');
         $this->viewBuilder()->setClassName('Ajax');
         $this->autoRender = false;
@@ -64,6 +61,8 @@ class RegistrationsController extends AppController
         $data = $this->request->getData();
         $connection = $this->AdhesionInitialDatas->getConnection();
         $connection->begin();
+
+        dd($this->clicksignService->getEnvelopes());
 
         try {
             $initialDataId = isset($data['initialDataId']) ? $data['initialDataId'] : null;
@@ -363,20 +362,5 @@ class RegistrationsController extends AppController
                     'state' => $data['uf'] ?? '',
                 ]
             ]));
-    }
-
-    public function upload()
-    {
-        // ... lógica para obter o arquivo, nome e metadados ...
-
-        try {
-            $base64File = '...'; // Seu arquivo em base64
-            $response = $this->ClicksignService->createDocument('contrato.pdf', $base64File, ['order_id' => 123]);
-
-            $this->Flash->success('Documento enviado! Chave: ' . $response['document']['key']);
-            return $this->redirect(['action' => 'status', $response['document']['key']]);
-        } catch (\Exception $e) {
-            $this->Flash->error('Erro ao enviar documento: ' . $e->getMessage());
-        }
     }
 }

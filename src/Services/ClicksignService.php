@@ -27,17 +27,27 @@ class ClicksignService
     private function _request(string $method, string $path, array $payload = [])
     {
         $url = $this->baseUrl . $path;
+        $options = ['type' => 'json'];
+
+        $method = strtolower($method);
+
+        if ($method === 'get') {
+            if (!empty($params))
+                $url .= '?' . http_build_query($params);
+
+            $payload = null;
+        } else
+            $payload = json_encode(['data' => ['attributes' => $params]]);
 
         try {
             $response = $this->httpClient->{$method}(
                 $url,
-                json_encode($payload),
-                ['type' => 'json']
+                $payload,
+                $options
             );
         } catch (\Exception $e) {
             throw new Exception('Falha na comunicação com Clicksign: ' . $e->getMessage());
         }
-
 
         if ($response->isOk() || $response->isCreated()) {
             return $response->getJson();
@@ -84,17 +94,17 @@ class ClicksignService
         return $this->_request('post', '/envelopes', $payload);
     }
 
-    public function createDocument(string $fileName, string $base64File, array $metadata = [])
-    {
-        $data = [
-            'archive' => $base64File,
-            'filename' => $fileName,
-            'metadata' => $metadata,
-            // ... outros parâmetros
-        ];
-
-        return $this->_request('post', '/envelopes', $data);
+    public function getEnvelopes(array $payload = []) {
+        return $this->_request('get', '/envelopes', $payload);
     }
 
-    // ... Implementar outros métodos: addSigner(), sendToSign(), getDocumentStatus(), etc.
+    public function createDocument(string $documentId, array $payload = [])
+    {
+        return $this->_request('post', "/envelopes/{$documentId}/documents", $data);
+    }
+
+    public function getDocuments(string $documentId, array $payload = [])
+    {
+        return $this->_request('get', "/envelopes/{$documentId}/documents", $data);
+    }
 }

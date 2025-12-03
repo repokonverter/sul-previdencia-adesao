@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App;
 
-use App\Service\ClicksignService;
 use Cake\Core\Configure;
 use Cake\Core\ContainerInterface;
 use Cake\Datasource\FactoryLocator;
@@ -23,6 +22,7 @@ use Authentication\AuthenticationServiceProviderInterface;
 use Authentication\Identifier\AbstractIdentifier;
 use Cake\Routing\Router;
 use Psr\Http\Message\ServerRequestInterface;
+use App\Service\ClicksignService;
 
 class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {

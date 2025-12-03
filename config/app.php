@@ -458,7 +458,7 @@ return [
     ],
 
     'Clicksign' => [
-        'baseUrl' => env('CLICKSIGN_BASE_URL', 'https://sandbox.clicksign.com/api/v1'),
-        'accessToken' => env('CLICKSIGN_ACCESS_TOKEN'),
+        'baseUrl' => env('CLICKSIGN_BASE_URL', 'https://sandbox.clicksign.com/api/v3'),
+        'accessToken' => env('CLICKSIGN_ACCESS_TOKEN', ''),
     ],
 ];
