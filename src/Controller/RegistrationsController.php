@@ -15,11 +15,11 @@ use App\Model\Table\AdhesionPensionSchemesTable;
 use App\Model\Table\AdhesionPersonalDatasTable;
 use App\Model\Table\AdhesionPlansTable;
 use App\Model\Table\AdhesionProponentStatementsTable;
-use App\Service\ClicksignService;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
 use Cake\Http\Client;
+use Cake\Core\Configure;
 
 class RegistrationsController extends AppController
 {
@@ -33,7 +33,6 @@ class RegistrationsController extends AppController
     protected AdhesionProponentStatementsTable $AdhesionProponentStatements;
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
-    private ClicksignService $clicksignService;
 
     public function initialize(): void
     {
@@ -62,7 +61,13 @@ class RegistrationsController extends AppController
         $connection = $this->AdhesionInitialDatas->getConnection();
         $connection->begin();
 
-        dd($this->clicksignService->getEnvelopes());
+        $clicksignService = new \App\Services\ClicksignService(
+            Configure::read('Clicksign.baseUrl'),
+            Configure::read('Clicksign.accessToken')
+        );
+
+        dd($clicksignService->getEnvelopes());
+
 
         try {
             $initialDataId = isset($data['initialDataId']) ? $data['initialDataId'] : null;

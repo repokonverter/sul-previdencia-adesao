@@ -22,7 +22,6 @@ use Authentication\AuthenticationServiceProviderInterface;
 use Authentication\Identifier\AbstractIdentifier;
 use Cake\Routing\Router;
 use Psr\Http\Message\ServerRequestInterface;
-use App\Service\ClicksignService;
 
 class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {
@@ -98,11 +97,11 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
     public function services(ContainerInterface $container): void
     {
-        $container->add(ClicksignService::class, function () {
-            $baseUrl = Configure::read('Clicksign.baseUrl');
-            $accessToken = Configure::read('Clicksign.accessToken');
+        // $container->add(ClicksignService::class, function () {
+        //     $baseUrl = Configure::read('Clicksign.baseUrl');
+        //     $accessToken = Configure::read('Clicksign.accessToken');
 
-            return new ClicksignService($baseUrl, $accessToken);
-        });
+        //     return new ClicksignService($baseUrl, $accessToken);
+        // });
     }
 }
