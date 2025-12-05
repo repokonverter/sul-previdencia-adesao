@@ -66,6 +66,11 @@ class ClicksignService
         throw new Exception($errorMessage);
     }
 
+    public function exemplo()
+    {
+        return "Funcionando!";
+    }
+
     public function createEnvelope(
         string $name,
         ?string $default_subject = null,

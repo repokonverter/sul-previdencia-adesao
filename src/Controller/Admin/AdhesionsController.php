@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 use App\Controller\AppController;
 use Dompdf\Dompdf;
 use DateTime;
+use App\Services\ClicksignService;
 
 class AdhesionsController extends AppController
 {
@@ -28,6 +29,19 @@ class AdhesionsController extends AppController
             'order' => ['AdhesionInitialDatas.created' => 'DESC'],
             'limit' => 10
         ];
+    }
+
+    public function assinar($id)
+    {
+
+        $clicksign = new ClicksignService(
+            'baseUrl',
+            'accessToken'
+        );
+
+        $resultado = $clicksign->exemplo();
+
+        debug($resultado);exit(); // "teste!"
     }
 
     public function index()
