@@ -95,4 +95,15 @@ return [
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
     ],
+    /*
+     * Sicoob API Configuration
+     */
+    'Sicoob' => [
+        'baseUrl' => 'https://sandbox.sicoob.com.br/sicoob/sandbox/pix/api/v2', // Sandbox URL
+        'authUrl' => 'https://sandbox.sicoob.com.br/token', // Auth URL
+        'clientId' => 'YOUR_CLIENT_ID',
+        'certificate' => '/path/to/certificate.pem',
+        'privateKey' => '/path/to/private.key',
+        'fixedToken' => env('SICOOB_FIXED_TOKEN', null), // Optional: Fixed token for Sandbox
+    ],
 ];
