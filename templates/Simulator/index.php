@@ -1598,7 +1598,7 @@ function createSecureCard($data, $type)
     <script>
         const localStorageKey = 'adesaoSulPrevidencia';
         let draftUUID = localStorage.getItem(localStorageKey);
-        let initialDataId = 3;
+        let initialDataId = null;
         const registerPages = [{
                 title: 'Dados iniciais',
                 id: 'initialData',
@@ -1659,7 +1659,7 @@ function createSecureCard($data, $type)
             }
 
             openModalBtn.addEventListener('click', function() {
-                registerPageIndex = 9;
+                registerPageIndex = 0;
 
                 updatePage(registerPageIndex);
 
