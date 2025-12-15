@@ -15,6 +15,7 @@ use App\Model\Table\AdhesionPensionSchemesTable;
 use App\Model\Table\AdhesionPersonalDatasTable;
 use App\Model\Table\AdhesionPlansTable;
 use App\Model\Table\AdhesionProponentStatementsTable;
+use App\Model\Table\ClicksignDatasTable;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
@@ -33,6 +34,7 @@ class RegistrationsController extends AppController
     protected AdhesionProponentStatementsTable $AdhesionProponentStatements;
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
+    protected ClicksignDatasTable $ClicksignDatas;
 
     public function initialize(): void
     {
@@ -48,6 +50,8 @@ class RegistrationsController extends AppController
         $this->AdhesionProponentStatements = $this->fetchTable('AdhesionProponentStatements');
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
+        $this->ClicksignDatas = $this->fetchTable('ClicksignDatas');
+        $this->loadComponent('PdfGenerator');
         // $this->loadComponent('RequestHandler');
         $this->viewBuilder()->setClassName('Ajax');
         $this->autoRender = false;
@@ -85,6 +89,7 @@ class RegistrationsController extends AppController
                         'AdhesionProponentStatements',
                         'AdhesionPensionSchemes',
                         'AdhesionPaymentDetails',
+                        'ClicksignDatas',
                     ]
                 );
             }
@@ -314,6 +319,99 @@ class RegistrationsController extends AppController
 
                 if (!$this->AdhesionPaymentDetails->save($paymentDetails))
                     throw new \Exception('Falha ao salvar o dado de pagamento: ' . json_encode($paymentDetails->getErrors()));
+
+                $pdfContent = $this->PdfGenerator->generatePdf($initialDataId, true);
+                $pdfBase64 = base64_encode($pdfContent);
+
+                try {
+                    $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
+                    $clicksign = new \App\Services\ClicksignService(
+                        Configure::read('Clicksign.baseUrl'),
+                        Configure::read('Clicksign.accessToken')
+                    );
+
+                    if (!$clicksignData->envelope_id) {
+                        $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
+                        $envelopeResponse = $clicksign->createEnvelope(
+                            'Envelope de Adesão - ' . $customerName
+                        );
+                        $envelopeId = $envelopeResponse['data']['id'];
+
+                        $clicksignData = $this->ClicksignDatas->patchEntity(
+                            $clicksignData,
+                            [
+                                'adhesion_initial_data_id' => $initialDataId,
+                                'envelope_id' => $envelopeId,
+                            ],
+                        );
+
+                        if (!$this->ClicksignDatas->save($clicksignData))
+                            throw new \Exception('Falha ao salvar no clicksign: ' . json_encode($clicksignData->getErrors()));
+                    } else {
+                        $envelopeResponse = $clicksign->getEnvelope($clicksignData->envelope_id);
+                        $envelopeId = $envelopeResponse['data']['id'];
+                    }
+
+                    if ($envelopeId) {
+                        $clicksign->createDocument($envelopeId, [
+                            'filename' => 'proposta_adesao.pdf',
+                            'content_base64' => "data:application/pdf;base64," . $pdfBase64,
+                            'mime_type' => 'application/pdf'
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    $connection->commit();
+
+                    Log::error('Erro integração Clicksign: ' . $e->getMessage());
+                }
+
+                try {
+                    $sicoobConfig = [
+                        'baseUrl' => Configure::read('Sicoob.baseUrl'),
+                        'authUrl' => Configure::read('Sicoob.authUrl'),
+                        'clientId' => Configure::read('Sicoob.clientId'),
+                        'certificate' => Configure::read('Sicoob.certificate_path'), // Assuming path is config
+                        'privateKey' => Configure::read('Sicoob.private_key_path'),   // Assuming path is config
+                        'fixedToken' => Configure::read('Sicoob.fixedToken') // If in homologation/env
+                    ];
+
+                    $sicoob = new \App\Services\SicoobService($sicoobConfig);
+
+                    $valorInfo = $initialDataAll->adhesion_payment_detail->total_contribution;
+
+                    if (!$valorInfo) $valorInfo = "0.00";
+
+                    $customerName = 'Cliente';
+
+                    if (isset($initialDataAll->adhesion_personal_data->name))
+                        $customerName = $initialDataAll->adhesion_personal_data->name;
+
+                    $cpf = $initialDataAll->adhesion_personal_data->cpf;
+                    $cpf = preg_replace('/\D/', '', $cpf);
+                    $cobData = [
+                        'calendario' => [
+                            'expiracao' => 3600
+                        ],
+                        'devedor' => [
+                            'cpf' => $cpf,
+                            'nome' => $customerName
+                        ],
+                        'valor' => [
+                            'original' => number_format((float)$valorInfo, 2, '.', '')
+                        ],
+                        'chave' => Configure::read('Sicoob.pixKey'),
+                        'solicitacaoPagador' => 'Pagamento Adesão'
+                    ];
+
+                    $cobResponse = $sicoob->createCob($cobData);
+
+                    if (!$cobResponse)
+                        throw new \Exception('Falha ao criar cob: ' . json_encode($cobResponse));
+                } catch (\Exception $e) {
+                    $connection->commit();
+
+                    Log::error('Erro integração Sicoob: ' . $e->getMessage());
+                }
             }
 
             $connection->commit();

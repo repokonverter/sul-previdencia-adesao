@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller\Admin;
@@ -13,6 +14,8 @@ class AdhesionsController extends AppController
     public function initialize(): void
     {
         parent::initialize();
+
+        $this->loadComponent('PdfGenerator');
 
         $this->viewBuilder()->setLayout('admin');
 
@@ -41,7 +44,8 @@ class AdhesionsController extends AppController
 
         $resultado = $clicksign->exemplo();
 
-        debug($resultado);exit(); // "teste!"
+        debug($resultado);
+        exit(); // "teste!"
     }
 
     public function index()
@@ -106,7 +110,7 @@ class AdhesionsController extends AppController
             ]
         ]);
 
-        if ($this->request->is(['patch','post','put'])) {
+        if ($this->request->is(['patch', 'post', 'put'])) {
             $adhesion = $this->AdhesionInitialDatas->patchEntity(
                 $adhesion,
                 $this->request->getData(),
@@ -135,7 +139,7 @@ class AdhesionsController extends AppController
 
     public function delete($id)
     {
-        $this->request->allowMethod(['post','delete']);
+        $this->request->allowMethod(['post', 'delete']);
         $item = $this->AdhesionInitialDatas->get($id);
 
         if ($this->AdhesionInitialDatas->delete($item)) {
@@ -149,85 +153,11 @@ class AdhesionsController extends AppController
 
     public function generatePdf($id)
     {
-        $adhesion = $this->AdhesionInitialDatas->get($id, [
-            'contain' => [
-                'AdhesionPersonalDatas',
-                'AdhesionAddresses',
-                'AdhesionDependents',
-                'AdhesionPlans',
-                'AdhesionDocuments',
-                'AdhesionOtherInformations',
-                'AdhesionPaymentDetails',
-                'AdhesionPensionSchemes',
-                'AdhesionProponentStatements'
-            ]
-        ]);
-
-        // Calcular idade
-        $birthDate = new DateTime($adhesion->adhesion_personal_data->birth_date->format('Y-m-d'));
-        $today = new DateTime();
-        $age = $today->diff($birthDate)->y;
-
-        // Número da proposta
-        $proposalNumber = 'BFX-' . $id . '-' . date('m-Y');
-
-        // Passar dados à view
-        $this->set(compact('adhesion', 'age', 'proposalNumber'));
-
-        // Renderizar HTML (converte Stream para string)
-        $this->viewBuilder()->disableAutoLayout();
-        $html = (string)$this->render('pdf_template')->getBody();
-
-        // Preview em HTML
-        if ($this->request->getQuery('preview') == 1) {
-            return $this->response
-                ->withType('html')
-                ->withStringBody($html);
-        }
-
-        // DOMPDF
-        $dompdf = new Dompdf();
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        return $dompdf->stream("proposta-plenoprev-$proposalNumber.pdf", [
-            'Attachment' => true
-        ]);
+        return $this->PdfGenerator->generatePdf($id);
     }
 
     public function generateFormPdf($id)
     {
-        $adhesion = $this->AdhesionInitialDatas->get($id, [
-            'contain' => [
-                'AdhesionPersonalDatas',
-                'AdhesionAddresses',
-                'AdhesionDependents',
-                'AdhesionPlans',
-                'AdhesionDocuments',
-                'AdhesionOtherInformations',
-                'AdhesionPaymentDetails',
-                'AdhesionPensionSchemes',
-                'AdhesionProponentStatements'
-            ]
-        ]);
-
-        $this->set(compact('adhesion'));
-
-        // Render HTML
-        $this->viewBuilder()->disableAutoLayout();
-        $html = $this->render('pdf_form_template')->getBody();
-
-        // DOMPDF
-        $dompdf = new \Dompdf\Dompdf();
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        return $dompdf->stream("formulario-inscricao-$id.pdf", [
-            "Attachment" => true
-        ]);
+        return $this->PdfGenerator->generateFormPdf($id);
     }
-
-
 }

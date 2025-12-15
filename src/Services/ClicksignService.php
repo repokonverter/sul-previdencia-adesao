@@ -37,7 +37,7 @@ class ClicksignService
 
             $payload = [];
         } else
-            $payload = json_encode(['data' => ['attributes' => $payload]]);
+            $payload = json_encode($payload);
 
         try {
             $response = $this->httpClient->{$method}(
@@ -66,11 +66,6 @@ class ClicksignService
         throw new Exception($errorMessage);
     }
 
-    public function exemplo()
-    {
-        return "Funcionando!";
-    }
-
     public function createEnvelope(
         string $name,
         ?string $default_subject = null,
@@ -88,6 +83,7 @@ class ClicksignService
         ], $extraAttributes);
 
         $attributes = array_filter($attributes, fn($value) => $value !== null);
+
         $payload = [
             'data' => [
                 'type' => 'envelopes',
@@ -98,7 +94,8 @@ class ClicksignService
         return $this->_request('post', '/envelopes', $payload);
     }
 
-    public function getEnvelopes(array $payload = []) {
+    public function getEnvelopes(array $payload = [])
+    {
         return $this->_request('get', '/envelopes', $payload);
     }
 
@@ -166,7 +163,7 @@ class ClicksignService
 
         // Merge extra attributes if needed, though template creation usually relies on the template structure
         if (!empty($attributes)) {
-             $payload['data']['attributes'] = array_merge($payload['data']['attributes'], $attributes);
+            $payload['data']['attributes'] = array_merge($payload['data']['attributes'], $attributes);
         }
 
         return $this->_request('post', '/templates/' . $templateKey . '/documents', $payload);
@@ -295,7 +292,7 @@ class ClicksignService
 
     public function notifyEnvelopeSigners(string $envelopeKey, array $attributes = []): array
     {
-         $payload = [
+        $payload = [
             'data' => [
                 'type' => 'notifications',
                 'attributes' => array_merge(['envelope_id' => $envelopeKey], $attributes),

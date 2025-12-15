@@ -22,5 +22,6 @@ class AdhesionInitialData extends Entity
         'adhesion_other_information' => true,
         'adhesion_documents' => true,
         'adhesion_dependents' => true,
+        'clicksign_data' => true,
     ];
 }

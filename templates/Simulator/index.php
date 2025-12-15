@@ -1598,7 +1598,7 @@ function createSecureCard($data, $type)
     <script>
         const localStorageKey = 'adesaoSulPrevidencia';
         let draftUUID = localStorage.getItem(localStorageKey);
-        let initialDataId = null;
+        let initialDataId = 3;
         const registerPages = [{
                 title: 'Dados iniciais',
                 id: 'initialData',
@@ -1659,7 +1659,7 @@ function createSecureCard($data, $type)
             }
 
             openModalBtn.addEventListener('click', function() {
-                registerPageIndex = 0;
+                registerPageIndex = 9;
 
                 updatePage(registerPageIndex);
 
@@ -1678,6 +1678,7 @@ function createSecureCard($data, $type)
                 $('#registerModal #personalData input[name="personalData[cpfLegalRepresentative]"]').val(cpf);
                 $('#registerModal #divLegalRepresentative input').attr('required', 'required');
                 $('#registerModal #divLegalRepresentative').slideDown();
+
                 return;
             }
 
