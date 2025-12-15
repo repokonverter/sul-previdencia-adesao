@@ -229,12 +229,13 @@ class ClicksignService
         return $this->_request('delete', "/signers/{$key}");
     }
 
-    public function createRequirement(string $signerKey, array $attributes): array
+    public function createRequirement(string $signerKey, array $attributes, array $relationships): array
     {
         $payload = [
             'data' => [
                 'type' => 'requirements',
                 'attributes' => $attributes,
+                'relationships' => $relationships,
             ],
         ];
         return $this->_request('post', "/signers/{$signerKey}/requirements", $payload);

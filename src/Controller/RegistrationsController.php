@@ -51,9 +51,12 @@ class RegistrationsController extends AppController
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
         $this->ClicksignDatas = $this->fetchTable('ClicksignDatas');
+
         $this->loadComponent('PdfGenerator');
-        // $this->loadComponent('RequestHandler');
+        $this->loadComponent('Utils');
+
         $this->viewBuilder()->setClassName('Ajax');
+
         $this->autoRender = false;
     }
 
@@ -358,6 +361,59 @@ class RegistrationsController extends AppController
                             'content_base64' => "data:application/pdf;base64," . $pdfBase64,
                             'mime_type' => 'application/pdf'
                         ]);
+
+                        $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
+                            'name' => $customerName,
+                            'email' => $initialDataAll->adhesion_personal_data->email,
+                            'documentation' => $this->Utils->formatCpf($initialDataAll->adhesion_personal_data->cpf),
+                            'birthday' => $initialDataAll->adhesion_personal_data->birthday,
+                            'group' => 1,
+                            'communicate_events' => [
+                                'signature_request' => 'email',
+                                'signature_reminder' => 'email',
+                                'document_signed' => 'email'
+                            ]
+                        ]);
+
+                        $clicksign->createRequirement($envelopeId, [
+                            'action' => 'agree',
+                            'role' => 'contractor'
+                        ], [
+                            "document" => [
+                                "data" => [
+                                    "type" => "documents",
+                                    'id' => $clicksignData->document_id
+                                ]
+                            ],
+                            "signer" => [
+                                "data" => [
+                                    "type" => "signers",
+                                    'id' => $clicksignSignerResponse['data']['id']
+                                ]
+                            ]
+                        ]);
+
+                        $clicksign->createRequirement($envelopeId, [
+                            'action' => 'provide_evidence',
+                            'auth' => 'email'
+                        ], [
+                            "document" => [
+                                "data" => [
+                                    "type" => "documents",
+                                    'id' => $clicksignData->document_id
+                                ]
+                            ],
+                            "signer" => [
+                                "data" => [
+                                    "type" => "signers",
+                                    'id' => $clicksignSignerResponse['data']['id']
+                                ]
+                            ]
+                        ]);
+
+                        $clicksign->updateEnvelope($envelopeId, [
+                            'status' => 'running'
+                        ]);
                     }
                 } catch (\Exception $e) {
                     $connection->commit();
@@ -407,6 +463,8 @@ class RegistrationsController extends AppController
 
                     if (!$cobResponse)
                         throw new \Exception('Falha ao criar cob: ' . json_encode($cobResponse));
+
+                    dd($cobResponse);
                 } catch (\Exception $e) {
                     $connection->commit();
 
