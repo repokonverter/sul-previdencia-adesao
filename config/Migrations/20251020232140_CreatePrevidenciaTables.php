@@ -16,7 +16,6 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addTimestamps()
             ->create();
 
-        // people
         $this->table('adhesion_personal_data')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
             ->addColumn('plan_for', 'string', ['limit' => 50])
@@ -39,7 +38,7 @@ class CreatePrevidenciaTables extends BaseMigration
         $this->table('adhesion_documents')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
             ->addColumn('type', 'string', ['limit' => 50])
-            ->addColumn('type_other', 'string', ['limit' => 100])
+            ->addColumn('type_other', 'string', ['limit' => 100, 'null' => true])
             ->addColumn('document_number', 'string', ['limit' => 255])
             ->addColumn('issue_date', 'date', ['null' => true])
             ->addColumn('issuer', 'string', ['limit' => 50, 'null' => true])
@@ -128,9 +127,9 @@ class CreatePrevidenciaTables extends BaseMigration
         $this->table('adhesion_pension_schemes')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
             ->addColumn('pension_scheme', 'string', ['limit' => 25])
-            ->addColumn('name', 'string', ['limit' => 100])
-            ->addColumn('cpf', 'string', ['limit' => 15])
-            ->addColumn('kinship', 'string', ['limit' => 100])
+            ->addColumn('name', 'string', ['limit' => 100, 'null' => true])
+            ->addColumn('cpf', 'string', ['limit' => 15, 'null' => true])
+            ->addColumn('kinship', 'string', ['limit' => 100, 'null' => true])
             ->addTimestamps()
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();
@@ -140,12 +139,12 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addColumn('due_date', 'integer', ['null' => true])
             ->addColumn('total_contribution', 'decimal', ['precision' => 10, 'scale' => 2, 'null' => true])
             ->addColumn('payment_type', 'string', ['limit' => 50])
-            ->addColumn('account_holder_name', 'string', ['limit' => 150])
-            ->addColumn('account_holder_cpf', 'string', ['limit' => 15])
-            ->addColumn('bank_number', 'string', ['limit' => 4])
-            ->addColumn('bank_name', 'string', ['limit' => 200])
-            ->addColumn('branch_number', 'string', ['limit' => 5])
-            ->addColumn('account_number', 'string', ['limit' => 8])
+            ->addColumn('account_holder_name', 'string', ['limit' => 150, 'null' => true])
+            ->addColumn('account_holder_cpf', 'string', ['limit' => 15, 'null' => true])
+            ->addColumn('bank_number', 'string', ['limit' => 4, 'null' => true])
+            ->addColumn('bank_name', 'string', ['limit' => 200, 'null' => true])
+            ->addColumn('branch_number', 'string', ['limit' => 5, 'null' => true])
+            ->addColumn('account_number', 'string', ['limit' => 8, 'null' => true])
             ->addTimestamps()
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();

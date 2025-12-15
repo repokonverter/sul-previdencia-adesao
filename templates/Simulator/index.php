@@ -1336,14 +1336,14 @@ function createSecureCard($data, $type)
                                         <div class="row">
                                             <div class="col">
                                                 <div class="input-group mb-3">
-                                                    <input type="text" class="form-control money" name="proponentStatement[healthProblemObs]">
-                                                    <span class="input-group-text" name="proponentStatement[weight]">Kg</span>
+                                                    <input type="text" class="form-control money" name="proponentStatement[weight]">
+                                                    <span class="input-group-text">Kg</span>
                                                 </div>
                                             </div>
                                             <div class="col">
                                                 <div class="input-group mb-3">
-                                                    <input type="text" class="form-control money" name="proponentStatement[healthProblemObs]">
-                                                    <span class="input-group-text" name="proponentStatement[height]">m</span>
+                                                    <input type="text" class="form-control money" name="proponentStatement[height]">
+                                                    <span class="input-group-text">m</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1986,8 +1986,8 @@ function createSecureCard($data, $type)
                 </div>
                 <div class="col-3">
                     <div class="mb-3">
-                        <label for="kinshipDependent" class="form-label">Parentesco*</label>
-                        <select class="form-select" name="dependents[${count}][kinshipDependent]">
+                        <label for="kinship" class="form-label">Parentesco*</label>
+                        <select class="form-select" name="dependents[${count}][kinship]">
                             <option value="">Selecione...</option>
                             <option value="Avô(ó)">Avô(ó)</option>
                             <option value="Companheiro(a)">Companheiro(a)</option>
@@ -2020,7 +2020,7 @@ function createSecureCard($data, $type)
                 <div class="col">
                     <div class="mb-3">
                         <label for="birthDateDependent" class="form-label">Data de nasc.*</label>
-                        <input type="date" max="9999-12-31" class="form-control" name="dependents[${count}][birthDate]" placeholder="Data de nascimento">
+                        <input type="date" max="9999-12-31" class="form-control" name="dependents[${count}][birth_date]" placeholder="Data de nascimento">
                         <div class="invalid-feedback">
                             Preenchimento obrigatório.
                         </div>

@@ -61,12 +61,12 @@ class RegistrationsController extends AppController
         $connection = $this->AdhesionInitialDatas->getConnection();
         $connection->begin();
 
-        $clicksignService = new \App\Services\ClicksignService(
-            Configure::read('Clicksign.baseUrl'),
-            Configure::read('Clicksign.accessToken')
-        );
+        // $clicksignService = new \App\Services\ClicksignService(
+        //     Configure::read('Clicksign.baseUrl'),
+        //     Configure::read('Clicksign.accessToken')
+        // );
 
-        dd($clicksignService->getEnvelopes());
+        // dd($clicksignService->getEnvelopes());
 
 
         try {
@@ -136,13 +136,13 @@ class RegistrationsController extends AppController
 
             if (isset($data['documents'])) {
                 $documentsData = $data['documents'];
-                $documents = !$initialDataAll->adhesion_documents ? $this->AdhesionDocuments->newEmptyEntity() : $this->AdhesionDocuments->get($initialDataAll->adhesion_documents->id);
+                $documents = !$initialDataAll->adhesion_document ? $this->AdhesionDocuments->newEmptyEntity() : $this->AdhesionDocuments->get($initialDataAll->adhesion_document->id);
                 $documents = $this->AdhesionDocuments->patchEntity(
                     $documents,
                     [
                         'adhesion_initial_data_id' => $initialDataId,
                         'type' => $documentsData['documentType'],
-                        'type_other' => $documentsData['type_other'],
+                        'type_other' => $documentsData['typeOther'] ?? null,
                         'document_number' => $documentsData['documentNumber'],
                         'issue_date' => $documentsData['issueDate'] ?? null,
                         'issuer' => $documentsData['issuer'] ?? null,
@@ -156,7 +156,7 @@ class RegistrationsController extends AppController
 
             if (isset($data['plans'])) {
                 $planData = $data['plans'];
-                $plans = !$initialDataAll->adhesion_plans ? $this->AdhesionPlans->newEmptyEntity() : $this->AdhesionPlans->get($initialDataAll->adhesion_plans->id);
+                $plans = !$initialDataAll->adhesion_plan ? $this->AdhesionPlans->newEmptyEntity() : $this->AdhesionPlans->get($initialDataAll->adhesion_plan->id);
                 $plans = $this->AdhesionPlans->patchEntity(
                     $plans,
                     [
@@ -282,10 +282,10 @@ class RegistrationsController extends AppController
                     $pensionSchemes,
                     [
                         'adhesion_initial_data_id' => $initialDataId,
-                        'due_date' => $pensionSchemesData['pensionSchemeType'] ?? '',
-                        'name' => $pensionSchemesData['name'] ?? '',
-                        'cpf' => $pensionSchemesData['cpf'] ?? false,
-                        'kinship' => $pensionSchemesData['kinship'] ?? false,
+                        'pension_scheme' => $pensionSchemesData['pensionSchemeType'] ?? '',
+                        'name' => $pensionSchemesData['name'] ?? null,
+                        'cpf' => $pensionSchemesData['cpf'] ?? null,
+                        'kinship' => $pensionSchemesData['kinship'] ?? null,
                     ],
                 );
 
@@ -301,14 +301,14 @@ class RegistrationsController extends AppController
                     [
                         'adhesion_initial_data_id' => $initialDataId,
                         'due_date' => $paymentDetailsData['due_date'] ?? '',
-                        'total_contribution' => $paymentDetailsData['total_contribution'] ?? null,
+                        'total_contribution' => str_replace(',', '.', str_replace('.', '', $paymentDetailsData['total_contribution'])) ?? null,
                         'payment_type' => $paymentDetailsData['payment_type'] ?? '',
-                        'account_holder_name' => $paymentDetailsData['account_holder_name'] ?? '',
-                        'account_holder_cpf' => $paymentDetailsData['account_holder_cpf'] ?? '',
-                        'bank_number' => $paymentDetailsData['bank_number'] ?? '',
-                        'bank_name' => $paymentDetailsData['bank_number'] ? $this->Bank->getName($paymentDetailsData['bank_number']) : '',
-                        'branch_number' => $paymentDetailsData['branch_number'] ?? '',
-                        'account_number' => $paymentDetailsData['account_number'] ?? '',
+                        'account_holder_name' => $paymentDetailsData['account_holder_name'] ?? null,
+                        'account_holder_cpf' => $paymentDetailsData['account_holder_cpf'] ?? null,
+                        'bank_number' => $paymentDetailsData['bank_number'] ?? null,
+                        'bank_name' => isset($paymentDetailsData['bank_number']) ? $this->Bank->getName($paymentDetailsData['bank_number']) : null,
+                        'branch_number' => $paymentDetailsData['branch_number'] ?? null,
+                        'account_number' => $paymentDetailsData['account_number'] ?? null,
                     ],
                 );
 
