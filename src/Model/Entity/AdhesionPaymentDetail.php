@@ -14,13 +14,13 @@ class AdhesionPaymentDetail extends Entity
         'total_contribution' => true,
         'payment_type' => true,
         'account_holder_name' => true,
-        'cpf' => true,
+        'account_holder_cpf' => true,
         'bank_number' => true,
         'bank_name' => true,
         'branch_number' => true,
         'account_number' => true,
         'created' => true,
-        'modified' => true,
+        'updated' => true,
         'adhesion_initial_data' => true,
     ];
 }

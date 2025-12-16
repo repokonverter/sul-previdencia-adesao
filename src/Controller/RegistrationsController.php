@@ -21,6 +21,8 @@ use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
 use Cake\Http\Client;
 use Cake\Core\Configure;
+use App\View\Helper\BankHelper;
+use Cake\View\View;
 
 class RegistrationsController extends AppController
 {
@@ -35,6 +37,7 @@ class RegistrationsController extends AppController
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
     protected ClicksignDatasTable $ClicksignDatas;
+    protected BankHelper $Bank;
 
     public function initialize(): void
     {
@@ -54,6 +57,8 @@ class RegistrationsController extends AppController
 
         $this->loadComponent('PdfGenerator');
         $this->loadComponent('Utils');
+
+        $this->Bank = new BankHelper(new View());
 
         $this->viewBuilder()->setClassName('Ajax');
 
@@ -268,8 +273,8 @@ class RegistrationsController extends AppController
                         'smoker_type' => $proponentStatementsData['smokerType'] ?? false,
                         'smoker_type_obs' => $proponentStatementsData['smokerTypeObs'] ?? '',
                         'smoker_qty' => $proponentStatementsData['smokerQty'] ?? '',
-                        'weight' => $proponentStatementsData['weight'] ?? null,
-                        'height' => $proponentStatementsData['height'] ?? null,
+                        'weight' => str_replace(',', '.', $proponentStatementsData['weight']) ?? null,
+                        'height' => str_replace(',', '.', $proponentStatementsData['height']) ?? null,
                         'gripe' => $proponentStatementsData['gripe'] ?? false,
                         'gripe_obs' => $proponentStatementsData['gripeObs'] ?? '',
                         'covid' => $proponentStatementsData['covid'] ?? false,
@@ -303,13 +308,18 @@ class RegistrationsController extends AppController
 
             if (!empty($data['paymentDetail'])) {
                 $paymentDetailsData = $data['paymentDetail'];
+
+                if ($paymentDetailsData['payment_type'] === 'Débito em conta' && !isset($paymentDetailsData['bank_number']))
+                    $paymentDetailsData['bank_number'] = '001';
+
+                $totalContribution = str_replace(',', '.', str_replace('.', '', $paymentDetailsData['total_contribution']));
                 $paymentDetails = !$initialDataAll->adhesion_payment_detail ? $this->AdhesionPaymentDetails->newEmptyEntity() : $this->AdhesionPaymentDetails->get($initialDataAll->adhesion_payment_detail->id);
                 $paymentDetails = $this->AdhesionPaymentDetails->patchEntity(
                     $paymentDetails,
                     [
                         'adhesion_initial_data_id' => $initialDataId,
                         'due_date' => $paymentDetailsData['due_date'] ?? '',
-                        'total_contribution' => str_replace(',', '.', str_replace('.', '', $paymentDetailsData['total_contribution'])) ?? null,
+                        'total_contribution' => $totalContribution ?? null,
                         'payment_type' => $paymentDetailsData['payment_type'] ?? '',
                         'account_holder_name' => $paymentDetailsData['account_holder_name'] ?? null,
                         'account_holder_cpf' => $paymentDetailsData['account_holder_cpf'] ?? null,
@@ -356,16 +366,19 @@ class RegistrationsController extends AppController
                     }
 
                     if ($envelopeId) {
-                        $clicksign->createDocument($envelopeId, [
+                        $documentResponse = $clicksign->createDocument($envelopeId, [
                             'filename' => 'proposta_adesao.pdf',
                             'content_base64' => "data:application/pdf;base64," . $pdfBase64,
                             'mime_type' => 'application/pdf'
                         ]);
 
+                        if (!$documentResponse['success'])
+                            throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
+
                         $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
                             'name' => $customerName,
                             'email' => $initialDataAll->adhesion_personal_data->email,
-                            'documentation' => $this->Utils->formatCpf($initialDataAll->adhesion_personal_data->cpf),
+                            'documentation' => $initialDataAll->adhesion_personal_data->cpf,
                             'birthday' => $initialDataAll->adhesion_personal_data->birthday,
                             'group' => 1,
                             'communicate_events' => [
@@ -375,7 +388,10 @@ class RegistrationsController extends AppController
                             ]
                         ]);
 
-                        $clicksign->createRequirement($envelopeId, [
+                        if (!$clicksignSignerResponse['success'])
+                            throw new \Exception('Falha ao criar o assinante no clicksign: ' . json_encode($clicksignSignerResponse['data']));
+
+                        $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
                             'action' => 'agree',
                             'role' => 'contractor'
                         ], [
@@ -393,7 +409,10 @@ class RegistrationsController extends AppController
                             ]
                         ]);
 
-                        $clicksign->createRequirement($envelopeId, [
+                        if (!$clicksignRequirementResponse['success'])
+                            throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+
+                        $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
                             'action' => 'provide_evidence',
                             'auth' => 'email'
                         ], [
@@ -411,12 +430,20 @@ class RegistrationsController extends AppController
                             ]
                         ]);
 
-                        $clicksign->updateEnvelope($envelopeId, [
+                        if (!$clicksignRequirementResponse['success'])
+                            throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+
+                        $clicksignEnvelopeResponse = $clicksign->updateEnvelope($envelopeId, [
                             'status' => 'running'
                         ]);
+
+                        if (!$clicksignEnvelopeResponse['success'])
+                            throw new \Exception('Falha ao atualizar o envelope no clicksign: ' . json_encode($clicksignEnvelopeResponse['data']));
                     }
                 } catch (\Exception $e) {
                     $connection->commit();
+
+                    dd($e);
 
                     Log::error('Erro integração Clicksign: ' . $e->getMessage());
                 }
@@ -432,11 +459,6 @@ class RegistrationsController extends AppController
                     ];
 
                     $sicoob = new \App\Services\SicoobService($sicoobConfig);
-
-                    $valorInfo = $initialDataAll->adhesion_payment_detail->total_contribution;
-
-                    if (!$valorInfo) $valorInfo = "0.00";
-
                     $customerName = 'Cliente';
 
                     if (isset($initialDataAll->adhesion_personal_data->name))
@@ -453,7 +475,7 @@ class RegistrationsController extends AppController
                             'nome' => $customerName
                         ],
                         'valor' => [
-                            'original' => number_format((float)$valorInfo, 2, '.', '')
+                            'original' => number_format((float)$totalContribution, 2, '.', '')
                         ],
                         'chave' => Configure::read('Sicoob.pixKey'),
                         'solicitacaoPagador' => 'Pagamento Adesão'
@@ -467,6 +489,8 @@ class RegistrationsController extends AppController
                     dd($cobResponse);
                 } catch (\Exception $e) {
                     $connection->commit();
+
+                    dd($e);
 
                     Log::error('Erro integração Sicoob: ' . $e->getMessage());
                 }
