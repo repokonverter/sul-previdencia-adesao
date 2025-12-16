@@ -50,7 +50,10 @@ class ClicksignService
         }
 
         if ($response->isOk())
-            return $response->getJson();
+            return [
+                'success' => true,
+                ...$response->getJson()
+            ];
 
         $errorMessage = 'Erro Clicksign. Status: ' . $response->getStatusCode();
 
@@ -99,8 +102,14 @@ class ClicksignService
         return $this->_request('get', '/envelopes', $payload);
     }
 
-    public function createDocument(string $documentId, array $payload = [])
+    public function createDocument(string $documentId, array $attributes = [])
     {
+        $payload = [
+            'data' => [
+                'type' => 'documents',
+                'attributes' => $attributes,
+            ],
+        ];
         return $this->_request('post', "/envelopes/{$documentId}/documents", $payload);
     }
 
@@ -169,26 +178,26 @@ class ClicksignService
         return $this->_request('post', '/templates/' . $templateKey . '/documents', $payload);
     }
 
-    public function updateDocument(string $key, array $attributes): array
+    public function updateDocument(string $envelopeId, string $documentId, array $attributes): array
     {
         $payload = [
             'data' => [
                 'type' => 'documents',
-                'id' => $key,
+                'id' => $documentId,
                 'attributes' => $attributes,
             ],
         ];
-        return $this->_request('patch', "/documents/{$key}", $payload);
+        return $this->_request('patch', "/envelopes/{$envelopeId}/documents/{$documentId}", $payload);
     }
 
-    public function getDocument(string $key): array
+    public function getDocument(string $envelopeId, string $documentId): array
     {
-        return $this->_request('get', "/documents/{$key}");
+        return $this->_request('get', "/envelopes/{$envelopeId}/documents/{$documentId}");
     }
 
-    public function deleteDocument(string $key): array
+    public function deleteDocument(string $envelopeId, string $documentId): array
     {
-        return $this->_request('delete', "/documents/{$key}");
+        return $this->_request('delete', "/envelopes/{$envelopeId}/documents/{$documentId}");
     }
 
     public function getSigners(string $envelopeKey): array
@@ -229,7 +238,7 @@ class ClicksignService
         return $this->_request('delete', "/signers/{$key}");
     }
 
-    public function createRequirement(string $signerKey, array $attributes, array $relationships): array
+    public function createRequirement(string $key, array $attributes, array $relationships): array
     {
         $payload = [
             'data' => [
@@ -238,20 +247,17 @@ class ClicksignService
                 'relationships' => $relationships,
             ],
         ];
-        return $this->_request('post', "/signers/{$signerKey}/requirements", $payload);
+        return $this->_request('post', "/envelopes/{$key}/requirements", $payload);
     }
 
-    public function getRequirements(string $signerKey): array
+    public function getRequirements(string $key): array
     {
-        // Assuming this endpoint exists based on standard structure, though docs might vary.
-        // If not explicit, it might be included in signer details.
-        // Docs showed "Listar Requisitos"
-        return $this->_request('get', "/signers/{$signerKey}/requirements");
+        return $this->_request('get', "/envelopes/{$key}/requirements");
     }
 
     public function deleteRequirement(string $key): array
     {
-        return $this->_request('delete', "/requirements/{$key}");
+        return $this->_request('delete', "/envelopes/{$key}/requirements");
     }
 
     public function getObservers(string $envelopeKey): array

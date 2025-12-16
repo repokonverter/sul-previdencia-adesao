@@ -1760,15 +1760,21 @@ function createSecureCard($data, $type)
                     break;
                 case 8:
                     const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]:checked').val();
+                    const anyPensionSchema = $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]').is(':checked');
 
                     if (planFor === 'Dependente') {
                         $('#registerModal #pensionSchemeAnyPensionSchema').hide();
 
-                        pensionSchema(false)
+                        pensionSchema(false);
                     } else {
                         $('#registerModal #pensionSchemeType').slideUp();
-                        $('#registerModal #pensionSchemeAnyPensionSchema input[type="checkbox"]').prop('checked', false)
-                        $('#registerModal #pensionSchemeAnyPensionSchema').show();
+
+                        if (!anyPensionSchema) {
+                            $('#registerModal #pensionSchemeAnyPensionSchema input[type="checkbox"]').prop('checked', false);
+                            $('#registerModal #pensionSchemeAnyPensionSchema').show();
+                        } else {
+                            $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]:checked').click();
+                        }
                     }
 
                     $('#registerModal #pensionScheme').fadeIn().show();

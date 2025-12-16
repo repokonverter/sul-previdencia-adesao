@@ -342,9 +342,10 @@ class RegistrationsController extends AppController
                         Configure::read('Clicksign.baseUrl'),
                         Configure::read('Clicksign.accessToken')
                     );
+                    $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
 
                     if (!$clicksignData->envelope_id) {
-                        $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
+                        $documents = 0;
                         $envelopeResponse = $clicksign->createEnvelope(
                             'Envelope de Adesão - ' . $customerName
                         );
@@ -363,23 +364,31 @@ class RegistrationsController extends AppController
                     } else {
                         $envelopeResponse = $clicksign->getEnvelope($clicksignData->envelope_id);
                         $envelopeId = $envelopeResponse['data']['id'];
+                        $responseGetDocuments = $clicksign->getDocuments($envelopeId);
+
+                        if (isset($responseGetDocuments['meta']['record_count']))
+                            $documents = $responseGetDocuments['meta']['record_count'];
                     }
 
                     if ($envelopeId) {
+                        if ($documents > 0)
+                            $clicksign->deleteDocument($envelopeId, $responseGetDocuments['data'][0]['id']);
+
                         $documentResponse = $clicksign->createDocument($envelopeId, [
                             'filename' => 'proposta_adesao.pdf',
                             'content_base64' => "data:application/pdf;base64," . $pdfBase64,
-                            'mime_type' => 'application/pdf'
                         ]);
 
                         if (!$documentResponse['success'])
                             throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
 
+                        $documentId = $documentResponse['data']['id'];
+
                         $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
                             'name' => $customerName,
-                            'email' => $initialDataAll->adhesion_personal_data->email,
+                            'email' => $initialDataAll->email,
                             'documentation' => $initialDataAll->adhesion_personal_data->cpf,
-                            'birthday' => $initialDataAll->adhesion_personal_data->birthday,
+                            'birthday' => $initialDataAll->adhesion_personal_data->birth_date,
                             'group' => 1,
                             'communicate_events' => [
                                 'signature_request' => 'email',
@@ -398,7 +407,7 @@ class RegistrationsController extends AppController
                             "document" => [
                                 "data" => [
                                     "type" => "documents",
-                                    'id' => $clicksignData->document_id
+                                    'id' => $documentId
                                 ]
                             ],
                             "signer" => [
@@ -419,7 +428,7 @@ class RegistrationsController extends AppController
                             "document" => [
                                 "data" => [
                                     "type" => "documents",
-                                    'id' => $clicksignData->document_id
+                                    'id' => $documentId
                                 ]
                             ],
                             "signer" => [

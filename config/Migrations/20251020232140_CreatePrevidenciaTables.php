@@ -126,7 +126,7 @@ class CreatePrevidenciaTables extends BaseMigration
 
         $this->table('adhesion_pension_schemes')
             ->addColumn('adhesion_initial_data_id', 'integer', ['null' => false])
-            ->addColumn('pension_scheme', 'string', ['limit' => 25])
+            ->addColumn('pension_scheme', 'string', ['limit' => 50])
             ->addColumn('name', 'string', ['limit' => 100, 'null' => true])
             ->addColumn('cpf', 'string', ['limit' => 15, 'null' => true])
             ->addColumn('kinship', 'string', ['limit' => 100, 'null' => true])
