@@ -14,7 +14,7 @@ class SicoobService
     private $clientId;
     private $certificate;
     private $privateKey;
-    private $accessToken; // This can now be set by fixedToken or obtained via authentication
+    private $accessToken;
 
     public function __construct(array $config)
     {
@@ -23,11 +23,8 @@ class SicoobService
         $this->clientId = $config['clientId'] ?? null;
         $this->certificate = $config['certificate'] ?? null;
         $this->privateKey = $config['privateKey'] ?? null;
-
-        // Support for fixed access token (e.g. Sandbox/Homologation)
         $this->accessToken = $config['fixedToken'] ?? null;
 
-        // Initial Client for Authentication (mTLS) - Only needed if we need to fetch token
         $sslConfig = [];
         if ($this->certificate && $this->privateKey) {
             $sslConfig = [
@@ -58,15 +55,16 @@ class SicoobService
         // But user request said: "se eu estiver usando em homologação ele não solicitar o access token e usar o que eu cadastrar no .env".
 
         if (!empty($this->clientId)) {
-             $this->_performAuthRequest();
+            $this->_performAuthRequest();
         } else {
-             // If we don't have clientId, we can't authenticate anyway.
-             // Assume the current token is all we have.
-             Log::warning("SicoobService: Attempted to authenticate but no Client ID provided. relying on fixed token if available.");
+            // If we don't have clientId, we can't authenticate anyway.
+            // Assume the current token is all we have.
+            Log::warning("SicoobService: Attempted to authenticate but no Client ID provided. relying on fixed token if available.");
         }
     }
 
-    private function _performAuthRequest() {
+    private function _performAuthRequest()
+    {
         try {
             $response = $this->httpClient->post($this->authUrl, [
                 'grant_type' => 'client_credentials',
@@ -85,9 +83,8 @@ class SicoobService
             $this->accessToken = $body['access_token'] ?? null;
 
             if (!$this->accessToken) {
-                 throw new Exception('Token de acesso não retornado pelo Sicoob.');
+                throw new Exception('Token de acesso não retornado pelo Sicoob.');
             }
-
         } catch (Exception $e) {
             Log::error('Sicoob Service Error: ' . $e->getMessage());
             throw $e;
@@ -125,19 +122,18 @@ class SicoobService
                 $options['headers'] = $headers;
                 $response = $this->httpClient->{$method}($url, $data, $options);
             } elseif ($response->getStatusCode() === 401) {
-                 throw new Exception('Sicoob: Não autorizado (401). Verifique o Token fixo.');
+                throw new Exception('Sicoob: Não autorizado (401). Verifique o Token fixo.');
             }
 
             if (!$response->isOk()) {
                 Log::warning("Sicoob API Error [{$method} {$url}]: " . $response->getStringBody());
-                 // Extract detailed error if available
+                // Extract detailed error if available
                 $errorBody = $response->getJson();
                 $errorMsg = $errorBody['mensagem'] ?? 'Erro na requisição Sicoob (' . $response->getStatusCode() . ')';
                 throw new Exception($errorMsg);
             }
 
             return $response->getJson();
-
         } catch (Exception $e) {
             throw $e;
         }
