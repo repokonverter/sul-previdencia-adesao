@@ -486,7 +486,7 @@ class RegistrationsController extends AppController
                         'valor' => [
                             'original' => number_format((float)$totalContribution, 2, '.', '')
                         ],
-                        'chave' => Configure::read('Sicoob.pixKey'),
+                        'chave' => Configure::read('Sicoob.pixKey') ?? '08408408408',
                         'solicitacaoPagador' => 'Pagamento Adesão'
                     ];
 
