@@ -32,15 +32,23 @@ RUN apk add --no-cache nginx \
     && apk add --no-cache icu-libs \
     # 👇 ADICIONADO: libpq para o runtime do pdo_pgsql
     && apk add --no-cache libpq \
+    # 👇 GD runtime dependencies
+    && apk add --no-cache libpng libjpeg-turbo freetype \
     \
     # 1. Instala as dependências de compilação (necessárias para intl e pdo_pgsql)
     && apk add --no-cache --virtual .build-deps \
     postgresql-dev \
     build-base \
     icu-dev \
+    # 👇 GD build dependencies
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
     \
     # 2. Compila e instala as extensões do PHP no runtime final
-    && docker-php-ext-install pdo pdo_pgsql intl \
+    # 👇 Configure GD
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql intl gd \
     \
     # 3. Limpa as dependências de build (para reduzir o tamanho da imagem)
     && apk del .build-deps \
