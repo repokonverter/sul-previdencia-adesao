@@ -345,129 +345,131 @@ class RegistrationsController extends AppController
                 $pdfContent = $this->PdfGenerator->generatePdf($initialDataId, true);
                 $pdfBase64 = base64_encode($pdfContent);
 
-                // try {
-                //     $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
-                //     $clicksign = new \App\Services\ClicksignService(
-                //         Configure::read('Clicksign.baseUrl'),
-                //         Configure::read('Clicksign.accessToken')
-                //     );
-                //     $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
+                try {
+                    $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
+                    $clicksign = new \App\Services\ClicksignService(
+                        Configure::read('Clicksign.baseUrl'),
+                        Configure::read('Clicksign.accessToken')
+                    );
+                    $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
 
-                //     if (!$clicksignData->envelope_id) {
-                //         $documents = 0;
-                //         $envelopeResponse = $clicksign->createEnvelope(
-                //             'Envelope de Adesão - ' . $customerName
-                //         );
-                //         $envelopeId = $envelopeResponse['data']['id'];
+                    if (!$clicksignData->envelope_id) {
+                        $documents = 0;
+                        $envelopeResponse = $clicksign->createEnvelope(
+                            'Envelope de Adesão - ' . $customerName
+                        );
+                        $envelopeId = $envelopeResponse['data']['id'];
 
-                //         $clicksignData = $this->ClicksignDatas->patchEntity(
-                //             $clicksignData,
-                //             [
-                //                 'adhesion_initial_data_id' => $initialDataId,
-                //                 'envelope_id' => $envelopeId,
-                //             ],
-                //         );
+                        $clicksignData = $this->ClicksignDatas->patchEntity(
+                            $clicksignData,
+                            [
+                                'adhesion_initial_data_id' => $initialDataId,
+                                'envelope_id' => $envelopeId,
+                            ],
+                        );
 
-                //         if (!$this->ClicksignDatas->save($clicksignData))
-                //             throw new \Exception('Falha ao salvar no clicksign: ' . json_encode($clicksignData->getErrors()));
-                //     } else {
-                //         $envelopeResponse = $clicksign->getEnvelope($clicksignData->envelope_id);
-                //         $envelopeId = $envelopeResponse['data']['id'];
-                //         $responseGetDocuments = $clicksign->getDocuments($envelopeId);
+                        if (!$this->ClicksignDatas->save($clicksignData))
+                            throw new \Exception('Falha ao salvar no clicksign: ' . json_encode($clicksignData->getErrors()));
+                    } else {
+                        $envelopeResponse = $clicksign->getEnvelope($clicksignData->envelope_id);
+                        $envelopeId = $envelopeResponse['data']['id'];
+                        $responseGetDocuments = $clicksign->getDocuments($envelopeId);
 
-                //         if (isset($responseGetDocuments['meta']['record_count']))
-                //             $documents = $responseGetDocuments['meta']['record_count'];
-                //     }
+                        if (isset($responseGetDocuments['meta']['record_count']))
+                            $documents = $responseGetDocuments['meta']['record_count'];
+                    }
 
-                //     if ($envelopeId) {
-                //         if ($documents > 0)
-                //             $clicksign->deleteDocument($envelopeId, $responseGetDocuments['data'][0]['id']);
+                    if ($envelopeId) {
+                        if ($documents > 0)
+                            $clicksign->deleteDocument($envelopeId, $responseGetDocuments['data'][0]['id']);
 
-                //         $documentResponse = $clicksign->createDocument($envelopeId, [
-                //             'filename' => 'proposta_adesao.pdf',
-                //             'content_base64' => "data:application/pdf;base64," . $pdfBase64,
-                //         ]);
+                        $documentResponse = $clicksign->createDocument($envelopeId, [
+                            'filename' => 'proposta_adesao.pdf',
+                            'content_base64' => "data:application/pdf;base64," . $pdfBase64,
+                        ]);
 
-                //         if (!$documentResponse['success'])
-                //             throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
+                        if (!$documentResponse['success'])
+                            throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
 
-                //         $documentId = $documentResponse['data']['id'];
+                        $documentId = $documentResponse['data']['id'];
 
-                //         $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
-                //             'name' => $customerName,
-                //             'email' => $initialDataAll->email,
-                //             'documentation' => $initialDataAll->adhesion_personal_data->cpf,
-                //             'birthday' => $initialDataAll->adhesion_personal_data->birth_date,
-                //             'group' => 1,
-                //             'communicate_events' => [
-                //                 'signature_request' => 'email',
-                //                 'signature_reminder' => 'email',
-                //                 'document_signed' => 'email'
-                //             ]
-                //         ]);
+                        $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
+                            'name' => $customerName,
+                            'email' => $initialDataAll->email,
+                            'documentation' => $initialDataAll->adhesion_personal_data->cpf,
+                            'birthday' => $initialDataAll->adhesion_personal_data->birth_date,
+                            'group' => 1,
+                            'communicate_events' => [
+                                'signature_request' => 'email',
+                                'signature_reminder' => 'email',
+                                'document_signed' => 'email'
+                            ]
+                        ]);
 
-                //         if (!$clicksignSignerResponse['success'])
-                //             throw new \Exception('Falha ao criar o assinante no clicksign: ' . json_encode($clicksignSignerResponse['data']));
+                        if (!$clicksignSignerResponse['success'])
+                            throw new \Exception('Falha ao criar o assinante no clicksign: ' . json_encode($clicksignSignerResponse['data']));
 
-                //         $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
-                //             'action' => 'agree',
-                //             'role' => 'contractor'
-                //         ], [
-                //             "document" => [
-                //                 "data" => [
-                //                     "type" => "documents",
-                //                     'id' => $documentId
-                //                 ]
-                //             ],
-                //             "signer" => [
-                //                 "data" => [
-                //                     "type" => "signers",
-                //                     'id' => $clicksignSignerResponse['data']['id']
-                //                 ]
-                //             ]
-                //         ]);
+                        $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
+                            'action' => 'agree',
+                            'role' => 'contractor'
+                        ], [
+                            "document" => [
+                                "data" => [
+                                    "type" => "documents",
+                                    'id' => $documentId
+                                ]
+                            ],
+                            "signer" => [
+                                "data" => [
+                                    "type" => "signers",
+                                    'id' => $clicksignSignerResponse['data']['id']
+                                ]
+                            ]
+                        ]);
 
-                //         if (!$clicksignRequirementResponse['success'])
-                //             throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+                        if (!$clicksignRequirementResponse['success'])
+                            throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
 
-                //         $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
-                //             'action' => 'provide_evidence',
-                //             'auth' => 'email'
-                //         ], [
-                //             "document" => [
-                //                 "data" => [
-                //                     "type" => "documents",
-                //                     'id' => $documentId
-                //                 ]
-                //             ],
-                //             "signer" => [
-                //                 "data" => [
-                //                     "type" => "signers",
-                //                     'id' => $clicksignSignerResponse['data']['id']
-                //                 ]
-                //             ]
-                //         ]);
+                        $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
+                            'action' => 'provide_evidence',
+                            'auth' => 'email'
+                        ], [
+                            "document" => [
+                                "data" => [
+                                    "type" => "documents",
+                                    'id' => $documentId
+                                ]
+                            ],
+                            "signer" => [
+                                "data" => [
+                                    "type" => "signers",
+                                    'id' => $clicksignSignerResponse['data']['id']
+                                ]
+                            ]
+                        ]);
 
-                //         if (!$clicksignRequirementResponse['success'])
-                //             throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+                        if (!$clicksignRequirementResponse['success'])
+                            throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
 
-                //         $clicksignEnvelopeResponse = $clicksign->updateEnvelope($envelopeId, [
-                //             'status' => 'running'
-                //         ]);
+                        $clicksignEnvelopeResponse = $clicksign->updateEnvelope($envelopeId, [
+                            'status' => 'running'
+                        ]);
 
-                //         if (!$clicksignEnvelopeResponse['success'])
-                //             throw new \Exception('Falha ao atualizar o envelope no clicksign: ' . json_encode($clicksignEnvelopeResponse['data']));
+                        if (!$clicksignEnvelopeResponse['success'])
+                            throw new \Exception('Falha ao atualizar o envelope no clicksign: ' . json_encode($clicksignEnvelopeResponse['data']));
 
-                //         $clicksignNotificationResponse = $clicksign->notifyEnvelopeSigners($envelopeId, ['message' => null]);
+                        $clicksignNotificationResponse = $clicksign->notifyEnvelopeSigners($envelopeId, ['message' => null]);
 
-                //         if (!$clicksignNotificationResponse['success'])
-                //             throw new \Exception('Falha ao notificar o envelope no clicksign: ' . json_encode($clicksignNotificationResponse['data']));
-                //     }
-                // } catch (\Exception $e) {
-                //     $connection->rollBack();
+                        if (!$clicksignNotificationResponse['success'])
+                            throw new \Exception('Falha ao notificar o envelope no clicksign: ' . json_encode($clicksignNotificationResponse['data']));
+                    }
+                } catch (\Exception $e) {
+                    $connection->rollBack();
 
-                //     Log::error('Erro integração Clicksign: ' . $e->getMessage());
-                // }
+                    dd($e);
+
+                    Log::error('Erro integração Clicksign: ' . $e->getMessage());
+                }
 
                 try {
                     $sicoobConfig = [
@@ -545,6 +547,8 @@ class RegistrationsController extends AppController
                         ]));
                 } catch (\Exception $e) {
                     $connection->rollback();
+
+                    dd($e);
 
                     Log::error('Erro integração Sicoob: ' . $e->getMessage());
                 }
