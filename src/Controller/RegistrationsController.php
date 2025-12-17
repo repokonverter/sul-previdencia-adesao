@@ -16,6 +16,7 @@ use App\Model\Table\AdhesionPersonalDatasTable;
 use App\Model\Table\AdhesionPlansTable;
 use App\Model\Table\AdhesionProponentStatementsTable;
 use App\Model\Table\ClicksignDatasTable;
+use App\Model\Table\PixTransactionsTable;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
@@ -23,6 +24,11 @@ use Cake\Http\Client;
 use Cake\Core\Configure;
 use App\View\Helper\BankHelper;
 use Cake\View\View;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\PngWriter;
 
 class RegistrationsController extends AppController
 {
@@ -37,6 +43,7 @@ class RegistrationsController extends AppController
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
     protected ClicksignDatasTable $ClicksignDatas;
+    protected PixTransactionsTable $PixTransactions;
     protected BankHelper $Bank;
 
     public function initialize(): void
@@ -54,6 +61,7 @@ class RegistrationsController extends AppController
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
         $this->ClicksignDatas = $this->fetchTable('ClicksignDatas');
+        $this->PixTransactions = $this->fetchTable('PixTransactions');
 
         $this->loadComponent('PdfGenerator');
         $this->loadComponent('Utils');
@@ -98,6 +106,7 @@ class RegistrationsController extends AppController
                         'AdhesionPensionSchemes',
                         'AdhesionPaymentDetails',
                         'ClicksignDatas',
+                        'PixTransactions',
                     ]
                 );
             }
@@ -336,135 +345,138 @@ class RegistrationsController extends AppController
                 $pdfContent = $this->PdfGenerator->generatePdf($initialDataId, true);
                 $pdfBase64 = base64_encode($pdfContent);
 
-                try {
-                    $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
-                    $clicksign = new \App\Services\ClicksignService(
-                        Configure::read('Clicksign.baseUrl'),
-                        Configure::read('Clicksign.accessToken')
-                    );
-                    $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
+                // try {
+                //     $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
+                //     $clicksign = new \App\Services\ClicksignService(
+                //         Configure::read('Clicksign.baseUrl'),
+                //         Configure::read('Clicksign.accessToken')
+                //     );
+                //     $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
 
-                    if (!$clicksignData->envelope_id) {
-                        $documents = 0;
-                        $envelopeResponse = $clicksign->createEnvelope(
-                            'Envelope de Adesão - ' . $customerName
-                        );
-                        $envelopeId = $envelopeResponse['data']['id'];
+                //     if (!$clicksignData->envelope_id) {
+                //         $documents = 0;
+                //         $envelopeResponse = $clicksign->createEnvelope(
+                //             'Envelope de Adesão - ' . $customerName
+                //         );
+                //         $envelopeId = $envelopeResponse['data']['id'];
 
-                        $clicksignData = $this->ClicksignDatas->patchEntity(
-                            $clicksignData,
-                            [
-                                'adhesion_initial_data_id' => $initialDataId,
-                                'envelope_id' => $envelopeId,
-                            ],
-                        );
+                //         $clicksignData = $this->ClicksignDatas->patchEntity(
+                //             $clicksignData,
+                //             [
+                //                 'adhesion_initial_data_id' => $initialDataId,
+                //                 'envelope_id' => $envelopeId,
+                //             ],
+                //         );
 
-                        if (!$this->ClicksignDatas->save($clicksignData))
-                            throw new \Exception('Falha ao salvar no clicksign: ' . json_encode($clicksignData->getErrors()));
-                    } else {
-                        $envelopeResponse = $clicksign->getEnvelope($clicksignData->envelope_id);
-                        $envelopeId = $envelopeResponse['data']['id'];
-                        $responseGetDocuments = $clicksign->getDocuments($envelopeId);
+                //         if (!$this->ClicksignDatas->save($clicksignData))
+                //             throw new \Exception('Falha ao salvar no clicksign: ' . json_encode($clicksignData->getErrors()));
+                //     } else {
+                //         $envelopeResponse = $clicksign->getEnvelope($clicksignData->envelope_id);
+                //         $envelopeId = $envelopeResponse['data']['id'];
+                //         $responseGetDocuments = $clicksign->getDocuments($envelopeId);
 
-                        if (isset($responseGetDocuments['meta']['record_count']))
-                            $documents = $responseGetDocuments['meta']['record_count'];
-                    }
+                //         if (isset($responseGetDocuments['meta']['record_count']))
+                //             $documents = $responseGetDocuments['meta']['record_count'];
+                //     }
 
-                    if ($envelopeId) {
-                        if ($documents > 0)
-                            $clicksign->deleteDocument($envelopeId, $responseGetDocuments['data'][0]['id']);
+                //     if ($envelopeId) {
+                //         if ($documents > 0)
+                //             $clicksign->deleteDocument($envelopeId, $responseGetDocuments['data'][0]['id']);
 
-                        $documentResponse = $clicksign->createDocument($envelopeId, [
-                            'filename' => 'proposta_adesao.pdf',
-                            'content_base64' => "data:application/pdf;base64," . $pdfBase64,
-                        ]);
+                //         $documentResponse = $clicksign->createDocument($envelopeId, [
+                //             'filename' => 'proposta_adesao.pdf',
+                //             'content_base64' => "data:application/pdf;base64," . $pdfBase64,
+                //         ]);
 
-                        if (!$documentResponse['success'])
-                            throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
+                //         if (!$documentResponse['success'])
+                //             throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
 
-                        $documentId = $documentResponse['data']['id'];
+                //         $documentId = $documentResponse['data']['id'];
 
-                        $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
-                            'name' => $customerName,
-                            'email' => $initialDataAll->email,
-                            'documentation' => $initialDataAll->adhesion_personal_data->cpf,
-                            'birthday' => $initialDataAll->adhesion_personal_data->birth_date,
-                            'group' => 1,
-                            'communicate_events' => [
-                                'signature_request' => 'email',
-                                'signature_reminder' => 'email',
-                                'document_signed' => 'email'
-                            ]
-                        ]);
+                //         $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
+                //             'name' => $customerName,
+                //             'email' => $initialDataAll->email,
+                //             'documentation' => $initialDataAll->adhesion_personal_data->cpf,
+                //             'birthday' => $initialDataAll->adhesion_personal_data->birth_date,
+                //             'group' => 1,
+                //             'communicate_events' => [
+                //                 'signature_request' => 'email',
+                //                 'signature_reminder' => 'email',
+                //                 'document_signed' => 'email'
+                //             ]
+                //         ]);
 
-                        if (!$clicksignSignerResponse['success'])
-                            throw new \Exception('Falha ao criar o assinante no clicksign: ' . json_encode($clicksignSignerResponse['data']));
+                //         if (!$clicksignSignerResponse['success'])
+                //             throw new \Exception('Falha ao criar o assinante no clicksign: ' . json_encode($clicksignSignerResponse['data']));
 
-                        $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
-                            'action' => 'agree',
-                            'role' => 'contractor'
-                        ], [
-                            "document" => [
-                                "data" => [
-                                    "type" => "documents",
-                                    'id' => $documentId
-                                ]
-                            ],
-                            "signer" => [
-                                "data" => [
-                                    "type" => "signers",
-                                    'id' => $clicksignSignerResponse['data']['id']
-                                ]
-                            ]
-                        ]);
+                //         $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
+                //             'action' => 'agree',
+                //             'role' => 'contractor'
+                //         ], [
+                //             "document" => [
+                //                 "data" => [
+                //                     "type" => "documents",
+                //                     'id' => $documentId
+                //                 ]
+                //             ],
+                //             "signer" => [
+                //                 "data" => [
+                //                     "type" => "signers",
+                //                     'id' => $clicksignSignerResponse['data']['id']
+                //                 ]
+                //             ]
+                //         ]);
 
-                        if (!$clicksignRequirementResponse['success'])
-                            throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+                //         if (!$clicksignRequirementResponse['success'])
+                //             throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
 
-                        $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
-                            'action' => 'provide_evidence',
-                            'auth' => 'email'
-                        ], [
-                            "document" => [
-                                "data" => [
-                                    "type" => "documents",
-                                    'id' => $documentId
-                                ]
-                            ],
-                            "signer" => [
-                                "data" => [
-                                    "type" => "signers",
-                                    'id' => $clicksignSignerResponse['data']['id']
-                                ]
-                            ]
-                        ]);
+                //         $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
+                //             'action' => 'provide_evidence',
+                //             'auth' => 'email'
+                //         ], [
+                //             "document" => [
+                //                 "data" => [
+                //                     "type" => "documents",
+                //                     'id' => $documentId
+                //                 ]
+                //             ],
+                //             "signer" => [
+                //                 "data" => [
+                //                     "type" => "signers",
+                //                     'id' => $clicksignSignerResponse['data']['id']
+                //                 ]
+                //             ]
+                //         ]);
 
-                        if (!$clicksignRequirementResponse['success'])
-                            throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+                //         if (!$clicksignRequirementResponse['success'])
+                //             throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
 
-                        $clicksignEnvelopeResponse = $clicksign->updateEnvelope($envelopeId, [
-                            'status' => 'running'
-                        ]);
+                //         $clicksignEnvelopeResponse = $clicksign->updateEnvelope($envelopeId, [
+                //             'status' => 'running'
+                //         ]);
 
-                        if (!$clicksignEnvelopeResponse['success'])
-                            throw new \Exception('Falha ao atualizar o envelope no clicksign: ' . json_encode($clicksignEnvelopeResponse['data']));
-                    }
-                } catch (\Exception $e) {
-                    $connection->commit();
+                //         if (!$clicksignEnvelopeResponse['success'])
+                //             throw new \Exception('Falha ao atualizar o envelope no clicksign: ' . json_encode($clicksignEnvelopeResponse['data']));
 
-                    dd($e);
+                //         $clicksignNotificationResponse = $clicksign->notifyEnvelopeSigners($envelopeId, ['message' => null]);
 
-                    Log::error('Erro integração Clicksign: ' . $e->getMessage());
-                }
+                //         if (!$clicksignNotificationResponse['success'])
+                //             throw new \Exception('Falha ao notificar o envelope no clicksign: ' . json_encode($clicksignNotificationResponse['data']));
+                //     }
+                // } catch (\Exception $e) {
+                //     $connection->rollBack();
+
+                //     Log::error('Erro integração Clicksign: ' . $e->getMessage());
+                // }
 
                 try {
                     $sicoobConfig = [
                         'baseUrl' => Configure::read('Sicoob.baseUrl'),
                         'authUrl' => Configure::read('Sicoob.authUrl'),
                         'clientId' => Configure::read('Sicoob.clientId'),
-                        'certificate' => Configure::read('Sicoob.certificate_path'), // Assuming path is config
-                        'privateKey' => Configure::read('Sicoob.private_key_path'),   // Assuming path is config
-                        'fixedToken' => Configure::read('Sicoob.fixedToken') // If in homologation/env
+                        'certificate' => Configure::read('Sicoob.certificate_path'),
+                        'privateKey' => Configure::read('Sicoob.private_key_path'),
+                        'fixedToken' => Configure::read('Sicoob.fixedToken')
                     ];
 
                     $sicoob = new \App\Services\SicoobService($sicoobConfig);
@@ -486,7 +498,7 @@ class RegistrationsController extends AppController
                         'valor' => [
                             'original' => number_format((float)$totalContribution, 2, '.', '')
                         ],
-                        'chave' => Configure::read('Sicoob.pixKey') ?? '08408408408',
+                        'chave' => Configure::read('Sicoob.pixKey'),
                         'solicitacaoPagador' => 'Pagamento Adesão'
                     ];
 
@@ -495,11 +507,44 @@ class RegistrationsController extends AppController
                     if (!$cobResponse)
                         throw new \Exception('Falha ao criar cob: ' . json_encode($cobResponse));
 
-                    dd($cobResponse);
-                } catch (\Exception $e) {
+                    $pixTransaction = $this->PixTransactions->newEmptyEntity();
+                    $pixTransaction = $this->PixTransactions->patchEntity(
+                        $pixTransaction,
+                        [
+                            'adhesion_initial_data_id' => $initialDataId,
+                            'txid' => $cobResponse['txid'],
+                            'amount' => $totalContribution,
+                        ],
+                    );
+
+                    if (!$this->PixTransactions->save($pixTransaction))
+                        throw new \Exception('Falha ao salvar transação: ' . json_encode($pixTransaction));
+
                     $connection->commit();
 
-                    dd($e);
+                    $qrCodeBase64 = Builder::create()
+                        ->writer(new PngWriter())
+                        ->writerOptions([])
+                        ->data($cobResponse['brcode'])
+                        ->encoding(new Encoding('UTF-8'))
+                        ->errorCorrectionLevel(ErrorCorrectionLevel::High)
+                        ->size(300)
+                        ->margin(10)
+                        ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
+                        ->validateResult(false)
+                        ->build()
+                        ->getDataUri();
+
+                    return $this->response->withType('application/json')
+                        ->withStringBody(json_encode([
+                            'success' => true,
+                            'message' => 'Adesão salva com sucesso!',
+                            'initialDataId' => intval($initialDataId),
+                            'qrCodeBase64' => $qrCodeBase64,
+                            'copyAndPaste' => $cobResponse['brcode'],
+                        ]));
+                } catch (\Exception $e) {
+                    $connection->rollback();
 
                     Log::error('Erro integração Sicoob: ' . $e->getMessage());
                 }

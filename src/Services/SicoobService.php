@@ -194,6 +194,16 @@ class SicoobService
 
     /**
      * @param string $txid
+     * @return string|null
+     * @throws Exception
+     */
+    public function cobImage(string $txid): string|null
+    {
+        return $this->request('get', "/cob/{$txid}/imagem");
+    }
+
+    /**
+     * @param string $txid
      * @param array $data
      * @return array
      * @throws Exception

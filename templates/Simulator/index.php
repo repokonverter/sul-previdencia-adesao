@@ -1585,6 +1585,18 @@ function createSecureCard($data, $type)
                                     <p>Enviamos para o e-mail "<span id="conclusionEmail"></span>" a proposta para assinatura e abaixo o pix para adesão, utilize o QR Code/pix copia e cola para realizar o pagamento.</p>
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="col-12 text-center">
+                                    <img id="pix-qrcode" src="" alt="QR Code PIX" style="max-width: 200px; display: none; margin: 0 auto;" />
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <label for="pix-copy-paste" class="form-label">Pix Copia e Cola</label>
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" id="pix-copy-paste" readonly>
+                                        <button class="btn btn-outline-secondary" type="button" id="btn-copy-pix">Copiar</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -1664,6 +1676,15 @@ function createSecureCard($data, $type)
                 updatePage(registerPageIndex);
 
                 registerModal.show();
+            });
+
+            $('#btn-copy-pix').on('click', function() {
+                const copyText = document.getElementById("pix-copy-paste");
+                copyText.select();
+                copyText.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(copyText.value).then(() => {
+                    alert("Código PIX copiado!");
+                });
             });
 
             simulationChart();
@@ -1837,9 +1858,14 @@ function createSecureCard($data, $type)
                 }
             }
 
-            await saveForm(registerPages[registerPageIndex].id);
+            const response = await saveForm(registerPages[registerPageIndex].id);
 
             registerPageIndex += 1;
+
+            if (registerPageIndex === 10) {
+                $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
+                $('#pix-copy-paste').val(response.copyAndPaste);
+            }
 
             updatePage(registerPageIndex)
         }

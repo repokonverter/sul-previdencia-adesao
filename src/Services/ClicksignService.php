@@ -281,20 +281,15 @@ class ClicksignService
         return $this->_request('delete', "/observers/{$key}");
     }
 
-    public function notifySigner(string $requestKey): array
+    public function notifySigner(string $envelopeKey, string $signerId, array $attributes): array
     {
-        // Docs: Notificar um Signatário
-        // Path usually /notifications with signer_request_key or similar
-        // Checking doc structure: "Notificar um Signatário" -> POST /notifications
         $payload = [
             'data' => [
                 'type' => 'notifications',
-                'attributes' => [
-                    'request_key' => $requestKey
-                ],
+                'attributes' => $attributes,
             ],
         ];
-        return $this->_request('post', "/notifications", $payload);
+        return $this->_request('post', "/envelopes/{$envelopeKey}/signers/{$signerId}/notifications", $payload);
     }
 
     public function notifyEnvelopeSigners(string $envelopeKey, array $attributes = []): array
@@ -302,10 +297,10 @@ class ClicksignService
         $payload = [
             'data' => [
                 'type' => 'notifications',
-                'attributes' => array_merge(['envelope_id' => $envelopeKey], $attributes),
+                'attributes' => $attributes,
             ],
         ];
-        return $this->_request('post', "/notifications", $payload);
+        return $this->_request('post', "/envelopes/{$envelopeKey}/notifications", $payload);
     }
 
     public function getTemplates(): array

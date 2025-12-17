@@ -105,5 +105,6 @@ return [
         'certificate' => 'certificate.pem',
         'privateKey' => 'private.key',
         'fixedToken' => env('SICOOB_FIXED_TOKEN', null),
+        'pixKey' => env('SICOOB_PIX_KEY', null),
     ],
 ];
