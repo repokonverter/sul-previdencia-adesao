@@ -27,6 +27,13 @@ env:
     - DB_USER
     - DB_PASSWORD
     - DB_NAME
+    - CLICKSIGN_BASE_URL
+    - CLICKSIGN_ACCESS_TOKEN
+    - SICOOB_BASE_URL
+    - SICOOB_AUTH_URL
+    - SICOOB_CLIENT_ID
+    - SICOOB_FIXED_TOKEN
+    - SICOOB_PIX_KEY
 
 builder:
   remote: "ssh://deploy@162.240.166.197:22022"
