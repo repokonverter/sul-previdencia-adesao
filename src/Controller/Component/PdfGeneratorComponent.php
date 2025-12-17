@@ -21,19 +21,22 @@ class PdfGeneratorComponent extends Component
 
     public function generatePdf($id, $returnContent = false)
     {
-        $adhesion = $this->AdhesionInitialDatas->get($id, [
-            'contain' => [
+        $adhesion = $this->AdhesionInitialDatas->get(
+            $id,
+            contain: [
                 'AdhesionPersonalDatas',
-                'AdhesionAddresses',
-                'AdhesionDependents',
-                'AdhesionPlans',
                 'AdhesionDocuments',
+                'AdhesionPlans',
+                'AdhesionDependents',
+                'AdhesionAddresses',
                 'AdhesionOtherInformations',
-                'AdhesionPaymentDetails',
+                'AdhesionProponentStatements',
                 'AdhesionPensionSchemes',
-                'AdhesionProponentStatements'
+                'AdhesionPaymentDetails',
+                'ClicksignDatas',
+                'PixTransactions',
             ]
-        ]);
+        );
 
         $birthDate = new DateTime($adhesion->adhesion_personal_data->birth_date->format('Y-m-d'));
         $today = new DateTime();
@@ -68,19 +71,22 @@ class PdfGeneratorComponent extends Component
 
     public function generateFormPdf($id, $returnContent = false)
     {
-        $adhesion = $this->AdhesionInitialDatas->get($id, [
-            'contain' => [
+        $adhesion = $this->AdhesionInitialDatas->get(
+            $id,
+            contain: [
                 'AdhesionPersonalDatas',
-                'AdhesionAddresses',
-                'AdhesionDependents',
-                'AdhesionPlans',
                 'AdhesionDocuments',
+                'AdhesionPlans',
+                'AdhesionDependents',
+                'AdhesionAddresses',
                 'AdhesionOtherInformations',
-                'AdhesionPaymentDetails',
+                'AdhesionProponentStatements',
                 'AdhesionPensionSchemes',
-                'AdhesionProponentStatements'
+                'AdhesionPaymentDetails',
+                'ClicksignDatas',
+                'PixTransactions',
             ]
-        ]);
+        );
 
         $controller = $this->getController();
         $controller->set(compact('adhesion'));
