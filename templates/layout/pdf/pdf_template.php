@@ -227,86 +227,70 @@
 
         <table style="margin-top: -1px;">
             <tr>
-                <td colspan="3">Nome Completo<br><?= $adhesion->adhesion_personal_data->name ?? '' ?></td>
-                <td>Data de Nascimento<br><?= $adhesion->adhesion_personal_data->birth_date ? $adhesion->adhesion_personal_data->birth_date->format('d/m/Y') : '' ?></td>
+                <td colspan="4">Nome Completo<br><?= $adhesion->adhesion_personal_data->name ?? '' ?></td>
+                <td colspan="2">Data de Nascimento<br><?= $adhesion->adhesion_personal_data->birth_date ? $adhesion->adhesion_personal_data->birth_date->format('d/m/Y') : '' ?></td>
             </tr>
             <tr>
                 <td>Idade<br><?= $age ?? '' ?></td>
                 <td>Sexo<br><?= $adhesion->adhesion_personal_data->gender ?? '' ?></td>
                 <td>Estado Civil<br><?= $adhesion->adhesion_personal_data->marital_status ?? '' ?></td>
                 <td>Nº de Filhos<br><?= $adhesion->adhesion_personal_data->number_childrens ?? 0 ?></td>
-                <td>CPF / Tipo<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?>, <span class="bold"><?= $adhesion->adhesion_personal_data->plan_for ?? '' ?></span></td>
+                <td colspan="2">CPF / Tipo<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?>, <span class="bold"><?= $adhesion->adhesion_personal_data->plan_for ?? '' ?></span></td>
             </tr>
             <tr>
-                <td>Nacionalidade<br><?= $adhesion->adhesion_personal_data->nacionality ?? '' ?></td>
+                <td colspan="2">Nacionalidade<br><?= $adhesion->adhesion_personal_data->nacionality ?? '' ?></td>
                 <td>Nat. do Documento<br><?= $adhesion->adhesion_document->type ?? '' ?> <?= $adhesion->adhesion_document->type_other ?? '' ?></td>
                 <td>Nº do Documento<br><?= $adhesion->adhesion_document->document_number ?? '' ?></td>
-                <td>Órgão Expedidor<br><?= $adhesion->adhesion_document->issuer ?? '' ?> / <?= $adhesion->adhesion_document->state ?? '' ?></td>
+                <td>Órgão Expedidor<br><?= $adhesion->adhesion_document->issuer ?? '' ?>/<?= $adhesion->adhesion_document->state ?? '' ?></td>
                 <td>Data de Expedição<br><?= $adhesion->adhesion_document->issue_date ? $adhesion->adhesion_document->issue_date->format('d/m/Y') : '' ?></td>
             </tr>
             <tr>
-                <td>Ocupação princ.<br><?= $adhesion->adhesion_other_information->main_occupation ?? '' ?></td>
-                <td colspan="3">
-                    Cód: <?= $adhesion->adhesion_other_information->main_occupation ?? '' ?>
-                    (<?= $adhesion->adhesion_other_information->status ?? '' ?>)
-                    &nbsp;&nbsp;|&nbsp;&nbsp;
-                    Categoria: <?= $adhesion->adhesion_other_information->category ?? '' ?>
+                <td colspan="2">Ocupação princ.<br><?= $adhesion->adhesion_other_information->main_occupation ?? '' ?></td>
+                <td colspan="2">Cód.<br><?= $adhesion->adhesion_other_information->main_occupation_code ?? '' ?>, ativo/inativo</td>
+                <td colspan="2">
+                    Empresa que trabalha<br><?= $adhesion->adhesion_other_information->company ?? '' ?>
                 </td>
             </tr>
             <tr>
-                <td>Pessoa Politicamente Exposta?</td>
-                <td><?= $adhesion->adhesion_other_information->politically_exposed ? 'Sim. Especificar: ' . ($adhesion->adhesion_other_information->politically_exposed_obs ?? '') : 'Não' ?></td>
-                <td>Residente no Brasil?</td>
-                <td><?= $adhesion->adhesion_other_information->brazilian_resident ? 'Sim' : 'Não' ?></td>
+                <td colspan="2">Categoria<br><?= $adhesion->adhesion_other_information->category ?? '' ?></td>
+                <td>Renda mensal bruta<br><?= $adhesion->adhesion_other_information->monthly_income ?? '' ?></td>
+                <td colspan="3">Pessoa Politicamente Exposta¹?<br><?= $adhesion->adhesion_other_information->politically_exposed ? 'Sim, ' . ($adhesion->adhesion_other_information->politically_exposed_obs ?? '') : 'Não' ?></td>
             </tr>
             <tr>
-                <td>Obrigações fiscais exterior?</td>
-                <td colspan="3"><?= $adhesion->adhesion_other_information->obligation_other_countries ? 'Sim' : 'Não' ?></td>
+                <td colspan="2">Residente no Brasil?<br><?= $adhesion->adhesion_other_information->brazilian_resident ? 'Sim' : 'Não' ?></td>
+                <td colspan="4">Obrigações fiscais exterior²?<br><?= $adhesion->adhesion_other_information->obligation_other_countries ? 'Sim' : 'Não' ?></td>
             </tr>
             <tr>
-                <td>Endereço Residencial</td>
-                <td colspan="3">
-                    <?= $adhesion->adhesion_address->address ?? '' ?>, Nº <?= $adhesion->adhesion_address->number ?? '' ?>
-                    <?= $adhesion->adhesion_address->complement ? ' - ' . $adhesion->adhesion_address->complement : '' ?>
-                </td>
+                <td colspan="4">Endereço Residencial<br><?= $adhesion->adhesion_address->address ?? '' ?></td>
+                <td colspan="2">Nº<br><?= $adhesion->adhesion_address->number ?? '' ?></td>
             </tr>
             <tr>
-                <td>Bairro / Cidade / UF</td>
-                <td colspan="3">
-                    <?= $adhesion->adhesion_address->neighborhood ?? '' ?> -
-                    <?= $adhesion->adhesion_address->city ?? '' ?> / <?= $adhesion->adhesion_address->state ?? '' ?>
-                </td>
+                <td>Complemento<br><?= $adhesion->adhesion_address->complement ?? '' ?></td>
+                <td>Bairro<br><?= $adhesion->adhesion_address->neighborhood ?? '' ?></td>
+                <td colspan="2">Cidade<br><?= $adhesion->adhesion_address->city ?? '' ?></td>
+                <td>UF<br><?= $adhesion->adhesion_address->state ?? '' ?></td>
+                <td>CEP<br><?= $adhesion->adhesion_address->cep ?? '' ?></td>
             </tr>
             <tr>
-                <td>CEP</td>
-                <td><?= $adhesion->adhesion_address->cep ?? '' ?></td>
-                <td>Telefone / Celular</td>
-                <td><?= $adhesion->phone ?? '' ?></td>
+                <td>Telefone<br><?= $adhesion->phone ?? '' ?></td>
+                <td colspan="4">E-mail<br><?= $adhesion->email ?? '' ?></td>
+                <td>É participante?<br><?= $adhesion->is_participant ? 'Sim' : 'Não' ?></td>
+            </tr>
+            <?php if ($adhesion->adhesion_personal_data->cpf_legal_representative) { ?>
+            <tr>
+                <td colspan="4">Nome do representante legal<br><?= $adhesion->adhesion_personal_data->name_legal_representative ?? '' ?></td>
+                <td colspan="2">CPF do representante legal<br><?= $adhesion->adhesion_personal_data->cpf_legal_representative ?? '' ?></td>
             </tr>
             <tr>
-                <td>E-mail</td>
-                <td colspan="3"><?= $adhesion->email ?? '' ?></td>
+                <td colspan="6">Filiação<br><?= $adhesion->adhesion_personal_data->affiliation_legal_representative ?? '' ?></td>
             </tr>
-            <tr>
-                <td>Representante Legal</td>
-                <td colspan="3">
-                    Nome: <?= $adhesion->adhesion_personal_data->name_legal_representative ?? '' ?> |
-                    CPF: <?= $adhesion->adhesion_personal_data->cpf_legal_representative ?? '' ?>
-                </td>
-            </tr>
-            <tr>
-                <td>Filiação</td>
-                <td colspan="3">
-                    Mãe: <?= $adhesion->adhesion_personal_data->mother_name ?? '' ?> |
-                    Pai: <?= $adhesion->adhesion_personal_data->father_name ?? '' ?>
-                </td>
-            </tr>
+            <?php } ?>
         </table>
 
         <div class="small-note">
-            <b>¹ Pessoas politicamente expostas:</b> Consideram-se pessoas politicamente expostas os agentes públicos que desempenham ou tenham desempenhado, nos 5 (cinco) anos anteriores, empregos ou funções públicas relevantes...
+            <b>¹Pessoas politicamente expostas:</b> Consideram-se pessoas politicamente expostas os agentes públicos que desempenham ou tenham desempenhado, nos 5 (cinco) anos anteriores, empregos ou funções públicas relevantes, assim como funções relevantes em organizações internacionais. cargos, empregos ou funções públicas, assim como seus representantes, familiares e outras pessoas de seu relacionamento próximo. São considerados familiares os parentes, na linha direta, até o primeiro grau, o cônjuge, o companheiro, a companheira, o enteado e a enteada, conforme definido na Circular SUSEP Nº 612/2020.
             <br>
-            <b>² FATCA:</b> Lei federal norte-americana que prevê a obrigatoriedade de instituições bancárias estrangeiras fornecerem dados...
+            <b>²A Lei de Conformidade Tributária de Contas Estrangeiras [Foreign Account Tax Compliance Act (FATCA)]</b> é uma lei federal norte-americana que prevê a obrigatoriedade de instituições bancárias estrangeiras fornecerem dados de seus correntistas às autoridades americanas, desde que esses correntistas sejam também cidadãos norte-americanos.
         </div>
 
         <div class="section-title">PLANO DE BENEFÍCIOS</div>
