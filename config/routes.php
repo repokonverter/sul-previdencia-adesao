@@ -83,6 +83,7 @@ return function (RouteBuilder $routes): void {
 
     $routes->prefix('Admin', function (RouteBuilder $routes) {
         $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
+
         $routes->fallbacks(DashedRoute::class);
     });
 

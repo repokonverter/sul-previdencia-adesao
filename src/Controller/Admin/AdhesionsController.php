@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
-use Dompdf\Dompdf;
-use DateTime;
+use App\Model\Table\AdhesionInitialDatasTable;
 use App\Services\ClicksignService;
 
 class AdhesionsController extends AppController
 {
+    protected AdhesionInitialDatasTable $AdhesionInitialDatas;
+
     public function initialize(): void
     {
         parent::initialize();
@@ -19,33 +20,12 @@ class AdhesionsController extends AppController
 
         $this->viewBuilder()->setLayout('admin');
 
-        $this->AdhesionPersonalDatas = $this->fetchTable('AdhesionPersonalDatas');
         $this->AdhesionInitialDatas = $this->fetchTable('AdhesionInitialDatas');
-        $this->AdhesionAddresses = $this->fetchTable('AdhesionAddresses');
-        $this->AdhesionDependents = $this->fetchTable('AdhesionDependents');
-        $this->AdhesionPlans = $this->fetchTable('AdhesionPlans');
-        $this->AdhesionOtherInformations = $this->fetchTable('AdhesionOtherInformations');
-        $this->AdhesionDocuments = $this->fetchTable('AdhesionDocuments');
-
 
         $this->paginate = [
             'order' => ['AdhesionInitialDatas.created' => 'DESC'],
             'limit' => 10
         ];
-    }
-
-    public function assinar($id)
-    {
-
-        $clicksign = new ClicksignService(
-            'baseUrl',
-            'accessToken'
-        );
-
-        $resultado = $clicksign->exemplo();
-
-        debug($resultado);
-        exit(); // "teste!"
     }
 
     public function index()
@@ -151,9 +131,18 @@ class AdhesionsController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
-    public function generatePdf($id)
+    public function generatePdf($id, $returnContent = false)
     {
-        return $this->PdfGenerator->generatePdf($id);
+        $pdf = $this->PdfGenerator->generatePdf($id, $returnContent);
+
+        if (!$returnContent)
+            return $pdf;
+
+        $this->response = $this->response->withType('pdf');
+        $this->viewBuilder()->setLayout('pdfPreview');
+        $this->set(['pdf' => $pdf]);
+
+        return $this->render('pdfPreview');
     }
 
     public function generateFormPdf($id)

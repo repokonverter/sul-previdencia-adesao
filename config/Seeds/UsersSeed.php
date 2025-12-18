@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use Migrations\AbstractSeed;
@@ -20,7 +21,7 @@ class UsersSeed extends AbstractSeed
             ],
         ];
 
-        $table = $this->table('users');
-        $table->insert($data)->save();
+        $this->table('users')->truncate();
+        $this->table('users')->insert($data)->save();
     }
 }

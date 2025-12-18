@@ -1,20 +1,69 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <style>
-        @page { margin: 20px 30px; }
-        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.1; color: #000; }
+        @page {
+            margin: 20px 30px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.1;
+            color: #000;
+        }
 
         /* Tabelas Gerais */
-        table { border-collapse: collapse; width: 100%; margin-bottom: 5px; }
-        th, td { border: 1px solid #000; padding: 4px; text-align: left; vertical-align: middle; font-size: 9pt; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: left;
+            vertical-align: middle;
+            font-size: 9pt;
+        }
 
         /* Cabeçalho Limpo (Sem bordas) */
-        .header-table { width: 100%; border: none !important; margin-bottom: 5px; }
-        .header-table td { border: none !important; vertical-align: bottom; padding: 0; }
-        .main-title { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-        .logo-text { font-size: 22pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; text-align: right; }
-        .slogan { font-size: 9pt; font-style: italic; text-align: right; margin-top: -4px; }
+        .header-table {
+            width: 100%;
+            border: none !important;
+            margin-bottom: 5px;
+        }
+
+        .header-table td {
+            border: none !important;
+            vertical-align: bottom;
+            padding: 0;
+        }
+
+        .main-title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .logo-text {
+            font-size: 22pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: right;
+        }
+
+        .slogan {
+            font-size: 9pt;
+            font-style: italic;
+            text-align: right;
+            margin-top: -4px;
+        }
 
         /* Títulos de Seção */
         .section-title {
@@ -30,35 +79,105 @@
         /* Checkbox Simulado (Visual apenas) */
         .checkbox {
             display: inline-block;
-            width: 10px; height: 10px;
+            width: 10px;
+            height: 10px;
             border: 1px solid #000;
             margin-right: 3px;
-            text-align: center; line-height: 10px; font-size: 10px;
+            text-align: center;
+            line-height: 10px;
+            font-size: 10px;
         }
-        .checkbox.checked::after { content: "X"; font-size: 8px; font-weight: bold; }
+
+        .checkbox.checked::after {
+            content: "X";
+            font-size: 8px;
+            font-weight: bold;
+        }
 
         /* Utilitários de Texto */
-        .small-note { font-size: 8pt; text-align: justify; margin-top: 3px; line-height: 1.2; }
-        .bold { font-weight: bold; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
+        .small-note {
+            font-size: 8pt;
+            text-align: justify;
+            margin-top: 3px;
+            line-height: 1.2;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
 
         /* Assinaturas e Administrativo */
-        .invisible-table, .invisible-table tr, .invisible-table td { border: none !important; background: transparent !important; padding: 0; }
-        .signature-table { width: 100%; margin-top: 25px; }
-        .signature-cell { width: 50%; padding: 0 10px; text-align: center; vertical-align: bottom; }
-        .signature-line { border-bottom: 1px solid #000; width: 90%; height: 20px; margin: 0 auto; }
-        .signature-label { text-align: center; font-size: 9pt; padding-top: 2px; }
+        .invisible-table,
+        .invisible-table tr,
+        .invisible-table td {
+            border: none !important;
+            background: transparent !important;
+            padding: 0;
+        }
+
+        .signature-table {
+            width: 100%;
+            margin-top: 25px;
+        }
+
+        .signature-cell {
+            width: 50%;
+            padding: 0 10px;
+            text-align: center;
+            vertical-align: bottom;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #000;
+            width: 90%;
+            height: 20px;
+            margin: 0 auto;
+        }
+
+        .signature-label {
+            text-align: center;
+            font-size: 9pt;
+            padding-top: 2px;
+        }
 
         /* Caixas Admin */
-        .seg-table { table-layout: fixed; font-size: 8pt; margin-top: 5px; }
-        .light-box { background: #f2f4ff; border: 1px solid #d3d7f6; padding: 2px 5px; font-size: 9pt; display: inline-block; width: 100px; }
+        .seg-table {
+            table-layout: fixed;
+            font-size: 8pt;
+            margin-top: 5px;
+        }
+
+        .light-box {
+            background: #f2f4ff;
+            border: 1px solid #d3d7f6;
+            padding: 2px 5px;
+            font-size: 9pt;
+            display: inline-block;
+            width: 100px;
+        }
 
         /* Rodapé */
-        .footer-text { font-size: 8pt; text-align: center; margin-top: 30px; line-height: 1.3; }
-        .page-break { page-break-after: always; }
+        .footer-text {
+            font-size: 8pt;
+            text-align: center;
+            margin-top: 30px;
+            line-height: 1.3;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
     </style>
 </head>
+
 <body>
     <div>
         <div style="font-size: 8pt; text-align: right; margin-bottom: 5px;">
@@ -82,66 +201,51 @@
 
         <div style="border-bottom: 2px solid #000; margin-bottom: 5px;"></div>
         <div style="font-size: 7pt; text-align: right; margin-bottom: 5px;">
-             1ª Via: MAG Seguros - 2ª Via: Sul Previdência - 3ª Via: Participante
+            1ª Via: MAG Seguros - 2ª Via: Sul Previdência - 3ª Via: Participante
         </div>
 
         <table>
             <tr>
-                <td width="20%">CNPJ do Plano</td>
-                <td width="30%">48.307.525/0001-09</td>
-                <td width="20%">Nº da Proposta</td>
-                <td width="30%"><?= $proposalNumber ?></td>
-            </tr>
-            <tr>
-                <td>Nº do Instituidor</td><td></td>
-                <td>Nome do Instituidor</td><td></td>
+                <td>
+                    CNPJ do Plano<br>
+                    48.307.525/0001-09
+                </td>
+                <td>
+                    Nº do Instituidor<br>
+                    123123
+                </td>
+                <td>
+                    Nome do instituidor<br>
+                    TEste
+                </td>
+                <td>
+                    Nº da Proposta<br>
+                    <?= $proposalNumber ?>
+                </td>
             </tr>
         </table>
 
         <table style="margin-top: -1px;">
             <tr>
-                <td width="20%">Nome Completo</td>
-                <td colspan="3" class="bold"><?= $adhesion->adhesion_personal_data->name ?? '' ?></td>
+                <td colspan="3">Nome Completo<br><?= $adhesion->adhesion_personal_data->name ?? '' ?></td>
+                <td>Data de Nascimento<br><?= $adhesion->adhesion_personal_data->birth_date ? $adhesion->adhesion_personal_data->birth_date->format('d/m/Y') : '' ?></td>
             </tr>
             <tr>
-                <td>Data de Nascimento</td>
-                <td><?= $adhesion->adhesion_personal_data->birth_date ? $adhesion->adhesion_personal_data->birth_date->format('d/m/Y') : '' ?></td>
-                <td width="15%">Idade / Sexo</td>
-                <td><?= $age ?? '' ?> &nbsp;/&nbsp; <?= $adhesion->adhesion_personal_data->gender ?? '' ?></td>
+                <td>Idade<br><?= $age ?? '' ?></td>
+                <td>Sexo<br><?= $adhesion->adhesion_personal_data->gender ?? '' ?></td>
+                <td>Estado Civil<br><?= $adhesion->adhesion_personal_data->marital_status ?? '' ?></td>
+                <td>Nº de Filhos<br><?= $adhesion->adhesion_personal_data->number_childrens ?? 0 ?></td>
+                <td>CPF / Tipo<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?>, <span class="bold"><?= $adhesion->adhesion_personal_data->plan_for ?? '' ?></span></td>
             </tr>
             <tr>
-                <td>Estado Civil</td>
-                <td><?= $adhesion->adhesion_personal_data->marital_status ?? '' ?></td>
-                <td>Nº de Filhos</td>
-                <td><?= $adhesion->adhesion_personal_data->number_childrens ?? 0 ?></td>
+                <td>Nacionalidade<br><?= $adhesion->adhesion_personal_data->nacionality ?? '' ?></td>
+                <td>Nat. do Documento<br><?= $adhesion->adhesion_document->type ?? '' ?> <?= $adhesion->adhesion_document->type_other ?? '' ?></td>
+                <td>Nº do Documento<br><?= $adhesion->adhesion_document->document_number ?? '' ?></td>
+                <td>Órgão Expedidor<br><?= $adhesion->adhesion_document->issuer ?? '' ?> / <?= $adhesion->adhesion_document->state ?? '' ?></td>
+                <td>Data de Expedição<br><?= $adhesion->adhesion_document->issue_date ? $adhesion->adhesion_document->issue_date->format('d/m/Y') : '' ?></td>
             </tr>
             <tr>
-                <td>CPF / Tipo</td>
-                <td colspan="3">
-                    <?= $adhesion->adhesion_personal_data->cpf ?? '' ?>
-                    &nbsp;&nbsp;&mdash;&nbsp;&nbsp;
-                    <span class="bold"><?= $adhesion->adhesion_personal_data->plan_for ?? '' ?></span>
-                </td>
-            </tr>
-            <tr>
-                <td>Nacionalidade</td>
-                <td><?= $adhesion->adhesion_personal_data->nacionality ?? '' ?></td>
-                <td>Documento</td>
-                <td><?= $adhesion->adhesion_document->type ?? '' ?> <?= $adhesion->adhesion_document->type_other ?? '' ?></td>
-            </tr>
-            <tr>
-                <td>Nº do Documento</td>
-                <td><?= $adhesion->adhesion_document->document_number ?? '' ?></td>
-                <td>Órgão Expedidor</td>
-                <td><?= $adhesion->adhesion_document->issuer ?? '' ?> / <?= $adhesion->adhesion_document->state ?? '' ?></td>
-            </tr>
-            <tr>
-                <td>Data de Expedição</td>
-                <td><?= $adhesion->adhesion_document->issue_date ? $adhesion->adhesion_document->issue_date->format('d/m/Y') : '' ?></td>
-                <td colspan="2"></td>
-            </tr>
-            <tr>
-                <td>Ocupação</td>
+                <td>Ocupação princ.<br><?= $adhesion->adhesion_other_information->main_occupation ?? '' ?></td>
                 <td colspan="3">
                     Cód: <?= $adhesion->adhesion_other_information->main_occupation ?? '' ?>
                     (<?= $adhesion->adhesion_other_information->status ?? '' ?>)
@@ -207,26 +311,42 @@
 
         <div class="section-title">PLANO DE BENEFÍCIOS</div>
         <table>
-            <tr><td width="50%">Benefício</td><td>APOSENTADORIA PROGRAMADA</td></tr>
-            <tr><td>Idade para Entrada em Benefício</td><td><?= $adhesion->adhesion_plan->benefit_entry_age ?? '' ?> anos</td></tr>
-            <tr><td>Valor da Contribuição (1)</td><td>R$ <?= number_format($adhesion->adhesion_plan->monthly_retirement_contribution ?? 0, 2, ',', '.') ?></td></tr>
+            <tr>
+                <td width="50%">Benefício</td>
+                <td>APOSENTADORIA PROGRAMADA</td>
+            </tr>
+            <tr>
+                <td>Idade para Entrada em Benefício</td>
+                <td><?= $adhesion->adhesion_plan->benefit_entry_age ?? '' ?> anos</td>
+            </tr>
+            <tr>
+                <td>Valor da Contribuição (1)</td>
+                <td>R$ <?= number_format($adhesion->adhesion_plan->monthly_retirement_contribution ?? 0, 2, ',', '.') ?></td>
+            </tr>
         </table>
         <div class="small-note">Taxa de Carregamento: 0%. Atualização anual (Junho/INPC). CNPB nº 2011/0017-65.</div>
 
         <div class="section-title">BENEFICIÁRIOS DO PLANO</div>
         <table>
-            <tr><th>Nome Completo</th><th>Data Nasc.</th><th>Parentesco*</th><th>%</th></tr>
+            <tr>
+                <th>Nome Completo</th>
+                <th>Data Nasc.</th>
+                <th>Parentesco*</th>
+                <th>%</th>
+            </tr>
             <?php if (!empty($adhesion->adhesion_dependents)): ?>
                 <?php foreach ($adhesion->adhesion_dependents as $dependent): ?>
-                <tr>
-                    <td><?= $dependent->name ?? '' ?></td>
-                    <td><?= $dependent->birth_date ? $dependent->birth_date->format('d/m/Y') : '' ?></td>
-                    <td><?= $dependent->kinship ?? '' ?></td>
-                    <td><?= $dependent->participation ?? '' ?> %</td>
-                </tr>
+                    <tr>
+                        <td><?= $dependent->name ?? '' ?></td>
+                        <td><?= $dependent->birth_date ? $dependent->birth_date->format('d/m/Y') : '' ?></td>
+                        <td><?= $dependent->kinship ?? '' ?></td>
+                        <td><?= $dependent->participation ?? '' ?> %</td>
+                    </tr>
                 <?php endforeach; ?>
             <?php else: ?>
-                <tr><td colspan="4" class="text-center">Não há beneficiários indicados. Observar art. 792 do Código Civil.</td></tr>
+                <tr>
+                    <td colspan="4" class="text-center">Não há beneficiários indicados. Observar art. 792 do Código Civil.</td>
+                </tr>
             <?php endif; ?>
         </table>
         <div class="small-note">*Legenda: C-Cônjuge; F-Filho(a); I-Irmão(ã); M-Mãe; P-Pai; Outros...</div>
@@ -264,14 +384,14 @@
                 <td>Forma Pagamento</td>
                 <td class="bold"><?= $adhesion->adhesion_payment_detail->payment_type ?? '' ?></td>
             </tr>
-            <?php if(($adhesion->adhesion_payment_detail->payment_type ?? '') == 'Débito em Conta'): ?>
-            <tr>
-                <td colspan="2">
-                    Banco: <?= $adhesion->adhesion_payment_detail->bank_number ?? '' ?> - <?= $adhesion->adhesion_payment_detail->bank_name ?? '' ?> |
-                    Ag: <?= $adhesion->adhesion_payment_detail->branch_number ?? '' ?> |
-                    CC: <?= $adhesion->adhesion_payment_detail->account_number ?? '' ?>
-                </td>
-            </tr>
+            <?php if (($adhesion->adhesion_payment_detail->payment_type ?? '') == 'Débito em Conta'): ?>
+                <tr>
+                    <td colspan="2">
+                        Banco: <?= $adhesion->adhesion_payment_detail->bank_number ?? '' ?> - <?= $adhesion->adhesion_payment_detail->bank_name ?? '' ?> |
+                        Ag: <?= $adhesion->adhesion_payment_detail->branch_number ?? '' ?> |
+                        CC: <?= $adhesion->adhesion_payment_detail->account_number ?? '' ?>
+                    </td>
+                </tr>
             <?php endif; ?>
         </table>
     </div>
@@ -285,17 +405,51 @@
 
         <div class="section-title">PARA USO DA SEGURADORA</div>
         <table class="seg-table">
-            <tr><th width="30%">Nome Proponente</th><th width="20%">CPF</th><th width="25%">Cód. Órgão</th><th width="25%">A partir de</th></tr>
-            <tr><td><br></td><td></td><td></td><td></td></tr>
-            <tr><th>Convênio Adesão</th><th>Ação Marketing</th><th>Alternativa</th><th>Sucursal</th></tr>
-            <tr><td><br></td><td></td><td></td><td></td></tr>
-            <tr><th>Gerente Comercial</th><th>Agente</th><th>Corretor 1</th><th>Corretor 2</th></tr>
-            <tr><td><br></td><td></td><td></td><td></td></tr>
+            <tr>
+                <th width="30%">Nome Proponente</th>
+                <th width="20%">CPF</th>
+                <th width="25%">Cód. Órgão</th>
+                <th width="25%">A partir de</th>
+            </tr>
+            <tr>
+                <td><br></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <th>Convênio Adesão</th>
+                <th>Ação Marketing</th>
+                <th>Alternativa</th>
+                <th>Sucursal</th>
+            </tr>
+            <tr>
+                <td><br></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <th>Gerente Comercial</th>
+                <th>Agente</th>
+                <th>Corretor 1</th>
+                <th>Corretor 2</th>
+            </tr>
+            <tr>
+                <td><br></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
         </table>
 
         <div class="section-title">DECLARAÇÃO PESSOAL DE SAÚDE</div>
         <table style="font-size: 8pt;">
-            <tr><th width="70%">Perguntas</th><th width="10%">Resp.</th><th width="20%">Obs.</th></tr>
+            <tr>
+                <th width="70%">Perguntas</th>
+                <th width="10%">Resp.</th>
+                <th width="20%">Obs.</th>
+            </tr>
             <tr>
                 <td>1. Problema de saúde ou medicamentos?</td>
                 <td class="text-center"><?= $adhesion->adhesion_proponent_statement->health_problem ? 'Sim' : 'Não' ?></td>
@@ -358,8 +512,12 @@
 
         <table class="signature-table invisible-table">
             <tr>
-                <td class="signature-cell"><div class="signature-line"></div></td>
-                <td class="signature-cell"><div class="signature-line"></div></td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
             </tr>
             <tr>
                 <td class="signature-label">Local e Data</td>
@@ -369,10 +527,14 @@
 
         <div style="margin-top:20px; border-top: 1px solid #000; padding-top: 5px;">
             <div style="font-weight:bold; font-size: 9pt;">PARA USO DA SUL PREVIDÊNCIA</div>
-             <table class="invisible-table" style="width: auto;">
+            <table class="invisible-table" style="width: auto;">
                 <tr>
-                    <td><div class="light-box">Conferido em</div></td>
-                    <td><div class="light-box">Visto</div></td>
+                    <td>
+                        <div class="light-box">Conferido em</div>
+                    </td>
+                    <td>
+                        <div class="light-box">Visto</div>
+                    </td>
                 </tr>
             </table>
             <div style="font-size:8pt;">De acordo com a solicitação do proponente.</div>
@@ -384,12 +546,42 @@
     <div>
         <div class="section-title">PARA USO DA SEGURADORA</div>
         <table class="seg-table">
-            <tr><th width="30%">Nome Proponente</th><th width="20%">CPF</th><th width="25%">Cód. Órgão</th><th width="25%">A partir de</th></tr>
-            <tr><td><br></td><td></td><td></td><td></td></tr>
-            <tr><th>Convênio Adesão</th><th>Ação Marketing</th><th>Alternativa</th><th>Sucursal</th></tr>
-            <tr><td><br></td><td></td><td></td><td></td></tr>
-            <tr><th>Gerente Comercial</th><th>Agente</th><th>Corretor 1</th><th>Corretor 2</th></tr>
-            <tr><td><br></td><td></td><td></td><td></td></tr>
+            <tr>
+                <th width="30%">Nome Proponente</th>
+                <th width="20%">CPF</th>
+                <th width="25%">Cód. Órgão</th>
+                <th width="25%">A partir de</th>
+            </tr>
+            <tr>
+                <td><br></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <th>Convênio Adesão</th>
+                <th>Ação Marketing</th>
+                <th>Alternativa</th>
+                <th>Sucursal</th>
+            </tr>
+            <tr>
+                <td><br></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <th>Gerente Comercial</th>
+                <th>Agente</th>
+                <th>Corretor 1</th>
+                <th>Corretor 2</th>
+            </tr>
+            <tr>
+                <td><br></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
         </table>
 
         <div class="section-title">DECLARAÇÕES E AUTORIZAÇÕES</div>
@@ -403,8 +595,12 @@
 
         <table class="signature-table invisible-table">
             <tr>
-                <td class="signature-cell"><div class="signature-line"></div></td>
-                <td class="signature-cell"><div class="signature-line"></div></td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
             </tr>
             <tr>
                 <td class="signature-label">Local e Data</td>
@@ -419,8 +615,12 @@
 
         <table class="signature-table invisible-table">
             <tr>
-                <td class="signature-cell"><div class="signature-line"></div></td>
-                <td class="signature-cell"><div class="signature-line"></div></td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
             </tr>
             <tr>
                 <td class="signature-label">Local e Data</td>
@@ -429,18 +629,26 @@
         </table>
 
         <div style="margin-top:20px;">
-             <table class="invisible-table" style="width: auto;">
+            <table class="invisible-table" style="width: auto;">
                 <tr>
-                    <td><div class="light-box">Conferido em</div></td>
-                    <td><div class="light-box">Visto</div></td>
+                    <td>
+                        <div class="light-box">Conferido em</div>
+                    </td>
+                    <td>
+                        <div class="light-box">Visto</div>
+                    </td>
                 </tr>
             </table>
-             <div style="font-size:8pt;">De acordo com a solicitação do proponente.</div>
+            <div style="font-size:8pt;">De acordo com a solicitação do proponente.</div>
 
-             <table class="signature-table invisible-table">
+            <table class="signature-table invisible-table">
                 <tr>
-                    <td class="signature-cell"><div class="signature-line"></div></td>
-                    <td class="signature-cell"><div class="signature-line"></div></td>
+                    <td class="signature-cell">
+                        <div class="signature-line"></div>
+                    </td>
+                    <td class="signature-cell">
+                        <div class="signature-line"></div>
+                    </td>
                 </tr>
                 <tr>
                     <td class="signature-label">Local e Data</td>
@@ -456,4 +664,5 @@
         </div>
     </div>
 </body>
+
 </html>
