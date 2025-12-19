@@ -241,7 +241,7 @@
                 <td>Data de Expedição<br><?= $adhesion->adhesion_document->issue_date ? $adhesion->adhesion_document->issue_date->format('d/m/Y') : '' ?></td>
             </tr>
             <tr>
-                <td colspan="2">Ocupação princ.<br><?= $adhesion->adhesion_other_information->main_occupation ?? '' ?></td>
+                <td colspan="2">Ocupação princ.<br><?= $adhesion->adhesion_other_information->main_occupation_description ?? '' ?></td>
                 <td colspan="2">Cód.<br><?= $adhesion->adhesion_other_information->main_occupation_code ?? '' ?>, ativo/inativo</td>
                 <td colspan="2">
                     Empresa que trabalha<br><?= $adhesion->adhesion_other_information->company ?? '' ?>

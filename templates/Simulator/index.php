@@ -1918,20 +1918,20 @@ function createSecureCard($data, $type)
                 }
             })
 
-            // if (!isValid) {
-            //     $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
-            //     return;
-            // }
+            if (!isValid) {
+                $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
 
-            // if (registerPageIndex === 4) {
-            //     if (!checkDependents()) {
-            //         alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
+                return;
+            }
 
-            //         return;
-            //     }
-            // }
+            if (registerPageIndex === 4)
+                if (!checkDependents()) {
+                    alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
 
-            // const response = await saveForm(registerPages[registerPageIndex].id);
+                    return;
+                }
+
+            const response = await saveForm(registerPages[registerPageIndex].id);
 
             registerPageIndex += 1;
 

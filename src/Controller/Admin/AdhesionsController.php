@@ -35,7 +35,13 @@ class AdhesionsController extends AppController
             ->contain([
                 'AdhesionPersonalDatas',
                 'AdhesionAddresses',
+                'AdhesionDependents',
                 'AdhesionPlans',
+                'AdhesionDocuments',
+                'AdhesionOtherInformations',
+                'AdhesionPaymentDetails',
+                'AdhesionPensionSchemes',
+                'AdhesionProponentStatements'
             ]);
 
         $searchName = $this->request->getQuery('name');
@@ -54,7 +60,6 @@ class AdhesionsController extends AppController
         }
 
         $adhesions = $this->paginate($query);
-        // debug($adhesions);exit();
         $this->set(compact('adhesions'));
     }
 
@@ -68,9 +73,9 @@ class AdhesionsController extends AppController
                 'AdhesionPlans',
                 'AdhesionDocuments',
                 'AdhesionOtherInformations',
-                'AdhesionPaymentDetails',        // NOVO
-                'AdhesionPensionSchemes',        // NOVO
-                'AdhesionProponentStatements'    // NOVO
+                'AdhesionPaymentDetails',
+                'AdhesionPensionSchemes',
+                'AdhesionProponentStatements'
             ]
         ]);
 
