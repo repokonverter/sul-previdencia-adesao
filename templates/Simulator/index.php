@@ -1034,29 +1034,102 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="mainOccupation" class="form-label">Ocupação principal*</label>
-                                        <select class="form-select" name="otherInformations[mainOccupation]">
-                                            <option value="">Digite para buscar...</option>
-                                            <option value="252105">Administrador</option>
-                                            <option value="252405">Analista de Recursos Humanos</option>
-                                            <option value="212405">Analista de Sistemas</option>
-                                            <option value="411010">Assistente Administrativo</option>
-                                            <option value="514120">Bombeiro Civil</option>
-                                            <option value="252210">Contador</option>
-                                            <option value="513205">Cozinheiro Geral</option>
-                                            <option value="261515">Designer Gráfico</option>
-                                            <option value="212415">Desenvolvedor de Software (Programador)</option>
-                                            <option value="223505">Enfermeiro</option>
-                                            <option value="214205">Engenheiro Civil</option>
-                                            <option value="223605">Fisioterapeuta</option>
-                                            <option value="142305">Gerente Comercial</option>
-                                            <option value="142105">Gerente Administrativo</option>
-                                            <option value="225125">Médico Clínico Geral</option>
-                                            <option value="782310">Motorista de Furgão ou Veículo Similar</option>
-                                            <option value="223710">Nutricionista</option>
-                                            <option value="233115">Professor de Educação Física (no ensino fundamental)</option>
-                                            <option value="322205">Técnico de Enfermagem</option>
-                                            <option value="521110">Vendedor de Comércio Varejista</option>
-                                        </select>
+                                        <div class="position-relative">
+                                            <input type="hidden" name="otherInformations[mainOccupationDescription]" id="mainOccupationDescription" required>
+                                            <input type="hidden" name="otherInformations[mainOccupationCode]" id="mainOccupationCode" required>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="mainOccupationSearch" placeholder="Digite para buscar..." autocomplete="off">
+                                                <span class="input-group-text" id="occupationLoading" style="display:none;">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="visually-hidden">Carregando...</span>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                            <div id="occupationResults" class="list-group position-absolute w-100 shadow bg-white" style="max-height: 200px; overflow-y: auto; z-index: 1000;"></div>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <script>
+                                            $(document).ready(function() {
+                                                let searchTimeout;
+                                                const $searchInput = $('#mainOccupationSearch');
+                                                const $hiddenInput = $('#mainOccupationCode');
+                                                const $resultsDiv = $('#occupationResults');
+
+                                                $searchInput.on('input', function() {
+                                                    clearTimeout(searchTimeout);
+                                                    const term = $(this).val();
+
+                                                    if (term.length < 3) {
+                                                        $resultsDiv.hide().empty();
+                                                        return;
+                                                    }
+
+                                                    searchTimeout = setTimeout(function() {
+                                                        $.ajax({
+                                                            url: '/occupations/search',
+                                                            dataType: 'json',
+                                                            data: {
+                                                                term: term
+                                                            },
+                                                            beforeSend: function() {
+                                                                $('#occupationLoading').show();
+                                                            },
+                                                            success: function(data) {
+                                                                $('#occupationLoading').hide();
+                                                                $resultsDiv.empty();
+
+                                                                if (data && data.length > 0) {
+                                                                    data.forEach(function(item) {
+                                                                        const $item = $('<a href="#" class="list-group-item list-group-item-action"></a>')
+                                                                            .text(item.description)
+                                                                            .data('id', item.id)
+                                                                            .data('description', item.description);
+
+                                                                        $resultsDiv.append($item);
+                                                                    });
+                                                                    console.log($resultsDiv);
+                                                                    $resultsDiv.show();
+                                                                } else {
+                                                                    $resultsDiv.hide();
+                                                                }
+                                                            },
+                                                            error: function() {
+                                                                $('#occupationLoading').hide();
+                                                                $resultsDiv.hide();
+                                                            }
+                                                        });
+                                                    }, 1200);
+                                                });
+
+                                                $resultsDiv.on('click', 'a.list-group-item', function(e) {
+                                                    e.preventDefault();
+                                                    const id = $(this).data('id');
+                                                    const description = $(this).data('description');
+
+                                                    $('#mainOccupationCode').val(id);
+                                                    $('#mainOccupationDescription').val(description);
+                                                    $searchInput.val(description);
+                                                    $resultsDiv.hide();
+
+                                                    $searchInput.removeClass('is-invalid');
+                                                });
+
+                                                $(document).on('click', function(e) {
+                                                    if (!$(e.target).closest('.position-relative').length) {
+                                                        $resultsDiv.hide();
+                                                    }
+                                                });
+
+                                                $('form').on('submit', function() {
+                                                    if (!$hiddenInput.val()) {
+                                                        $searchInput.addClass('is-invalid');
+                                                        return false;
+                                                    }
+                                                });
+                                            });
+                                        </script>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -1845,20 +1918,20 @@ function createSecureCard($data, $type)
                 }
             })
 
-            if (!isValid) {
-                $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
-                return;
-            }
+            // if (!isValid) {
+            //     $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
+            //     return;
+            // }
 
-            if (registerPageIndex === 4) {
-                if (!checkDependents()) {
-                    alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
+            // if (registerPageIndex === 4) {
+            //     if (!checkDependents()) {
+            //         alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
 
-                    return;
-                }
-            }
+            //         return;
+            //     }
+            // }
 
-            const response = await saveForm(registerPages[registerPageIndex].id);
+            // const response = await saveForm(registerPages[registerPageIndex].id);
 
             registerPageIndex += 1;
 

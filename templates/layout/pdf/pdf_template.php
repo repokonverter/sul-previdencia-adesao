@@ -249,7 +249,7 @@
             </tr>
             <tr>
                 <td colspan="2">Categoria<br><?= $adhesion->adhesion_other_information->category ?? '' ?></td>
-                <td>Renda mensal bruta<br><?= $adhesion->adhesion_other_information->monthly_income ?? '' ?></td>
+                <td>Renda mensal bruta<br><?= $adhesion->adhesion_other_information->monthly_income ?? '<br>' ?></td>
                 <td colspan="3">Pessoa Politicamente Exposta¹?<br><?= $adhesion->adhesion_other_information->politically_exposed ? 'Sim, ' . ($adhesion->adhesion_other_information->politically_exposed_obs ?? '') : 'Não' ?></td>
             </tr>
             <tr>
@@ -297,7 +297,7 @@
                 <td>Valor da Contribuição (1)<br>R$ <?= number_format($adhesion->adhesion_plan->monthly_retirement_contribution ?? 0, 2, ',', '.') ?></td>
             </tr>
             <tr>
-                <td>Taxa de Carregamento do plano: 0%. O valor de contribuição será atualizado, anualmente, no mês de junho, pela variação do INPC.</td>
+                <td colspan="3">Taxa de Carregamento do plano: 0%. O valor de contribuição será atualizado, anualmente, no mês de junho, pela variação do INPC.</td>
             </tr>
         </table>
         <div class="small-note">Inscrição do plano no Cadastro Nacional de Planos de Benefícios (CNPB) nº 2011/0017-65.</div>
@@ -404,7 +404,7 @@
     <div class="page-break"></div>
 
     <div>
-        <div style="font-size: 8pt; text-align: justify; border: 1px dashed #ccc; padding: 5px; margin-bottom: 10px;">
+        <div class="small-note">
             Espaço para relógio protocolo<br>
             A aceitação estará sujeita à análise do risco e a MONGERAL AEGON tem o prazo de até 15 dias, contados da data que vier a ser registrada pelo relógio protocolo, para manifestar-se em relação à aceitação ou recusa desta proposta. Este prazo será suspenso quando necessária a requisição de outros documentos ou dados para análise do risco. Essa eventual suspensão terminará quando forem protocolados os documentos ou dados para análise do risco. Caso não haja manifestação de recusa desta proposta pela MONGERAL AEGON no prazo antes referido, a aceitação da proposta se dará automaticamente. No caso de não aceitação da proposta, o valor aportado será devolvido, atualizado até a data da efetiva restituição, de acordo com a regulamentação em vigor.
         </div>
@@ -513,7 +513,7 @@
             </tr>
         </table>
 
-        <div style="margin-top: 10px;">
+        <div style="margin-top: 15px;">
             <div style="font-weight:bold; font-size: 9pt;">PARA USO DA SUL PREVIDÊNCIA</div>
             <table class="invisible-table" style="width: auto;">
                 <tr>
@@ -542,6 +542,7 @@
                 <td class="signature-label">Assinatura do Representante da Sul Previdência</td>
             </tr>
         </table>
+
         <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; text-align: center;">
             Gestor do plano: Sociedade de Previdência Complementar Sul Previdência - CNPJ: 12.148.125/0001-42
         </div>
@@ -551,51 +552,47 @@
 
     <div>
         <div class="section-title">PARA USO DA SEGURADORA</div>
-        <table class="seg-table">
+        <table>
             <tr>
-                <th width="30%">Nome Proponente</th>
-                <th width="20%">CPF</th>
-                <th width="25%">Cód. Órgão</th>
-                <th width="25%">A partir de</th>
+                <td colspan="2">Nome Proponente<br><br></td>
+                <td colspan="2">CPF<br><br></td>
+                <td>Cód. Órgão<br><br></td>
+                <td>A partir de<br><br></td>
             </tr>
             <tr>
-                <td><br></td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td>Convênio Adesão<br><br></td>
+                <td>Ação Marketing<br><br></td>
+                <td>Alternativa<br><br></td>
+                <td>Sucursal<br><br></td>
+                <td>Diretor Regional<br><br></td>
+                <td>Gerente de Sucursal<br><br></td>
             </tr>
             <tr>
-                <th>Convênio Adesão</th>
-                <th>Ação Marketing</th>
-                <th>Alternativa</th>
-                <th>Sucursal</th>
-            </tr>
-            <tr>
-                <td><br></td>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
-            <tr>
-                <th>Gerente Comercial</th>
-                <th>Agente</th>
-                <th>Corretor 1</th>
-                <th>Corretor 2</th>
-            </tr>
-            <tr>
-                <td><br></td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td colspan="2">Gerente Comercial<br><br></td>
+                <td colspan="2">Agente<br><br></td>
+                <td>Corretor 1<br><br></td>
+                <td>Corretor 2<br><br></td>
             </tr>
         </table>
 
-        <div class="section-title">DECLARAÇÕES E AUTORIZAÇÕES</div>
-        <div class="small-note" style="margin-bottom: 10px;">
-            Declaro ter recebido os regulamentos e estatutos. Reconheço que a assinatura implica adesão automática.
+        <div class="section-title">PARA USO DO CORRETOR</div>
+        <table>
+            <tr>
+                <td colspan="2">Nome do Corretor<br><br></td>
+                <td>Código SUSEP<br><br></td>
+                <td>Assinatura<br><br></td>
+            </tr>
+        </table>
+
+        <div class="section-title">DECLARAÇÕES DO PROPONENTE</div>
+        <div class="small-note">
+            Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano PlenoPrev, bem como material explicativo sobre o referido plano. Declaro também que tive prévio e expresso conhecimento e estou de acordo com os termos dos regulamentos dos planos de Pecúlio, contratados pela Sul Previdência junto à MAG Seguros, e por mim custeados, que determinam como único beneficiário a Sul Previdência, o que não poderá ser alterado. Entendo que a responsabilidade pelo pagamento das rendas mensais de aposentadoria programada, aposentadoria por invalidez e pensão será da Sul Previdência. Desta maneira, reconheço que a minha assinatura na presente proposta implica na minha automática adesão aos referidos regulamentos, sabendo, desde já, que a aceitação dos planos de risco está sujeita à análise do risco.
             <br>
-            Concordo em receber eletronicamente o Relatório Anual e demais informações do Plano.
+            Declaro, ainda, que as informações por mim fornecidas são verdadeiras e ciente estou de que quaisquer omissões ou falsidades tornarão nula esta proposta, nos termos do Artigo 766 do Código Civil, podendo vir a responder civil e criminalmente pelas inveracidades eventualmente verificadas. Autorizo, desde já, médicos, hospitais, clínicas ou quaisquer entidades públicas ou privadas a prestar à MAG Seguros informações relacionadas ao meu estado de saúde ou moléstias que eu possa sofrer ou ter sofrido, bem como resultados de exames e tratamentos instituídos, isentando-os, desde já, de qualquer responsabilidade que implique em ofensa ou sigilo profissional.
             <br>
+            Comprometo-me a informar à Sul Previdência a minha condição de pessoa politicamente exposta, mesmo que ocorrida após a assinatura da proposta, durante a vigência do plano, conforme os termos definidos na IN MPS nº 34/2020 e na Circular SUSEP nº 612/2020.
+            <br>
+            Concordo em receber eletronicamente o Relatório Anual com informações do Plano, bem como autorizo a utilização do endereço eletrônico para envio de demais informações e documentos relacionados com o Plano.
             <strong>ACEITE: SIM</strong>
         </div>
 
@@ -610,13 +607,13 @@
             </tr>
             <tr>
                 <td class="signature-label">Local e Data</td>
-                <td class="signature-label">Assinatura do Proponente / Rep. Legal</td>
+                <td class="signature-label">Assinatura do Proponente ou Representante Legal</td>
             </tr>
         </table>
 
-        <div class="section-title" style="margin-top:20px;">AUTORIZAÇÃO DE DÉBITO (USO SUL PREVIDÊNCIA)</div>
+        <div class="section-title">PARA USO DA SUL PREVIDÊNCIA</div>
         <div class="small-note">
-            Autorizo o débito em conta corrente das contribuições. Comprometo-me a manter saldo suficiente.
+            Autorizo o banco designado no anverso a debitar na conta corrente, por mim indicada, o valor correspondente às contribuições do plano contratado nesta proposta. Estou ciente de que os débitos em conta corrente serão comandados tendo por base as informações enviadas diretamente pela Sul Previdência ao banco. Comprometo-me, desde já, a manter saldo suficiente para a finalidade, isentando o banco de qualquer responsabilidade caso a conta não comporte o valor do documento a liquidar. Declaro-me ciente de que o banco poderá, mediante aviso, com antecedência mínima de 15 (quinze) dias do vencimento do encargo ou da próxima parcela, tornar sem efeito a presente autorização, reservando-me adotar o mesmo procedimento, quando do meu interesse. Declaro que as informações prestadas são verdadeiras, não havendo responsabilidade da Sul Previdência ou do banco informado nesta proposta pela não efetivação dos débitos em função de informações incorretas.
         </div>
 
         <table class="signature-table invisible-table">
@@ -634,7 +631,8 @@
             </tr>
         </table>
 
-        <div style="margin-top: 10px;">
+        <div style="margin-top: 15px;">
+            <div style="font-weight:bold; font-size: 9pt;">PARA USO DA SUL PREVIDÊNCIA</div>
             <table class="invisible-table" style="width: auto;">
                 <tr>
                     <td>
@@ -646,22 +644,22 @@
                 </tr>
             </table>
             <div style="font-size:8pt;">De acordo com a solicitação do proponente.</div>
-
-            <table class="signature-table invisible-table">
-                <tr>
-                    <td class="signature-cell">
-                        <div class="signature-line"></div>
-                    </td>
-                    <td class="signature-cell">
-                        <div class="signature-line"></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="signature-label">Local e Data</td>
-                    <td class="signature-label">Assinatura Rep. Sul Previdência</td>
-                </tr>
-            </table>
         </div>
+
+        <table class="signature-table invisible-table">
+            <tr>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="signature-label">Local e Data</td>
+                <td class="signature-label">Assinatura do Representante da Sul Previdência</td>
+            </tr>
+        </table>
 
         <div class="footer-text">
             Gestor do plano: Sociedade de Previdência Complementar Sul Previdência - CNPJ: 12.148.125/0001-42<br>
