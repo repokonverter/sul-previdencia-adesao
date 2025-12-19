@@ -14,7 +14,6 @@
             color: #000;
         }
 
-        /* Tabelas Gerais */
         table {
             border-collapse: collapse;
             width: 100%;
@@ -30,7 +29,6 @@
             font-size: 9pt;
         }
 
-        /* Cabeçalho Limpo (Sem bordas) */
         .header-table {
             width: 100%;
             border: none !important;
@@ -65,7 +63,6 @@
             margin-top: -4px;
         }
 
-        /* Títulos de Seção */
         .section-title {
             background-color: #f0f0f0;
             font-weight: bold;
@@ -76,7 +73,6 @@
             text-transform: uppercase;
         }
 
-        /* Checkbox Simulado (Visual apenas) */
         .checkbox {
             display: inline-block;
             width: 10px;
@@ -125,7 +121,7 @@
 
         .signature-table {
             width: 100%;
-            margin-top: 25px;
+            margin-top: 20px;
         }
 
         .signature-cell {
@@ -161,7 +157,7 @@
             padding: 2px 5px;
             font-size: 9pt;
             display: inline-block;
-            width: 100px;
+            width: 200px;
         }
 
         /* Rodapé */
@@ -189,7 +185,7 @@
                 <td style="width: 60%;">
                     <div class="main-title">PROPOSTA DE INSCRIÇÃO</div>
                     <div style="font-size: 9pt;">
-                        <span class="checkbox checked"></span> Contratação avulsa de cobertura de risco
+                        <span class="checkbox"></span> Contratação avulsa de cobertura de risco
                     </div>
                 </td>
                 <td style="width: 40%;">
@@ -277,13 +273,13 @@
                 <td>É participante?<br><?= $adhesion->is_participant ? 'Sim' : 'Não' ?></td>
             </tr>
             <?php if ($adhesion->adhesion_personal_data->cpf_legal_representative) { ?>
-            <tr>
-                <td colspan="4">Nome do representante legal<br><?= $adhesion->adhesion_personal_data->name_legal_representative ?? '' ?></td>
-                <td colspan="2">CPF do representante legal<br><?= $adhesion->adhesion_personal_data->cpf_legal_representative ?? '' ?></td>
-            </tr>
-            <tr>
-                <td colspan="6">Filiação<br><?= $adhesion->adhesion_personal_data->affiliation_legal_representative ?? '' ?></td>
-            </tr>
+                <tr>
+                    <td colspan="4">Nome do representante legal<br><?= $adhesion->adhesion_personal_data->name_legal_representative ?? '' ?></td>
+                    <td colspan="2">CPF do representante legal<br><?= $adhesion->adhesion_personal_data->cpf_legal_representative ?? '' ?></td>
+                </tr>
+                <tr>
+                    <td colspan="6">Filiação<br><?= $adhesion->adhesion_personal_data->affiliation_legal_representative ?? '' ?></td>
+                </tr>
             <?php } ?>
         </table>
 
@@ -296,19 +292,15 @@
         <div class="section-title">PLANO DE BENEFÍCIOS</div>
         <table>
             <tr>
-                <td width="50%">Benefício</td>
-                <td>APOSENTADORIA PROGRAMADA</td>
+                <td>Benefício<br>APOSENTADORIA PROGRAMADA</td>
+                <td>Idade para Entrada em Benefício<br><?= $adhesion->adhesion_plan->benefit_entry_age ?? '' ?> anos</td>
+                <td>Valor da Contribuição (1)<br>R$ <?= number_format($adhesion->adhesion_plan->monthly_retirement_contribution ?? 0, 2, ',', '.') ?></td>
             </tr>
             <tr>
-                <td>Idade para Entrada em Benefício</td>
-                <td><?= $adhesion->adhesion_plan->benefit_entry_age ?? '' ?> anos</td>
-            </tr>
-            <tr>
-                <td>Valor da Contribuição (1)</td>
-                <td>R$ <?= number_format($adhesion->adhesion_plan->monthly_retirement_contribution ?? 0, 2, ',', '.') ?></td>
+                <td>Taxa de Carregamento do plano: 0%. O valor de contribuição será atualizado, anualmente, no mês de junho, pela variação do INPC.</td>
             </tr>
         </table>
-        <div class="small-note">Taxa de Carregamento: 0%. Atualização anual (Junho/INPC). CNPB nº 2011/0017-65.</div>
+        <div class="small-note">Inscrição do plano no Cadastro Nacional de Planos de Benefícios (CNPB) nº 2011/0017-65.</div>
 
         <div class="section-title">BENEFICIÁRIOS DO PLANO</div>
         <table>
@@ -316,7 +308,7 @@
                 <th>Nome Completo</th>
                 <th>Data Nasc.</th>
                 <th>Parentesco*</th>
-                <th>%</th>
+                <th>Participação</th>
             </tr>
             <?php if (!empty($adhesion->adhesion_dependents)): ?>
                 <?php foreach ($adhesion->adhesion_dependents as $dependent): ?>
@@ -324,57 +316,86 @@
                         <td><?= $dependent->name ?? '' ?></td>
                         <td><?= $dependent->birth_date ? $dependent->birth_date->format('d/m/Y') : '' ?></td>
                         <td><?= $dependent->kinship ?? '' ?></td>
-                        <td><?= $dependent->participation ?? '' ?> %</td>
+                        <td><?= $dependent->participation ?? '' ?>%</td>
                     </tr>
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="4" class="text-center">Não há beneficiários indicados. Observar art. 792 do Código Civil.</td>
+                    <td colspan="4" class="text-center">Não há beneficiários indicados. Será observado o art. 792 do Código Civil.</td>
                 </tr>
             <?php endif; ?>
         </table>
-        <div class="small-note">*Legenda: C-Cônjuge; F-Filho(a); I-Irmão(ã); M-Mãe; P-Pai; Outros...</div>
 
         <div class="section-title">PARCELA ADICIONAL DE RISCO</div>
         <table>
             <tr>
-                <td>PECÚLIO POR MORTE (Proc. 15.414.000077/2005-16)</td>
+                <td>Benefício</td>
+                <td>Nº Processo SUSEP</td>
+                <td>Valor do Pecúlio</td>
+                <td>Valor da Contribuição</td>
+            </tr>
+            <tr>
                 <td>
-                    Capital: R$ <?= number_format($adhesion->adhesion_plan->survivors_pension_insured_capital ?? 0, 2, ',', '.') ?> |
-                    Contrib.: R$ <?= number_format($adhesion->adhesion_plan->monthly_survivors_pension_contribution ?? 0, 2, ',', '.') ?>
+                    1102 - PECÚLIO POR MORTE
+                </td>
+                <td>
+                    15.414.000077/2005-16
+                </td>
+                <td>
+                    R$ <?= number_format($adhesion->adhesion_plan->survivors_pension_insured_capital ?? 0, 2, ',', '.') ?>
+                </td>
+                <td>
+                    R$ <?= number_format($adhesion->adhesion_plan->monthly_survivors_pension_contribution ?? 0, 2, ',', '.') ?>
                 </td>
             </tr>
             <tr>
-                <td>PECÚLIO POR INVALIDEZ (Proc. 15.414.000078/2005-52)</td>
                 <td>
-                    Capital: R$ <?= number_format($adhesion->adhesion_plan->disability_retirement_insured_capital ?? 0, 2, ',', '.') ?> |
-                    Contrib.: R$ <?= number_format($adhesion->adhesion_plan->monthly_disability_retirement_contribution ?? 0, 2, ',', '.') ?>
+                    1102 - PECÚLIO POR INVALIDEZ
+                </td>
+                <td>
+                    15.414.000078/2005-52
+                </td>
+                <td>
+                    R$ <?= number_format($adhesion->adhesion_plan->disability_retirement_insured_capital ?? 0, 2, ',', '.') ?>
+                </td>
+                <td>
+                    R$ <?= number_format($adhesion->adhesion_plan->monthly_disability_retirement_contribution ?? 0, 2, ',', '.') ?>
                 </td>
             </tr>
             <tr>
-                <td colspan="2" class="text-right bold">
-                    Total Risco (2): R$ <?= number_format(($adhesion->adhesion_plan->monthly_survivors_pension_contribution ?? 0) + ($adhesion->adhesion_plan->monthly_disability_retirement_contribution ?? 0), 2, ',', '.') ?>
+                <td colspan="2">
+                    Pecúlios garantidos pela Mongeral Aegon Seguros e Previdência<br>
+                    CNPJ: 33.608.308/0001-73 Carregamento: 30%
+                </td>
+                <td class="text-right bold">
+                    Total da Parcela Adicional de Risco (2):
+                </td>
+                <td>
+                    R$ <?= number_format(($adhesion->adhesion_plan->monthly_survivors_pension_contribution ?? 0) + ($adhesion->adhesion_plan->monthly_disability_retirement_contribution ?? 0), 2, ',', '.') ?>
                 </td>
             </tr>
         </table>
+        <div class="small-note">O valor da contribuição para o(s) pecúlio(s) será atualizado, anualmente, no mês de junho, pela variação do INPC e em função da nova idade atingida
+            pelo participante. O registro destes planos na SUSEP não implica, por parte da autarquia, incentivo ou recomendação para sua comercialização.</div>
 
         <div class="section-title">DADOS PARA PAGAMENTO</div>
         <table>
             <tr>
-                <td>Vencimento: Dia <?= $adhesion->adhesion_payment_detail->due_date ?? '' ?></td>
-                <td>Total (1+2): R$ <?= number_format($adhesion->adhesion_payment_detail->total_contribution ?? 0, 2, ',', '.') ?></td>
-            </tr>
-            <tr>
-                <td>Forma Pagamento</td>
-                <td class="bold"><?= $adhesion->adhesion_payment_detail->payment_type ?? '' ?></td>
+                <td>Dia do vencimento<br><?= $adhesion->adhesion_payment_detail->due_date ?? '' ?></td>
+                <td colspan="2">Total da contribuição (1+2)<br>R$ <?= number_format($adhesion->adhesion_payment_detail->total_contribution ?? 0, 2, ',', '.') ?></td>
+                <td colspan="2">Forma Pagamento<br><?= $adhesion->adhesion_payment_detail->payment_type ?? '' ?></td>
             </tr>
             <?php if (($adhesion->adhesion_payment_detail->payment_type ?? '') == 'Débito em Conta'): ?>
                 <tr>
-                    <td colspan="2">
-                        Banco: <?= $adhesion->adhesion_payment_detail->bank_number ?? '' ?> - <?= $adhesion->adhesion_payment_detail->bank_name ?? '' ?> |
-                        Ag: <?= $adhesion->adhesion_payment_detail->branch_number ?? '' ?> |
-                        CC: <?= $adhesion->adhesion_payment_detail->account_number ?? '' ?>
-                    </td>
+                    <td colspan="3">Nome do correntista<br><?= $adhesion->adhesion_payment_detail->account_holder ?? '' ?></td>
+                    <td colspan="2">CPF do correntista<br><?= $adhesion->adhesion_payment_detail->account_holder_cpf ?? '' ?></td>
+                </tr>
+                <tr>
+                    <td>Nº do banco<br><?= $adhesion->adhesion_payment_detail->bank_number ?? '' ?></td>
+                    <td>Nome do banco<br><?= $adhesion->adhesion_payment_detail->bank_name ?? '' ?></td>
+                    <td>Nº da agência<br><?= $adhesion->adhesion_payment_detail->branch_number ?? '' ?></td>
+                    <td>Nº da conta corrente<br><?= $adhesion->adhesion_payment_detail->account_number ?? '' ?></td>
+                    <td>Autorização de débito em conta no verso da 2ª via.</td>
                 </tr>
             <?php endif; ?>
         </table>
@@ -384,114 +405,97 @@
 
     <div>
         <div style="font-size: 8pt; text-align: justify; border: 1px dashed #ccc; padding: 5px; margin-bottom: 10px;">
-            Espaço para relógio protocolo. A aceitação estará sujeita à análise do risco e a MONGERAL AEGON tem o prazo de até 15 dias...
+            Espaço para relógio protocolo<br>
+            A aceitação estará sujeita à análise do risco e a MONGERAL AEGON tem o prazo de até 15 dias, contados da data que vier a ser registrada pelo relógio protocolo, para manifestar-se em relação à aceitação ou recusa desta proposta. Este prazo será suspenso quando necessária a requisição de outros documentos ou dados para análise do risco. Essa eventual suspensão terminará quando forem protocolados os documentos ou dados para análise do risco. Caso não haja manifestação de recusa desta proposta pela MONGERAL AEGON no prazo antes referido, a aceitação da proposta se dará automaticamente. No caso de não aceitação da proposta, o valor aportado será devolvido, atualizado até a data da efetiva restituição, de acordo com a regulamentação em vigor.
         </div>
 
         <div class="section-title">PARA USO DA SEGURADORA</div>
-        <table class="seg-table">
+        <table>
             <tr>
-                <th width="30%">Nome Proponente</th>
-                <th width="20%">CPF</th>
-                <th width="25%">Cód. Órgão</th>
-                <th width="25%">A partir de</th>
+                <td colspan="2">Nome Proponente<br><br></td>
+                <td colspan="2">CPF<br><br></td>
+                <td>Cód. Órgão<br><br></td>
+                <td>A partir de<br><br></td>
             </tr>
             <tr>
-                <td><br></td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td>Convênio Adesão<br><br></td>
+                <td>Ação Marketing<br><br></td>
+                <td>Alternativa<br><br></td>
+                <td>Sucursal<br><br></td>
+                <td>Diretor Regional<br><br></td>
+                <td>Gerente de Sucursal<br><br></td>
             </tr>
             <tr>
-                <th>Convênio Adesão</th>
-                <th>Ação Marketing</th>
-                <th>Alternativa</th>
-                <th>Sucursal</th>
-            </tr>
-            <tr>
-                <td><br></td>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
-            <tr>
-                <th>Gerente Comercial</th>
-                <th>Agente</th>
-                <th>Corretor 1</th>
-                <th>Corretor 2</th>
-            </tr>
-            <tr>
-                <td><br></td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td colspan="2">Gerente Comercial<br><br></td>
+                <td colspan="2">Agente<br><br></td>
+                <td>Corretor 1<br><br></td>
+                <td>Corretor 2<br><br></td>
             </tr>
         </table>
 
-        <div class="section-title">DECLARAÇÃO PESSOAL DE SAÚDE</div>
+        <div class="section-title">PARA USO DO CORRETOR</div>
+        <table>
+            <tr>
+                <td colspan="2">Nome do Corretor<br><br></td>
+                <td>Código SUSEP<br><br></td>
+                <td>Assinatura<br><br></td>
+            </tr>
+        </table>
+
+        <div class="section-title">DECLARAÇÕES DO PROPONENTE <span style="font-size: 8pt; font-weight: normal;">Declaração Pessoal de Saúde (nunca deve ser assinada em branco.)</span></div>
         <table style="font-size: 8pt;">
             <tr>
-                <th width="70%">Perguntas</th>
-                <th width="10%">Resp.</th>
-                <th width="20%">Obs.</th>
+                <th width="75%">Perguntas</th>
+                <th width="25%">Respostas</th>
             </tr>
             <tr>
-                <td>1. Problema de saúde ou medicamentos?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->health_problem ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->health_problem_obs ?? '' ?></td>
+                <td>1. Encontra-se com algum problema de saúde ou faz uso de algum medicamento?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->health_problem ? 'Sim, ' . $adhesion->adhesion_proponent_statement->health_problem_obs : 'Não' ?></td>
             </tr>
             <tr>
-                <td>2. Doenças coração, hipertensão, diabetes, câncer?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->heart_disease ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->heart_disease_obs ?? '' ?></td>
+                <td>2. Sofre ou já sofreu de doenças do coração, hipertensão,circulatórias, do sangue, diabetes, pulmão, fígado, rins, infarto, acidente vascular cerebral, articulações, qualquer tipo de câncer ou HIV?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->heart_disease ? 'Sim, ' . $adhesion->adhesion_proponent_statement->heart_disease_obs : 'Não' ?></td>
             </tr>
             <tr>
-                <td>3. Deficiências, LER/DORT?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->suffered_organ_defects ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->suffered_organ_defects_obs ?? '' ?></td>
+                <td>3. Sofre ou sofreu de deficiências de órgãos, membros ou sentidos, incluindo doenças ortopédicas relacionadas a esforço repetitivo (LER e DORT)?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->suffered_organ_defects ? 'Sim, ' . $adhesion->adhesion_proponent_statement->suffered_organ_defects_obs : 'Não' ?></td>
             </tr>
             <tr>
-                <td>4. Cirurgia/Internação (5 anos)?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->surgery ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->surgery_obs ?? '' ?></td>
+                <td>4. Fez alguma cirurgia, biópsia ou esteve internado nos últimos 5 anos?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->surgery ? 'Sim, ' . $adhesion->adhesion_proponent_statement->surgery_obs : 'Não' ?></td>
             </tr>
             <tr>
-                <td>5. Afastado/Aposentado invalidez?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->away ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->away_obs ?? '' ?></td>
+                <td>5. Está afastado(a) do trabalho ou aposentado por invalidez?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->away ? 'Sim, ' . $adhesion->adhesion_proponent_statement->away_obs : 'Não' ?></td>
             </tr>
             <tr>
-                <td>6. Esportes de risco/Voo?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->practices_parachuting ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->practices_parachuting_obs ?? '' ?></td>
+                <td>6. Pratica paraquedismo, motociclismo, boxe, asa delta, rodeio, alpinismo, voo livre, automobilismo, mergulho ou exerce atividade, em caráter profissional ou amador, a bordo de aeronaves, que não sejam de linhas regulares?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->practices_parachuting ? 'Sim, ' . $adhesion->adhesion_proponent_statement->practices_parachuting_obs : 'Não' ?></td>
             </tr>
             <tr>
                 <td>7. Fumante?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->smoker ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->smoker_type_obs ?? '' ?></td>
+                <td><?= $adhesion->adhesion_proponent_statement->smoker ? 'Sim, ' . $adhesion->adhesion_proponent_statement->smoker_type . ', ' . $adhesion->adhesion_proponent_statement->smoker_type_obs : 'Não' ?></td>
             </tr>
             <tr>
-                <td>8. Peso / Altura</td>
-                <td colspan="2"><?= $adhesion->adhesion_proponent_statement->weight ?? '' ?> Kg / <?= $adhesion->adhesion_proponent_statement->height ?? '' ?> m</td>
+                <td>8. Peso e Altura</td>
+                <td><?= $adhesion->adhesion_proponent_statement->weight ?? '' ?> Kg e <?= number_format($adhesion->adhesion_proponent_statement->height ?? 0, 2, ',', '.') ?> m</td>
             </tr>
             <tr>
-                <td>9. Sintomas gripe/COVID?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->gripe ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->gripe_obs ?? '' ?></td>
+                <td>9. Apresenta, no momento, sintomas de gripe, febre, cansaço, tosse, coriza, dores pelo corpo, dor de cabeça, dor de garganta, falta de ar, perda de olfato, perda de paladar ou está aguardando resultado do teste da COVID-19?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->gripe ? 'Sim, ' . $adhesion->adhesion_proponent_statement->gripe_obs : 'Não' ?></td>
             </tr>
             <tr>
-                <td>10. Já teve COVID-19?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->covid ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->covid_obs ?? '' ?></td>
+                <td>10. Foi diagnosticado(a) com infecção pelo novo CORONA VÍRUS ou COVID-19?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->covid ? 'Sim, ' . $adhesion->adhesion_proponent_statement->covid_obs : 'Não' ?></td>
             </tr>
             <tr>
-                <td>11. Sequelas COVID-19?</td>
-                <td class="text-center"><?= $adhesion->adhesion_proponent_statement->covid_sequelae ? 'Sim' : 'Não' ?></td>
-                <td><?= $adhesion->adhesion_proponent_statement->covid_sequelae_obs ?? '' ?></td>
+                <td>11. Apresenta, no momento, sequelas do COVID-19 diferente de perda de olfato e/ou paladar?</td>
+                <td><?= $adhesion->adhesion_proponent_statement->covid_sequelae ? 'Sim, ' . $adhesion->adhesion_proponent_statement->covid_sequelae_obs : 'Não' ?></td>
             </tr>
         </table>
 
         <div class="small-note">
-            Declaro ter recebido o estatuto da Sul Previdência e o regulamento do PlenoPrev. As informações são verdadeiras sob pena do Art. 766 do Código Civil. Autorizo médicos/hospitais a prestar informações à MAG Seguros.
+            Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano PlenoPrev, bem como o material explicativo sobre o referido plano. Declaro também que tive prévio e expresso conhecimento e estou de acordo com os termos dos regulamentos dos planos de pecúlio, contratados pela Sul Previdência na MAG Seguros, e por mim custeados, que determinam como único beneficiário a Sul Previdência, o que não poderá ser alterado. Entendo que a responsabilidade pelo pagamento das rendas mensais de aposentadoria programada, aposentadoria por invalidez e pensão será da Sul Previdência. Desta maneira, reconheço que a minha assinatura na presente proposta implica na minha automática adesão aos referidos regulamentos, sabendo, desde já, que a aceitação dos planos de risco está sujeita à análise do risco. Declaro, ainda, que as informações por mim fornecidas são verdadeiras e ciente estou de que quaisquer omissões ou falsidades tornarão nula esta proposta, nos termos do Art. 766 do Código Civil, podendo vir a responder civil e criminalmente pelas inveracidades eventualmente verificadas. Autorizo, desde já, médicos, hospitais, clínicas ou quaisquer entidades públicas ou privadas a prestar à MAG Seguros informações relacionadas ao meu estado de saúde ou moléstias que eu possa sofrer ou ter sofrido, bem como resultados de exames e tratamentos instituídos, isentando-os, desde já, de qualquer responsabilidade que implique em ofensa ou sigilo profissional. Comprometo-me a informar à Sul Previdência a minha condição de pessoa politicamente exposta, mesmo que ocorrida após a assinatura da proposta, durante a vigência do plano, conforme os termos definidos na IN MPS nº 34/2020 e na Circular SUSEP nº 612/2020.
         </div>
 
         <table class="signature-table invisible-table">
@@ -505,11 +509,11 @@
             </tr>
             <tr>
                 <td class="signature-label">Local e Data</td>
-                <td class="signature-label">Assinatura do Proponente / Rep. Legal</td>
+                <td class="signature-label">Assinatura do Proponente ou Representante Legal</td>
             </tr>
         </table>
 
-        <div style="margin-top:20px; border-top: 1px solid #000; padding-top: 5px;">
+        <div style="margin-top: 10px;">
             <div style="font-weight:bold; font-size: 9pt;">PARA USO DA SUL PREVIDÊNCIA</div>
             <table class="invisible-table" style="width: auto;">
                 <tr>
@@ -522,6 +526,24 @@
                 </tr>
             </table>
             <div style="font-size:8pt;">De acordo com a solicitação do proponente.</div>
+        </div>
+
+        <table class="signature-table invisible-table">
+            <tr>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+                <td class="signature-cell">
+                    <div class="signature-line"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="signature-label">Local e Data</td>
+                <td class="signature-label">Assinatura do Representante da Sul Previdência</td>
+            </tr>
+        </table>
+        <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; text-align: center;">
+            Gestor do plano: Sociedade de Previdência Complementar Sul Previdência - CNPJ: 12.148.125/0001-42
         </div>
     </div>
 
@@ -612,7 +634,7 @@
             </tr>
         </table>
 
-        <div style="margin-top:20px;">
+        <div style="margin-top: 10px;">
             <table class="invisible-table" style="width: auto;">
                 <tr>
                     <td>
