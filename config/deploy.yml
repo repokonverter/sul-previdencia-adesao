@@ -47,7 +47,7 @@ accessories:
   db:
     image: postgres:16
     host: 162.240.166.197
-    port: 5433
+    port: "5433:5432"
     env:
       secret:
         - POSTGRES_USER
