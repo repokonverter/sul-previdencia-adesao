@@ -204,15 +204,15 @@
             <tr>
                 <td>
                     CNPJ do Plano<br>
-                    48.307.525/0001-09
+                    <?= $fixedData['cnpjPlan'] ?>
                 </td>
                 <td>
                     Nº do Instituidor<br>
-                    009
+                    <?= $fixedData['institutionNumber'] ?>
                 </td>
                 <td>
                     Nome do instituidor<br>
-                    CEPREV
+                    <?= $fixedData['institutionName'] ?>
                 </td>
                 <td>
                     Nº da Proposta<br>
@@ -241,8 +241,33 @@
                 <td>Data de Expedição<br><?= $adhesion->adhesion_document->issue_date ? $adhesion->adhesion_document->issue_date->format('d/m/Y') : '' ?></td>
             </tr>
             <tr>
-                <td colspan="2">Ocupação princ.<br><?= $adhesion->adhesion_other_information->main_occupation_description ?? '' ?></td>
-                <td colspan="2">Cód.<br><?= $adhesion->adhesion_other_information->main_occupation_code ?? '' ?>, ativo/inativo</td>
+                <td colspan="2">
+                    Ocupação princ.<br>
+                    <?php
+                    if ($adhesion->adhesion_other_information->main_occupation_description) {
+                        echo $adhesion->adhesion_other_information->main_occupation_description;
+                    } elseif ($adhesion->adhesion_other_information->category === 'Aposentadoria') {
+                        echo $adhesion->adhesion_other_information->category;
+                    } else {
+                        echo 'Não informado';
+                    }
+                    ?>
+                </td>
+                <td colspan="2">
+                    Cód.<br>
+                    <?php
+                    if ($adhesion->adhesion_other_information->main_occupation_code) {
+                        echo $adhesion->adhesion_other_information->main_occupation_code;
+                    } else {
+                        echo 'Não informado';
+                    }
+
+                    if ($adhesion->adhesion_other_information->category === 'Aposentadoria')
+                        echo ', Inativo';
+                    else
+                        echo ', Ativo';
+                    ?>
+                </td>
                 <td colspan="2">
                     Empresa que trabalha/última empresa<br><?= $adhesion->adhesion_other_information->company ?? '' ?>
                 </td>
@@ -414,21 +439,21 @@
             <tr>
                 <td colspan="2">Nome Proponente<br><?= $adhesion->adhesion_personal_data->name ?? '' ?></td>
                 <td colspan="2">CPF<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?></td>
-                <td>Cód. Órgão<br>100350</td>
+                <td>Cód. Órgão<br><?= $fixedData['useInsuranceCompany']['code'] ?></td>
                 <td>A partir de<br><br></td>
             </tr>
             <tr>
-                <td>Convênio Adesão<br>AD2550</td>
-                <td>Ação Marketing<br>AM0493</td>
-                <td>Alternativa<br>01</td>
-                <td>Sucursal<br>F22</td>
+                <td>Convênio Adesão<br><?= $fixedData['useInsuranceCompany']['membershipAgreement'] ?></td>
+                <td>Ação Marketing<br><?= $fixedData['useInsuranceCompany']['marketingAction'] ?></td>
+                <td>Alternativa<br><?= $fixedData['useInsuranceCompany']['alternative'] ?></td>
+                <td>Sucursal<br><?= $fixedData['useInsuranceCompany']['branch'] ?></td>
                 <td>Diretor Regional<br><br></td>
                 <td>Gerente de Sucursal<br><br></td>
             </tr>
             <tr>
                 <td colspan="2">Gerente Comercial<br><br></td>
                 <td colspan="2">Agente<br><br></td>
-                <td>Corretor 1<br>MT 8002897</td>
+                <td>Corretor 1<br><?= $fixedData['useInsuranceCompany']['secureBroker1'] ?></td>
                 <td>Corretor 2<br><br></td>
             </tr>
         </table>
@@ -436,8 +461,8 @@
         <div class="section-title">PARA USO DO CORRETOR</div>
         <table>
             <tr>
-                <td colspan="2">Nome do Corretor<br>Corretop Corretora de Seguros</td>
-                <td>Código SUSEP<br>202104784</td>
+                <td colspan="2">Nome do Corretor<br><?= $fixedData['useSecureBroker']['name'] ?></td>
+                <td>Código SUSEP<br><?= $fixedData['useSecureBroker']['code'] ?></td>
                 <td>Assinatura<br><br></td>
             </tr>
         </table>
@@ -556,21 +581,21 @@
             <tr>
                 <td colspan="2">Nome Proponente<br><?= $adhesion->adhesion_personal_data->name ?? '' ?></td>
                 <td colspan="2">CPF<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?></td>
-                <td>Cód. Órgão<br>100350</td>
+                <td>Cód. Órgão<br><?= $fixedData['useInsuranceCompany']['code'] ?></td>
                 <td>A partir de<br><br></td>
             </tr>
             <tr>
-                <td>Convênio Adesão<br>AD2550</td>
-                <td>Ação Marketing<br>AM0493</td>
-                <td>Alternativa<br>01</td>
-                <td>Sucursal<br>F22</td>
+                <td>Convênio Adesão<br><?= $fixedData['useInsuranceCompany']['membershipAgreement'] ?></td>
+                <td>Ação Marketing<br><?= $fixedData['useInsuranceCompany']['marketingAction'] ?></td>
+                <td>Alternativa<br><?= $fixedData['useInsuranceCompany']['alternative'] ?></td>
+                <td>Sucursal<br><?= $fixedData['useInsuranceCompany']['branch'] ?></td>
                 <td>Diretor Regional<br><br></td>
                 <td>Gerente de Sucursal<br><br></td>
             </tr>
             <tr>
                 <td colspan="2">Gerente Comercial<br><br></td>
                 <td colspan="2">Agente<br><br></td>
-                <td>Corretor 1<br>MT 8002897</td>
+                <td>Corretor 1<br><?= $fixedData['useInsuranceCompany']['secureBroker1'] ?></td>
                 <td>Corretor 2<br><br></td>
             </tr>
         </table>
@@ -578,8 +603,8 @@
         <div class="section-title">PARA USO DO CORRETOR</div>
         <table>
             <tr>
-                <td colspan="2">Nome do Corretor<br>Corretop Corretora de Seguros</td>
-                <td>Código SUSEP<br>202104784</td>
+                <td colspan="2">Nome do Corretor<br><?= $fixedData['useSecureBroker']['name'] ?></td>
+                <td>Código SUSEP<br><?= $fixedData['useSecureBroker']['code'] ?></td>
                 <td>Assinatura<br><br></td>
             </tr>
         </table>
@@ -662,9 +687,9 @@
         </table>
 
         <div class="footer-text">
-            Gestor do plano: Sociedade de Previdência Complementar Sul Previdência - CNPJ: 12.148.125/0001-42<br>
-            Rua Vidal Ramos nº 31 - Sala 602 - Centro - Florianópolis - SC<br>
-            www.sulprevidencia.org.br
+            Gestor do plano: <?= $fixedData['footer']['planManager'] ?> - CNPJ: <?= $fixedData['footer']['cnpjPlanManager'] ?><br>
+            <?= $fixedData['footer']['address'] ?><br>
+            <?= $fixedData['footer']['site'] ?>
         </div>
     </div>
 </body>

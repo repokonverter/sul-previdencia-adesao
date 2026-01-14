@@ -16,7 +16,7 @@
         }
 
         .section-title {
-            background: #003f7f; /* azul */
+            background: #003f7f;
             color: #fff;
             padding: 4px 8px;
             font-weight: bold;
@@ -89,7 +89,7 @@
         <td><?= h($adhesion->adhesion_personal_data->birth_date ?? '') ?></td>
 
         <td><strong>Nacionalidade:</strong></td>
-        <td>Brasileiro</td>
+        <td><?= h($adhesion->adhesion_personal_data->nacionality ?? '') ?></td>
     </tr>
 
     <tr>
@@ -119,8 +119,8 @@
         <td><?= h($adhesion->adhesion_personal_data->cpf ?? '') ?></td>
     </tr>
     <tr>
-        <td><strong>RG:</strong></td>
-        <td><?= h($adhesion->adhesion_documents[0]->rg ?? '') ?></td>
+        <td><strong><?= $adhesion->adhesion_document->type !== 'Outro' ? $adhesion->adhesion_document->type : $adhesion->adhesion_document->type_other; ?>:</strong></td>
+        <td><?= h($adhesion->adhesion_document->document_number ?? '') ?></td>
     </tr>
 </table>
 
@@ -157,7 +157,7 @@
 <div class="section-title">Contato</div>
 
 <table class="form-table">
-    <tr>
+    <tr style="display: none;">
         <td><strong>Fone Residencial:</strong></td>
         <td><?= h($adhesion->adhesion_personal_data->phone ?? '') ?></td>
 
@@ -167,43 +167,35 @@
 
     <tr>
         <td><strong>Celular:</strong></td>
-        <td><?= h($adhesion->adhesion_personal_data->cellphone ?? '') ?></td>
+        <td><?= h($adhesion->adhesion_initial_data->phone ?? '') ?></td>
 
         <td><strong>E-mail:</strong></td>
-        <td><?= h($adhesion->adhesion_personal_data->email ?? '') ?></td>
+        <td><?= h($adhesion->adhesion_initial_data->email ?? '') ?></td>
     </tr>
 </table>
 
 <div class="note-box">
-    DECLARO sob as penas da Lei, que sou segurado do seguinte Regime de Previdência:
-    ( ) GERAL (INSS);  
-    ( ) PRÓPRIO (Servidor Público);  
-    ( ) COMPLEMENTAR (Fundos de Pensão)
-</div>
-
-<strong>OU</strong>
-
-<div class="note-box">
-    DECLARO sob as penas da Lei, que sou parente até segundo grau do segurado abaixo
-    identificado, o qual é vinculado ao seguinte regime de previdência:  
-    ( ) GERAL (INSS);  
-    ( ) PRÓPRIO (Servidor Público);  
-    ( ) COMPLEMENTAR (Fundos de Pensão)
+    <?= !$adhesion->adhesion_pension_scheme->cpf ? 'DECLARO sob as penas da Lei, que sou segurado do' : 'DECLARO sob as penas da Lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao' ?> seguinte regime de previdência:
+    (<?= !$adhesion->adhesion_pension_scheme->pension_scheme === 'Geral (INSS)' ? 'X' : ' ' ?>) GERAL (INSS);
+    (<?= !$adhesion->adhesion_pension_scheme->pension_scheme === 'Proprio (Servidor Publico)' ? 'X' : ' ' ?>) PRÓPRIO (Servidor Público);
+    (<?= !$adhesion->adhesion_pension_scheme->pension_scheme === 'Complementar (Fundos de pensão)' ? 'X' : ' ' ?>) COMPLEMENTAR (Fundos de Pensão)
+    <?php if ($adhesion->adhesion_pension_scheme->cpf) { ?>
     <br><br>
-    Vinculado ao Segurado:<br>
-    CPF do Segurado:<br>
-    Grau de Parentesco:
+    Vinculado ao Segurado: <?= h($adhesion->adhesion_pension_scheme->name) ?><br>
+    CPF do Segurado: <?= h($adhesion->adhesion_pension_scheme->cpf) ?><br>
+    Grau de Parentesco: <?= h($adhesion->adhesion_pension_scheme->kinship) ?>
+    <?php } ?>
 </div>
 
 <p class="footer-text">
-( ) AUTORIZO   ( ) NÃO AUTORIZO o CEPREV a realizar o tratamento de meus Dados
+(X) AUTORIZO   ( ) NÃO AUTORIZO o CEPREV a realizar o tratamento de meus Dados
 Pessoais para oferecer produtos e serviços, por meio de e-mail, ligações, SMS,
 mensagens, bem como autorizo compartilhar meus dados com seus parceiros e demais
 prestadores de serviços.
 </p>
 
 <div class="signature-line">
-    <p>Local: _____________________, ____ de _____________________ de 20____.</p>
+    <p>Local: Florianópolis, <?= date('d') ?> de <?= $this->Utils->monthName(date('m')) ?> de <?= date('Y') ?>.</p>
     <p>Assinatura: _____________________________________________</p>
 </div>
 

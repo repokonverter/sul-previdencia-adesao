@@ -345,8 +345,16 @@ class RegistrationsController extends AppController
                 if (!$this->AdhesionPaymentDetails->save($paymentDetails))
                     throw new \Exception('Falha ao salvar o dado de pagamento: ' . json_encode($paymentDetails->getErrors()));
 
-                $pdfContent = $this->PdfGenerator->generatePdf($initialDataId, true);
-                $pdfBase64 = base64_encode($pdfContent);
+                $base64PdfForms = [
+                    [
+                        'file' => base64_encode($this->PdfGenerator->generatePdfApplicationForm($initialDataId, true)),
+                        'name' => 'proposta_adesao.pdf',
+                    ],
+                    [
+                        'file' => base64_encode($this->PdfGenerator->generateRegistrationFormPdf($initialDataId, true)),
+                        'name' => 'formulario_inscricao.pdf',
+                    ]
+                ];
 
                 try {
                     $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
@@ -386,15 +394,17 @@ class RegistrationsController extends AppController
                         if ($documents > 0)
                             $clicksign->deleteDocument($envelopeId, $responseGetDocuments['data'][0]['id']);
 
-                        $documentResponse = $clicksign->createDocument($envelopeId, [
-                            'filename' => 'proposta_adesao.pdf',
-                            'content_base64' => "data:application/pdf;base64," . $pdfBase64,
-                        ]);
+                        foreach ($base64PdfForms as $base64PdfForm) {
+                            $documentResponse = $clicksign->createDocument($envelopeId, [
+                                'filename' => $base64PdfForm['name'],
+                                'content_base64' => "data:application/pdf;base64," . $base64PdfForm['file'],
+                            ]);
 
-                        if (!$documentResponse['success'])
-                            throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
+                            if (!$documentResponse['success'])
+                                throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
 
-                        $documentId = $documentResponse['data']['id'];
+                            $documentId = $documentResponse['data']['id'];
+                        }
 
                         $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
                             'name' => $customerName,

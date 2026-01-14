@@ -1035,8 +1035,8 @@ function createSecureCard($data, $type)
                                     <div class="mb-3">
                                         <label for="mainOccupation" class="form-label">Ocupação principal*</label>
                                         <div class="position-relative">
-                                            <input type="hidden" name="otherInformations[mainOccupationDescription]" id="mainOccupationDescription" required>
-                                            <input type="hidden" name="otherInformations[mainOccupationCode]" id="mainOccupationCode" required>
+                                            <input type="hidden" name="otherInformations[mainOccupationDescription]" id="mainOccupationDescription">
+                                            <input type="hidden" name="otherInformations[mainOccupationCode]" id="mainOccupationCode">
                                             <div class="input-group">
                                                 <input type="text" class="form-control" id="mainOccupationSearch" placeholder="Digite para buscar..." autocomplete="off">
                                                 <span class="input-group-text" id="occupationLoading" style="display:none;">
@@ -1949,11 +1949,11 @@ function createSecureCard($data, $type)
                 }
             })
 
-            // if (!isValid) {
-            //     $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
+            if (!isValid) {
+                $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
 
-            //     return;
-            // }
+                return;
+            }
 
             if (registerPageIndex === 4)
                 if (!checkDependents()) {
@@ -1962,14 +1962,14 @@ function createSecureCard($data, $type)
                     return;
                 }
 
-            // const response = await saveForm(registerPages[registerPageIndex].id);
+            const response = await saveForm(registerPages[registerPageIndex].id);
 
             registerPageIndex += 1;
 
-            // if (registerPageIndex === 10) {
-            //     $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
-            //     $('#pix-copy-paste').val(response.copyAndPaste);
-            // }
+            if (registerPageIndex === 10) {
+                $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
+                $('#pix-copy-paste').val(response.copyAndPaste);
+            }
 
             updatePage(registerPageIndex)
         }

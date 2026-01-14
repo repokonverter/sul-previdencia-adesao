@@ -138,7 +138,7 @@ class AdhesionsController extends AppController
 
     public function generatePdf($id, $returnContent = false)
     {
-        $pdf = $this->PdfGenerator->generatePdf($id, $returnContent);
+        $pdf = $this->PdfGenerator->generatePdfApplicationForm($id, $returnContent);
 
         if (!$returnContent)
             return $pdf;
@@ -152,6 +152,6 @@ class AdhesionsController extends AppController
 
     public function generateFormPdf($id)
     {
-        return $this->PdfGenerator->generateFormPdf($id);
+        return $this->PdfGenerator->generateRegistrationFormPdf($id);
     }
 }
