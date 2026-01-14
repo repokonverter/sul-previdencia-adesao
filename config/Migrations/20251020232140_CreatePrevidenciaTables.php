@@ -90,7 +90,10 @@ class CreatePrevidenciaTables extends BaseMigration
             ->addColumn('category', 'string', ['limit' => 25])
             ->addColumn('brazilian_resident', 'boolean', ['default' => true, 'null' => true])
             ->addColumn('politically_exposed', 'boolean', ['default' => false, 'null' => true])
+            ->addColumn('politically_exposed_obs', 'string', ['limit' => 250, 'null' => true])
             ->addColumn('obligation_other_countries', 'boolean', ['default' => false, 'null' => true])
+            ->addColumn('monthly_income', 'decimal', ['precision' => 10, 'scale' => 2, 'null' => true])
+            ->addColumn('company', 'string', ['limit' => 250, 'null' => true])
             ->addTimestamps()
             ->addForeignKey('adhesion_initial_data_id', 'adhesion_initial_data', 'id', ['delete' => 'CASCADE'])
             ->create();

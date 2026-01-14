@@ -9,7 +9,9 @@ servers:
 
 proxy:
   ssl: true
-  host: plenoprev.konverter.com.br
+  hosts:
+    - plenoprev.konverter.com.br
+    - www.plenoprev.konverter.com.br
   app_port: 80
 
 registry:

@@ -208,15 +208,15 @@
                 </td>
                 <td>
                     Nº do Instituidor<br>
-                    123123
+                    009
                 </td>
                 <td>
                     Nome do instituidor<br>
-                    TEste
+                    CEPREV
                 </td>
                 <td>
                     Nº da Proposta<br>
-                    <?= $proposalNumber ?>
+                    <?= ''; ?>
                 </td>
             </tr>
         </table>
@@ -244,7 +244,7 @@
                 <td colspan="2">Ocupação princ.<br><?= $adhesion->adhesion_other_information->main_occupation_description ?? '' ?></td>
                 <td colspan="2">Cód.<br><?= $adhesion->adhesion_other_information->main_occupation_code ?? '' ?>, ativo/inativo</td>
                 <td colspan="2">
-                    Empresa que trabalha<br><?= $adhesion->adhesion_other_information->company ?? '' ?>
+                    Empresa que trabalha/última empresa<br><?= $adhesion->adhesion_other_information->company ?? '' ?>
                 </td>
             </tr>
             <tr>
@@ -412,23 +412,23 @@
         <div class="section-title">PARA USO DA SEGURADORA</div>
         <table>
             <tr>
-                <td colspan="2">Nome Proponente<br><br></td>
-                <td colspan="2">CPF<br><br></td>
-                <td>Cód. Órgão<br><br></td>
+                <td colspan="2">Nome Proponente<br><?= $adhesion->adhesion_personal_data->name ?? '' ?></td>
+                <td colspan="2">CPF<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?></td>
+                <td>Cód. Órgão<br>100350</td>
                 <td>A partir de<br><br></td>
             </tr>
             <tr>
-                <td>Convênio Adesão<br><br></td>
-                <td>Ação Marketing<br><br></td>
-                <td>Alternativa<br><br></td>
-                <td>Sucursal<br><br></td>
+                <td>Convênio Adesão<br>AD2550</td>
+                <td>Ação Marketing<br>AM0493</td>
+                <td>Alternativa<br>01</td>
+                <td>Sucursal<br>F22</td>
                 <td>Diretor Regional<br><br></td>
                 <td>Gerente de Sucursal<br><br></td>
             </tr>
             <tr>
                 <td colspan="2">Gerente Comercial<br><br></td>
                 <td colspan="2">Agente<br><br></td>
-                <td>Corretor 1<br><br></td>
+                <td>Corretor 1<br>MT 8002897</td>
                 <td>Corretor 2<br><br></td>
             </tr>
         </table>
@@ -436,8 +436,8 @@
         <div class="section-title">PARA USO DO CORRETOR</div>
         <table>
             <tr>
-                <td colspan="2">Nome do Corretor<br><br></td>
-                <td>Código SUSEP<br><br></td>
+                <td colspan="2">Nome do Corretor<br>Corretop Corretora de Seguros</td>
+                <td>Código SUSEP<br>202104784</td>
                 <td>Assinatura<br><br></td>
             </tr>
         </table>
@@ -554,23 +554,23 @@
         <div class="section-title">PARA USO DA SEGURADORA</div>
         <table>
             <tr>
-                <td colspan="2">Nome Proponente<br><br></td>
-                <td colspan="2">CPF<br><br></td>
-                <td>Cód. Órgão<br><br></td>
+                <td colspan="2">Nome Proponente<br><?= $adhesion->adhesion_personal_data->name ?? '' ?></td>
+                <td colspan="2">CPF<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?></td>
+                <td>Cód. Órgão<br>100350</td>
                 <td>A partir de<br><br></td>
             </tr>
             <tr>
-                <td>Convênio Adesão<br><br></td>
-                <td>Ação Marketing<br><br></td>
-                <td>Alternativa<br><br></td>
-                <td>Sucursal<br><br></td>
+                <td>Convênio Adesão<br>AD2550</td>
+                <td>Ação Marketing<br>AM0493</td>
+                <td>Alternativa<br>01</td>
+                <td>Sucursal<br>F22</td>
                 <td>Diretor Regional<br><br></td>
                 <td>Gerente de Sucursal<br><br></td>
             </tr>
             <tr>
                 <td colspan="2">Gerente Comercial<br><br></td>
                 <td colspan="2">Agente<br><br></td>
-                <td>Corretor 1<br><br></td>
+                <td>Corretor 1<br>MT 8002897</td>
                 <td>Corretor 2<br><br></td>
             </tr>
         </table>
@@ -578,8 +578,8 @@
         <div class="section-title">PARA USO DO CORRETOR</div>
         <table>
             <tr>
-                <td colspan="2">Nome do Corretor<br><br></td>
-                <td>Código SUSEP<br><br></td>
+                <td colspan="2">Nome do Corretor<br>Corretop Corretora de Seguros</td>
+                <td>Código SUSEP<br>202104784</td>
                 <td>Assinatura<br><br></td>
             </tr>
         </table>

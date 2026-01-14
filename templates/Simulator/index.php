@@ -1140,12 +1140,36 @@ function createSecureCard($data, $type)
                                         <label for="category" class="form-label">Categoria*</label>
                                         <select class="form-select" name="otherInformations[category]">
                                             <option value="">Selecione...</option>
+                                            <option value="Aposentado">Aposentado</option>
                                             <option value="Autônomo">Autônomo</option>
                                             <option value="Empregado">Empregado</option>
                                             <option value="Empregador">Empregador</option>
                                             <option value="Servidor Público">Servidor Público</option>
                                             <option value="Outros">Outros</option>
                                         </select>
+                                        <div class="invalid-feedback">
+                                            Preenchimento obrigatório.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label class="form-label">Renda mensal bruta aproximada*</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" name="otherInformations[monthlyIncome]" placeholder="Renda mensal bruta aproximada">
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="company" class="form-label">Empresa que trabalha/última empresa*</label>
+                                        <input type="text" class="form-control" name="otherInformations[company]" placeholder="Empresa que trabalha/última empresa">
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -1173,12 +1197,19 @@ function createSecureCard($data, $type)
                                     <div class="mb-3">
                                         <label for="" class="form-label">É pessoa politicamente exposta?*</label>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="otherInformations[politicallyExposed]" id="politicallyExposedYes" value="1">
+                                            <input class="form-check-input" type="radio" name="otherInformations[politicallyExposed]" id="politicallyExposedYes" value="1" onclick="showHide(true, 'politicallyExposedObs')">
                                             <label class="form-check-label" for="politicallyExposedYes">Sim</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="otherInformations[politicallyExposed]" id="politicallyExposedNo" value="0">
+                                            <input class="form-check-input" type="radio" name="otherInformations[politicallyExposed]" id="politicallyExposedNo" value="0" onclick="showHide(false, 'politicallyExposedObs')">
                                             <label class="form-check-label" for="politicallyExposedNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="politicallyExposedObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar:*</label>
+                                            <input type="text" class="form-control" name="otherInformations[politicallyExposedObs]" placeholder="Especificar">
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -1918,11 +1949,11 @@ function createSecureCard($data, $type)
                 }
             })
 
-            if (!isValid) {
-                $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
+            // if (!isValid) {
+            //     $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
 
-                return;
-            }
+            //     return;
+            // }
 
             if (registerPageIndex === 4)
                 if (!checkDependents()) {
@@ -1931,14 +1962,14 @@ function createSecureCard($data, $type)
                     return;
                 }
 
-            const response = await saveForm(registerPages[registerPageIndex].id);
+            // const response = await saveForm(registerPages[registerPageIndex].id);
 
             registerPageIndex += 1;
 
-            if (registerPageIndex === 10) {
-                $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
-                $('#pix-copy-paste').val(response.copyAndPaste);
-            }
+            // if (registerPageIndex === 10) {
+            //     $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
+            //     $('#pix-copy-paste').val(response.copyAndPaste);
+            // }
 
             updatePage(registerPageIndex)
         }

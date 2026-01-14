@@ -251,7 +251,10 @@ class RegistrationsController extends AppController
                         'category' => $otherInformationsData['category'] ?? '',
                         'brazilian_resident' => $otherInformationsData['brazilianResident'] ?? false,
                         'politically_exposed' => $otherInformationsData['politicallyExposed'] ?? false,
+                        'politically_exposed_obs' => $otherInformationsData['politicallyExposedObs'] ?? '',
                         'obligation_other_countries' => $otherInformationsData['obligationOtherCountries'] ?? false,
+                        'company' => $otherInformationsData['company'] ?? '',
+                        'monthly_income' => str_replace(',', '.', str_replace('.', '', $otherInformationsData['monthlyIncome'])) ?? null,
                     ],
                 );
 
