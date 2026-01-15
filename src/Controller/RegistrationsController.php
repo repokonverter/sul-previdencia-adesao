@@ -64,7 +64,6 @@ class RegistrationsController extends AppController
         $this->PixTransactions = $this->fetchTable('PixTransactions');
 
         $this->loadComponent('PdfGenerator');
-        $this->loadComponent('Utils');
 
         $this->Bank = new BankHelper(new View());
 
@@ -394,6 +393,8 @@ class RegistrationsController extends AppController
                         if ($documents > 0)
                             $clicksign->deleteDocument($envelopeId, $responseGetDocuments['data'][0]['id']);
 
+                        $documentIds = [];
+
                         foreach ($base64PdfForms as $base64PdfForm) {
                             $documentResponse = $clicksign->createDocument($envelopeId, [
                                 'filename' => $base64PdfForm['name'],
@@ -403,7 +404,7 @@ class RegistrationsController extends AppController
                             if (!$documentResponse['success'])
                                 throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
 
-                            $documentId = $documentResponse['data']['id'];
+                            $documentIds[] = $documentResponse['data']['id'];
                         }
 
                         $clicksignSignerResponse = $clicksign->createSigner($envelopeId, [
@@ -422,47 +423,49 @@ class RegistrationsController extends AppController
                         if (!$clicksignSignerResponse['success'])
                             throw new \Exception('Falha ao criar o assinante no clicksign: ' . json_encode($clicksignSignerResponse['data']));
 
-                        $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
-                            'action' => 'agree',
-                            'role' => 'contractor'
-                        ], [
-                            "document" => [
-                                "data" => [
-                                    "type" => "documents",
-                                    'id' => $documentId
+                        foreach ($documentIds as $documentId) {
+                            $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
+                                'action' => 'agree',
+                                'role' => 'contractor'
+                            ], [
+                                "document" => [
+                                    "data" => [
+                                        "type" => "documents",
+                                        'id' => $documentId
+                                    ]
+                                ],
+                                "signer" => [
+                                    "data" => [
+                                        "type" => "signers",
+                                        'id' => $clicksignSignerResponse['data']['id']
+                                    ]
                                 ]
-                            ],
-                            "signer" => [
-                                "data" => [
-                                    "type" => "signers",
-                                    'id' => $clicksignSignerResponse['data']['id']
-                                ]
-                            ]
-                        ]);
+                            ]);
 
-                        if (!$clicksignRequirementResponse['success'])
-                            throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+                            if (!$clicksignRequirementResponse['success'])
+                                throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
 
-                        $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
-                            'action' => 'provide_evidence',
-                            'auth' => 'email'
-                        ], [
-                            "document" => [
-                                "data" => [
-                                    "type" => "documents",
-                                    'id' => $documentId
+                            $clicksignRequirementResponse = $clicksign->createRequirement($envelopeId, [
+                                'action' => 'provide_evidence',
+                                'auth' => 'email'
+                            ], [
+                                "document" => [
+                                    "data" => [
+                                        "type" => "documents",
+                                        'id' => $documentId
+                                    ]
+                                ],
+                                "signer" => [
+                                    "data" => [
+                                        "type" => "signers",
+                                        'id' => $clicksignSignerResponse['data']['id']
+                                    ]
                                 ]
-                            ],
-                            "signer" => [
-                                "data" => [
-                                    "type" => "signers",
-                                    'id' => $clicksignSignerResponse['data']['id']
-                                ]
-                            ]
-                        ]);
+                            ]);
 
-                        if (!$clicksignRequirementResponse['success'])
-                            throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+                            if (!$clicksignRequirementResponse['success'])
+                                throw new \Exception('Falha ao criar a exigência no clicksign: ' . json_encode($clicksignRequirementResponse['data']));
+                        }
 
                         $clicksignEnvelopeResponse = $clicksign->updateEnvelope($envelopeId, [
                             'status' => 'running'

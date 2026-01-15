@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <style>
@@ -73,131 +74,134 @@
         }
     </style>
 </head>
+
 <body>
 
-<h1>FORMULÁRIO DE INSCRIÇÃO</h1>
+    <h1>FORMULÁRIO DE INSCRIÇÃO</h1>
 
-<div class="section-title">DADOS PESSOAIS</div>
+    <div class="section-title">DADOS PESSOAIS</div>
 
-<table class="form-table">
-    <tr>
-        <td><strong>Nome Completo:</strong></td>
-        <td colspan="3"><?= h($adhesion->adhesion_personal_data->name ?? '') ?></td>
-    </tr>
-    <tr>
-        <td><strong>Data de Nascimento:</strong></td>
-        <td><?= h($adhesion->adhesion_personal_data->birth_date ?? '') ?></td>
+    <table class="form-table">
+        <tr>
+            <td><strong>Nome Completo:</strong></td>
+            <td colspan="3"><?= h($adhesion->adhesion_personal_data->name ?? '') ?></td>
+        </tr>
+        <tr>
+            <td><strong>Data de Nascimento:</strong></td>
+            <td><?= h($adhesion->adhesion_personal_data->birth_date ?? '') ?></td>
 
-        <td><strong>Nacionalidade:</strong></td>
-        <td><?= h($adhesion->adhesion_personal_data->nacionality ?? '') ?></td>
-    </tr>
+            <td><strong>Nacionalidade:</strong></td>
+            <td><?= h($adhesion->adhesion_personal_data->nacionality ?? '') ?></td>
+        </tr>
 
-    <tr>
-        <td><strong>Nome da Mãe:</strong></td>
-        <td colspan="3"><?= h($adhesion->adhesion_personal_data->mother_name ?? '') ?></td>
-    </tr>
+        <tr>
+            <td><strong>Nome da Mãe:</strong></td>
+            <td colspan="3"><?= h($adhesion->adhesion_personal_data->mother_name ?? '') ?></td>
+        </tr>
 
-    <tr>
-        <td><strong>Nome do Pai:</strong></td>
-        <td colspan="3"><?= h($adhesion->adhesion_personal_data->father_name ?? '') ?></td>
-    </tr>
+        <tr>
+            <td><strong>Nome do Pai:</strong></td>
+            <td colspan="3"><?= h($adhesion->adhesion_personal_data->father_name ?? '') ?></td>
+        </tr>
 
-    <tr>
-        <td><strong>Profissão:</strong></td>
-        <td><?= h($adhesion->adhesion_other_information->profession ?? '') ?></td>
+        <tr>
+            <td><strong>Profissão:</strong></td>
+            <td><?= h($adhesion->adhesion_other_information->main_occupation_description ?? '') ?></td>
 
-        <td><strong>Nº Registro Profissional:</strong></td>
-        <td><?= h($adhesion->adhesion_other_information->professional_register ?? '') ?></td>
-    </tr>
-</table>
+            <td><strong>Nº Registro Profissional:</strong></td>
+            <td><?= h($adhesion->adhesion_other_information->professional_register ?? '') ?></td>
+        </tr>
+    </table>
 
-<div class="section-title">Documentos</div>
+    <div class="section-title">Documentos</div>
 
-<table class="form-table">
-    <tr>
-        <td><strong>CPF:</strong></td>
-        <td><?= h($adhesion->adhesion_personal_data->cpf ?? '') ?></td>
-    </tr>
-    <tr>
-        <td><strong><?= $adhesion->adhesion_document->type !== 'Outro' ? $adhesion->adhesion_document->type : $adhesion->adhesion_document->type_other; ?>:</strong></td>
-        <td><?= h($adhesion->adhesion_document->document_number ?? '') ?></td>
-    </tr>
-</table>
+    <table class="form-table">
+        <tr>
+            <td><strong>CPF:</strong></td>
+            <td><?= h($adhesion->adhesion_personal_data->cpf ?? '') ?></td>
+        </tr>
+        <tr>
+            <td><strong><?= $adhesion->adhesion_document->type !== 'Outro' ? $adhesion->adhesion_document->type : $adhesion->adhesion_document->type_other; ?>:</strong></td>
+            <td><?= h($adhesion->adhesion_document->document_number ?? '') ?></td>
+        </tr>
+    </table>
 
-<div class="section-title">Endereço Residencial</div>
+    <div class="section-title">Endereço Residencial</div>
 
-<table class="form-table">
-    <tr>
-        <td><strong>Logradouro:</strong></td>
-        <td colspan="3"><?= h($adhesion->adhesion_address->address ?? '') ?></td>
-    </tr>
+    <table class="form-table">
+        <tr>
+            <td><strong>Logradouro:</strong></td>
+            <td colspan="3"><?= h($adhesion->adhesion_address->address ?? '') ?></td>
+        </tr>
 
-    <tr>
-        <td><strong>Número:</strong></td>
-        <td><?= h($adhesion->adhesion_address->number ?? '') ?></td>
+        <tr>
+            <td><strong>Número:</strong></td>
+            <td><?= h($adhesion->adhesion_address->number ?? '') ?></td>
 
-        <td><strong>Complemento:</strong></td>
-        <td><?= h($adhesion->adhesion_address->complement ?? '') ?></td>
-    </tr>
+            <td><strong>Complemento:</strong></td>
+            <td><?= h($adhesion->adhesion_address->complement ?? '') ?></td>
+        </tr>
 
-    <tr>
-        <td><strong>Bairro:</strong></td>
-        <td><?= h($adhesion->adhesion_address->neighborhood ?? '') ?></td>
+        <tr>
+            <td><strong>Bairro:</strong></td>
+            <td><?= h($adhesion->adhesion_address->neighborhood ?? '') ?></td>
 
-        <td><strong>Cidade/UF:</strong></td>
-        <td><?= h($adhesion->adhesion_address->city ?? '') ?>/<?= h($adhesion->adhesion_address->state ?? '') ?></td>
-    </tr>
+            <td><strong>Cidade/UF:</strong></td>
+            <td><?= h($adhesion->adhesion_address->city ?? '') ?>/<?= h($adhesion->adhesion_address->state ?? '') ?></td>
+        </tr>
 
-    <tr>
-        <td><strong>CEP:</strong></td>
-        <td colspan="3"><?= h($adhesion->adhesion_address->cep ?? '') ?></td>
-    </tr>
-</table>
+        <tr>
+            <td><strong>CEP:</strong></td>
+            <td colspan="3"><?= h($adhesion->adhesion_address->cep ?? '') ?></td>
+        </tr>
+    </table>
 
-<div class="section-title">Contato</div>
+    <div class="section-title">Contato</div>
 
-<table class="form-table">
-    <tr style="display: none;">
-        <td><strong>Fone Residencial:</strong></td>
-        <td><?= h($adhesion->adhesion_personal_data->phone ?? '') ?></td>
+    <table class="form-table">
+        <tr style="display: none;">
+            <td><strong>Fone Residencial:</strong></td>
+            <td><?= h($adhesion->adhesion_personal_data->phone ?? '') ?></td>
 
-        <td><strong>Fone Comercial:</strong></td>
-        <td><?= h($adhesion->adhesion_personal_data->commercial_phone ?? '') ?></td>
-    </tr>
+            <td><strong>Fone Comercial:</strong></td>
+            <td><?= h($adhesion->adhesion_personal_data->commercial_phone ?? '') ?></td>
+        </tr>
 
-    <tr>
-        <td><strong>Celular:</strong></td>
-        <td><?= h($adhesion->adhesion_initial_data->phone ?? '') ?></td>
+        <tr>
+            <td><strong>Celular:</strong></td>
+            <td><?= h($adhesion->phone ?? '') ?></td>
 
-        <td><strong>E-mail:</strong></td>
-        <td><?= h($adhesion->adhesion_initial_data->email ?? '') ?></td>
-    </tr>
-</table>
+            <td><strong>E-mail:</strong></td>
+            <td><?= h($adhesion->email ?? '') ?></td>
+        </tr>
+    </table>
 
-<div class="note-box">
-    <?= !$adhesion->adhesion_pension_scheme->cpf ? 'DECLARO sob as penas da Lei, que sou segurado do' : 'DECLARO sob as penas da Lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao' ?> seguinte regime de previdência:
-    (<?= !$adhesion->adhesion_pension_scheme->pension_scheme === 'Geral (INSS)' ? 'X' : ' ' ?>) GERAL (INSS);
-    (<?= !$adhesion->adhesion_pension_scheme->pension_scheme === 'Proprio (Servidor Publico)' ? 'X' : ' ' ?>) PRÓPRIO (Servidor Público);
-    (<?= !$adhesion->adhesion_pension_scheme->pension_scheme === 'Complementar (Fundos de pensão)' ? 'X' : ' ' ?>) COMPLEMENTAR (Fundos de Pensão)
-    <?php if ($adhesion->adhesion_pension_scheme->cpf) { ?>
-    <br><br>
-    Vinculado ao Segurado: <?= h($adhesion->adhesion_pension_scheme->name) ?><br>
-    CPF do Segurado: <?= h($adhesion->adhesion_pension_scheme->cpf) ?><br>
-    Grau de Parentesco: <?= h($adhesion->adhesion_pension_scheme->kinship) ?>
-    <?php } ?>
-</div>
+    <div class="note-box">
+        <?= !$adhesion->adhesion_pension_scheme->cpf ? 'DECLARO sob as penas da Lei, que sou segurado do' : 'DECLARO sob as penas da Lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao' ?> seguinte regime de previdência:
+        <br>
+        (<?= !$adhesion->adhesion_pension_scheme->pension_scheme == 'Geral (INSS)' ? 'X' : ' ' ?>) GERAL (INSS);
+        (<?= !$adhesion->adhesion_pension_scheme->pension_scheme == 'Próprio (Servidor público)' ? 'X' : ' ' ?>) PRÓPRIO (Servidor Público);
+        (<?= !$adhesion->adhesion_pension_scheme->pension_scheme == 'Complementar (Fundos de pensão)' ? 'X' : ' ' ?>) COMPLEMENTAR (Fundos de Pensão)
+        <?php if ($adhesion->adhesion_pension_scheme->cpf) { ?>
+            <br><br>
+            Vinculado ao Segurado: <?= h($adhesion->adhesion_pension_scheme->name) ?><br>
+            CPF do Segurado: <?= h($adhesion->adhesion_pension_scheme->cpf) ?><br>
+            Grau de Parentesco: <?= h($adhesion->adhesion_pension_scheme->kinship) ?>
+        <?php } ?>
+    </div>
 
-<p class="footer-text">
-(X) AUTORIZO   ( ) NÃO AUTORIZO o CEPREV a realizar o tratamento de meus Dados
-Pessoais para oferecer produtos e serviços, por meio de e-mail, ligações, SMS,
-mensagens, bem como autorizo compartilhar meus dados com seus parceiros e demais
-prestadores de serviços.
-</p>
+    <p class="footer-text">
+        (X) AUTORIZO ( ) NÃO AUTORIZO o CEPREV a realizar o tratamento de meus Dados
+        Pessoais para oferecer produtos e serviços, por meio de e-mail, ligações, SMS,
+        mensagens, bem como autorizo compartilhar meus dados com seus parceiros e demais
+        prestadores de serviços.
+    </p>
 
-<div class="signature-line">
-    <p>Local: Florianópolis, <?= date('d') ?> de <?= $this->Utils->monthName(date('m')) ?> de <?= date('Y') ?>.</p>
-    <p>Assinatura: _____________________________________________</p>
-</div>
+    <div class="signature-line">
+        <p>Local: Florianópolis, <?= date('d') ?> de <?= $this->Utils->monthName(date('m')) ?> de <?= date('Y') ?>.</p>
+        <p>Assinatura: _____________________________________________</p>
+    </div>
 
 </body>
+
 </html>
