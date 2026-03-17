@@ -36,6 +36,8 @@ env:
     - SICOOB_CLIENT_ID
     - SICOOB_FIXED_TOKEN
     - SICOOB_PIX_KEY
+    - SICOOB_CERTIFICATE_BASE64
+    - SICOOB_PRIVATE_KEY_BASE64
 
 builder:
   remote: "ssh://deploy@162.240.166.197:22022"

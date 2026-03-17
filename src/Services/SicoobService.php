@@ -25,6 +25,22 @@ class SicoobService
         $this->privateKey = $config['privateKey'] ?? null;
         $this->accessToken = $config['fixedToken'] ?? null;
 
+        // Check for Base64 encoded certificate/key (Production strategy)
+        if (!empty($config['certificateBase64']) && !empty($config['privateKeyBase64'])) {
+            $tempCertPath = TMP . 'sicoob_cert_' . md5($this->clientId) . '.pem';
+            $tempKeyPath = TMP . 'sicoob_key_' . md5($this->clientId) . '.key';
+
+            if (!file_exists($tempCertPath)) {
+                file_put_contents($tempCertPath, base64_decode($config['certificateBase64']));
+            }
+            if (!file_exists($tempKeyPath)) {
+                file_put_contents($tempKeyPath, base64_decode($config['privateKeyBase64']));
+            }
+
+            $this->certificate = $tempCertPath;
+            $this->privateKey = $tempKeyPath;
+        }
+
         $sslConfig = [];
         if ($this->certificate && $this->privateKey) {
             $sslConfig = [

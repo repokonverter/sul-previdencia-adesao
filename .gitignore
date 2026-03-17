@@ -56,3 +56,5 @@ yarn-error.log
 .kamal/secrets
 # Bootstrap UI
 /webroot/bootstrap_u_i
+# Certificates
+/certificates

@@ -461,4 +461,16 @@ return [
         'baseUrl' => env('CLICKSIGN_BASE_URL', 'https://sandbox.clicksign.com/api/v3'),
         'accessToken' => env('CLICKSIGN_ACCESS_TOKEN', ''),
     ],
+
+    'Sicoob' => [
+        'baseUrl' =>  env('SICOOB_BASE_URL', null),
+        'authUrl' => env('SICOOB_AUTH_URL', null),
+        'clientId' => env('SICOOB_CLIENT_ID', null),
+        'certificate' => env('SICOOB_CERTIFICATE_FILE', 'certificate.pem'),
+        'privateKey' => env('SICOOB_PRIVATE_KEY_FILE', 'private.key'),
+        'certificateBase64' => env('SICOOB_CERTIFICATE_BASE64', null),
+        'privateKeyBase64' => env('SICOOB_PRIVATE_KEY_BASE64', null),
+        'fixedToken' => env('SICOOB_FIXED_TOKEN', null),
+        'pixKey' => env('SICOOB_PIX_KEY', null),
+    ],
 ];
