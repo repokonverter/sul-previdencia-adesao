@@ -42,6 +42,9 @@ class SicoobService
         }
 
         $sslConfig = [];
+
+        dd([$this->certificate, $this->privateKey]);
+
         if ($this->certificate && $this->privateKey) {
             $sslConfig = [
                 'ssl_cert' => $this->certificate,
@@ -85,7 +88,7 @@ class SicoobService
             $response = $this->httpClient->post($this->authUrl, [
                 'grant_type' => 'client_credentials',
                 'client_id' => $this->clientId,
-                'scope' => 'cob.write cob.read cobv.write cobv.read pix.write pix.read webhook.read webhook.write payload_location.write payload_location.read' // Scopes for Pix V2
+                'scope' => 'cob.write cob.read cobv.write cobv.read lotecobv.write lotecobv.read pix.write pix.read webhook.read webhook.write payloadlocation.write payloadlocation.read'
             ], [
                 'headers' => ['Content-Type' => 'application/x-www-form-urlencoded']
             ]);
