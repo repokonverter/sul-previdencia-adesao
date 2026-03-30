@@ -43,12 +43,14 @@ class SicoobService
 
         $sslConfig = [];
 
-        dd([$this->certificate, $this->privateKey]);
-
         if ($this->certificate && $this->privateKey) {
             $sslConfig = [
-                'ssl_cert' => $this->certificate,
-                'ssl_key' => $this->privateKey,
+                'ssl_local_cert' => $this->certificate,
+                'ssl_local_pk' => $this->privateKey,
+                'curl' => [
+                    CURLOPT_SSLCERT => $this->certificate,
+                    CURLOPT_SSLKEY => $this->privateKey,
+                ],
             ];
         }
 
