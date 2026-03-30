@@ -5,7 +5,7 @@ image: repokonverter/sul-previdencia-adesao
 servers:
   web:
     hosts:
-      - 162.240.166.197
+      - 162.240.152.202
 
 proxy:
   ssl: true
@@ -22,8 +22,9 @@ registry:
 
 env:
   clear:
-    DB_HOST: sul-previdencia-adesao-db
+    DB_HOST: infra-dados-postgres
     DEBUG: true
+
   secret:
     - SECURITY_SALT
     - DB_USER
@@ -47,14 +48,14 @@ ssh:
   user: deploy
   port: 22022
 
-accessories:
-  db:
-    image: postgres:16
-    host: 162.240.166.197
-    port: "5433:5432"
-    env:
-      secret:
-        - POSTGRES_USER
-        - POSTGRES_PASSWORD
-    volumes:
-      - adesao-sulprev-db-data:/var/lib/postgresql/data
+# accessories:
+#   db:
+#     image: postgres:16
+#     host: 162.240.166.197
+#     port: "5433:5432"
+#     env:
+#       secret:
+#         - POSTGRES_USER
+#         - POSTGRES_PASSWORD
+#     volumes:
+#       - adesao-sulprev-db-data:/var/lib/postgresql/data
