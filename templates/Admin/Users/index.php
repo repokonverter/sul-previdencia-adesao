@@ -12,20 +12,20 @@ $this->assign('title', 'Usuários');
     <div class="card mb-3 shadow-sm">
         <div class="card-body">
             <?= $this->Form->create(null, ['type' => 'get', 'class' => 'row g-2']) ?>
-                <div class="col-md-4">
-                    <?= $this->Form->control('q', [
-                        'label' => false,
-                        'placeholder' => 'Buscar por nome ou e-mail...',
-                        'value' => $this->request->getQuery('q'),
-                        'class' => 'form-control'
-                    ]) ?>
-                </div>
-                <div class="col-md-2">
-                    <?= $this->Form->button('Buscar', ['class' => 'btn btn-secondary w-100']) ?>
-                </div>
-                <div class="col-md-2">
-                    <?= $this->Html->link('Limpar', ['action' => 'index'], ['class' => 'btn btn-light w-100']) ?>
-                </div>
+            <div class="col-md-4">
+                <?= $this->Form->control('q', [
+                    'label' => false,
+                    'placeholder' => 'Buscar por nome ou e-mail...',
+                    'value' => $this->request->getQuery('q'),
+                    'class' => 'form-control'
+                ]) ?>
+            </div>
+            <div class="col-md-2">
+                <?= $this->Form->button('Buscar', ['class' => 'btn btn-secondary w-100']) ?>
+            </div>
+            <div class="col-md-2">
+                <?= $this->Html->link('Limpar', ['action' => 'index'], ['class' => 'btn btn-light w-100']) ?>
+            </div>
             <?= $this->Form->end() ?>
         </div>
     </div>
@@ -38,7 +38,7 @@ $this->assign('title', 'Usuários');
                     <th><?= $this->Paginator->sort('id', 'ID') ?></th>
                     <th><?= $this->Paginator->sort('name', 'Nome') ?></th>
                     <th><?= $this->Paginator->sort('email', 'E-mail') ?></th>
-                    <th><?= $this->Paginator->sort('role', 'Perfil') ?></th>
+                    <!-- <th><?= $this->Paginator->sort('role', 'Perfil') ?></th> -->
                     <th class="text-center">Ações</th>
                 </tr>
             </thead>
@@ -48,13 +48,17 @@ $this->assign('title', 'Usuários');
                         <td><?= h($user->id) ?></td>
                         <td><?= h($user->name) ?></td>
                         <td><?= h($user->email) ?></td>
-                        <td><?= ucfirst(h($user->role)) ?></td>
+                        <!-- <td><?= ucfirst(h($user->role)) ?></td> -->
                         <td class="text-end">
                             <?= $this->Html->link('<i class="bi bi-eye"></i>', ['action' => 'view', $user->id], [
-                                'escape' => false, 'class' => 'btn btn-sm btn-outline-primary me-1', 'title' => 'Ver'
+                                'escape' => false,
+                                'class' => 'btn btn-sm btn-outline-primary me-1',
+                                'title' => 'Ver'
                             ]) ?>
                             <?= $this->Html->link('<i class="bi bi-pencil"></i>', ['action' => 'edit', $user->id], [
-                                'escape' => false, 'class' => 'btn btn-sm btn-outline-warning me-1', 'title' => 'Editar'
+                                'escape' => false,
+                                'class' => 'btn btn-sm btn-outline-warning me-1',
+                                'title' => 'Editar'
                             ]) ?>
                             <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $user->id], [
                                 'escape' => false,
