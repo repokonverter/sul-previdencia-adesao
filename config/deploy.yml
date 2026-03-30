@@ -41,7 +41,7 @@ env:
     - SICOOB_PRIVATE_KEY_BASE64
 
 builder:
-  remote: "ssh://deploy@162.240.166.197:22022"
+  remote: "ssh://deploy@162.240.152.202:22022"
   arch: amd64
 
 ssh:
@@ -51,7 +51,7 @@ ssh:
 # accessories:
 #   db:
 #     image: postgres:16
-#     host: 162.240.166.197
+#     host: 162.240.152.202
 #     port: "5433:5432"
 #     env:
 #       secret:
