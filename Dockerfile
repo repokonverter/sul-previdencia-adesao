@@ -25,7 +25,7 @@ RUN composer install --optimize-autoloader --no-interaction
 # ----------------------------------------------------
 # 2. APPLICATION STAGE: Imagem final de runtime (Inclui Nginx e PHP-FPM)
 # ----------------------------------------------------
-FROM php:8.3-fpm-alpine AS app
+FROM php:8.4-fpm-alpine AS app
 
 # Instala o Nginx, icu-libs e a biblioteca de runtime do PostgreSQL (libpq)
 RUN apk add --no-cache nginx \
