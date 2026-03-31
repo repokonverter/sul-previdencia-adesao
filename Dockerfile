@@ -1,7 +1,7 @@
 # ----------------------------------------------------
 # 1. BUILDER STAGE: Prepara a imagem base PHP-FPM (APENAS para instalar o Composer)
 # ----------------------------------------------------
-FROM php:8.3-fpm-alpine AS builder
+FROM php:8.4-fpm-alpine AS builder
 
 # Instala ferramentas necessárias (git, build-base para compilação)
 # IMPORTANTE: Instalamos 'icu-dev' e a extensão 'intl' para satisfazer o Composer.
