@@ -492,9 +492,9 @@ class RegistrationsController extends AppController
                         'baseUrl' => Configure::read('Sicoob.baseUrl'),
                         'authUrl' => Configure::read('Sicoob.authUrl'),
                         'clientId' => Configure::read('Sicoob.clientId'),
-                        'certificate' => Configure::read('Sicoob.certificate_path'),
-                        'privateKey' => Configure::read('Sicoob.private_key_path'),
-                        'fixedToken' => Configure::read('Sicoob.fixedToken')
+                        'certificateBase64' => Configure::read('Sicoob.certificateBase64'),
+                        'privateKeyBase64' => Configure::read('Sicoob.privateKeyBase64'),
+                        'fixedToken' => Configure::read('Sicoob.fixedToken'),
                     ];
 
                     $sicoob = new \App\Services\SicoobService($sicoobConfig);
