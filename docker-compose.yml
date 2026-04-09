@@ -1,10 +1,8 @@
-version: '3'
-
 services:
   pgsql:
     image: postgres:alpine
     ports:
-      - '5432:5432'
+      - '5433:5432'
     container_name: 'pgsql-sul-prev'
     restart: always
     volumes:
@@ -14,11 +12,11 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
 
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 8080:8080
+  # adminer:
+  #   image: adminer
+  #   restart: always
+  #   ports:
+  #     - 8080:8080
 
 volumes:
   pg-data:

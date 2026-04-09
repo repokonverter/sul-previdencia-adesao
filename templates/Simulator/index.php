@@ -918,7 +918,7 @@ function createSecureCard($data, $type)
                         </div>
 
                         <div id="dependents" class="hidden">
-                            <div class="row">
+                            <div class="row mb-2">
                                 <div class="col d-flex justify-content-end"><button type="button" class="btn btn-success" onclick="addDependent();">Adicionar</button></div>
                             </div>
                             <div id="listDependents"></div>
@@ -2109,8 +2109,13 @@ function createSecureCard($data, $type)
                 participation = 34;
 
             $('#listDependents').append(`
-        <div class="dependentDiv">
-            <div class="text-center"><strong>Beneficiário ${count + 1}</strong></div>
+        <div class="dependentDiv border rounded p-3 mb-3 shadow-sm bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="h6 mb-0"><strong>Beneficiário ${count + 1}</strong></div>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeDependent(this);">
+                    <i class="bi bi-trash"></i> Remover
+                </button>
+            </div>
             <div class="row">
                 <div class="col">
                     <div class="mb-3">
@@ -2178,6 +2183,34 @@ function createSecureCard($data, $type)
             $('.cpf').mask('000.000.000-00', {
                 reverse: true,
             });
+        }
+
+        const removeDependent = (element) => {
+            $(element).closest('.dependentDiv').remove();
+
+            // Re-index remaining dependents
+            $('#listDependents .dependentDiv').each(function(index) {
+                $(this).find('strong').text(`Beneficiário ${index + 1}`);
+                $(this).find('input, select').each(function() {
+                    let name = $(this).attr('name');
+                    if (name) {
+                        name = name.replace(/dependents\[\d+\]/, `dependents[${index}]`);
+                        $(this).attr('name', name);
+                    }
+                });
+            });
+
+            // Recalculate participation
+            const count = $('#listDependents .dependentDiv').length;
+            if (count > 0) {
+                let baseParticipation = Math.floor(100 / count);
+                let remainder = 100 % count;
+
+                $('#listDependents .dependentDiv').each(function(index) {
+                    let p = baseParticipation + (index < remainder ? 1 : 0);
+                    $(this).find('.participation').val(p);
+                });
+            }
         }
 
         const showHide = (show, id) => {
