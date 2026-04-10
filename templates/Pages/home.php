@@ -1374,7 +1374,7 @@ echo $this->Html->css('application');
     </div>
 
     <!-- Simulador Modal -->
-    <div class="modal fade" id="simulatorModal" tabindex="-1" aria-labelledby="simulatorModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal fade" id="simulatorModal" tabindex="-1" aria-labelledby="simulatorModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" style="display: none;">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1456,8 +1456,8 @@ echo $this->Html->css('application');
 <script>
     const simulate = () => {
         let isValid = true;
-        const date = $('#simulatorModal input[name="dateBirth').val();
-        const value = $('#simulatorModal input[name="monthlyInvestment').val().replace('.', '').replace(',', '.');
+        const date = $('#simulatorModal input[name="dateBirth"]').val();
+        const value = $('#simulatorModal input[name="monthlyInvestment"]').val().replace('.', '').replace(',', '.');
         const simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
         const form = document.querySelectorAll(`#simulatorForm input`);
 

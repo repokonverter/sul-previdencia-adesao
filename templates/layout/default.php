@@ -83,11 +83,7 @@ $this->prepend('meta', $this->Html->meta('favicon.ico', '/favicon.ico', ['type' 
  * Prepend `css` block with Bootstrap stylesheets
  * Change to bootstrap.min to use the compressed version
  */
-if (Configure::read('debug')) {
-    $this->prepend('css', $this->Html->css(['BootstrapUI.bootstrap']));
-} else {
-    $this->prepend('css', $this->Html->css(['BootstrapUI.bootstrap.min']));
-}
+$this->prepend('css', $this->Html->css('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css'));
 $this->prepend(
     'css',
     $this->Html->css(['BootstrapUI./font/bootstrap-icons', 'BootstrapUI./font/bootstrap-icon-sizes'])
@@ -97,11 +93,7 @@ $this->prepend(
  * Prepend `script` block with Popper and Bootstrap scripts
  * Change bootstrap.min to use the compressed version
  */
-if (Configure::read('debug')) {
-    $this->prepend('script', $this->Html->script(['BootstrapUI.bootstrap.bundle']));
-} else {
-    $this->prepend('script', $this->Html->script(['BootstrapUI.bootstrap.bundle.min']));
-}
+$this->prepend('script', $this->Html->script('https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js'));
 
 ?>
 <!doctype html>
