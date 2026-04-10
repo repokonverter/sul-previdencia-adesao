@@ -179,9 +179,9 @@
     <div class="note-box">
         <?= !$adhesion->adhesion_pension_scheme->cpf ? 'DECLARO sob as penas da Lei, que sou segurado do' : 'DECLARO sob as penas da Lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao' ?> seguinte regime de previdência:
         <br>
-        (<?= !$adhesion->adhesion_pension_scheme->pension_scheme == 'Geral (INSS)' ? 'X' : ' ' ?>) GERAL (INSS);
-        (<?= !$adhesion->adhesion_pension_scheme->pension_scheme == 'Próprio (Servidor público)' ? 'X' : ' ' ?>) PRÓPRIO (Servidor Público);
-        (<?= !$adhesion->adhesion_pension_scheme->pension_scheme == 'Complementar (Fundos de pensão)' ? 'X' : ' ' ?>) COMPLEMENTAR (Fundos de Pensão)
+        (<?= $adhesion->adhesion_pension_scheme->pension_scheme == 'Geral (INSS)' ? 'X' : ' ' ?>) GERAL (INSS);
+        (<?= $adhesion->adhesion_pension_scheme->pension_scheme == 'Próprio (Servidor público)' ? 'X' : ' ' ?>) PRÓPRIO (Servidor Público);
+        (<?= $adhesion->adhesion_pension_scheme->pension_scheme == 'Complementar (Fundos de pensão)' ? 'X' : ' ' ?>) COMPLEMENTAR (Fundos de Pensão)
         <?php if ($adhesion->adhesion_pension_scheme->cpf) { ?>
             <br><br>
             Vinculado ao Segurado: <?= h($adhesion->adhesion_pension_scheme->name) ?><br>
