@@ -246,7 +246,8 @@ class RegistrationsController extends AppController
                     $otherInformations,
                     [
                         'adhesion_initial_data_id' => $initialDataId,
-                        'main_occupation' => $otherInformationsData['mainOccupation'] ?? '',
+                        'main_occupation_description' => $otherInformationsData['mainOccupationDescription'] ?? '',
+                        'main_occupation_code' => $otherInformationsData['mainOccupationCode'] ?? '',
                         'category' => $otherInformationsData['category'] ?? '',
                         'brazilian_resident' => $otherInformationsData['brazilianResident'] ?? false,
                         'politically_exposed' => $otherInformationsData['politicallyExposed'] ?? false,

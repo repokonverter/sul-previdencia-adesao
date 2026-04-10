@@ -19,5 +19,7 @@ class AdhesionOtherInformation extends Entity
         'created' => true,
         'modified' => true,
         'adhesion_initial_data' => true,
+        'company' => true,
+        'monthly_income' => true,
     ];
 }

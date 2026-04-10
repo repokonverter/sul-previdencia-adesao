@@ -231,7 +231,8 @@
                 <td>Sexo<br><?= $adhesion->adhesion_personal_data->gender ?? '' ?></td>
                 <td>Estado Civil<br><?= $adhesion->adhesion_personal_data->marital_status ?? '' ?></td>
                 <td>Nº de Filhos<br><?= $adhesion->adhesion_personal_data->number_childrens ?? 0 ?></td>
-                <td colspan="2">CPF / Tipo<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?>, <span class="bold"><?= $adhesion->adhesion_personal_data->plan_for ?? '' ?></span></td>
+                <td colspan="2">CPF / Tipo<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?><span class="bold"><?= '' //$adhesion->adhesion_personal_data->plan_for ?? ''
+                                                                                                                    ?></span></td>
             </tr>
             <tr>
                 <td colspan="2">Nacionalidade<br><?= $adhesion->adhesion_personal_data->nacionality ?? '' ?></td>
@@ -274,7 +275,7 @@
             </tr>
             <tr>
                 <td colspan="2">Categoria<br><?= $adhesion->adhesion_other_information->category ?? '' ?></td>
-                <td>Renda mensal bruta<br><?= $adhesion->adhesion_other_information->monthly_income ?? '<br>' ?></td>
+                <td>Renda mensal bruta<br>R$ <?= number_format($adhesion->adhesion_other_information->monthly_income ?? 0, 2, ',', '.') ?></td>
                 <td colspan="3">Pessoa Politicamente Exposta¹?<br><?= $adhesion->adhesion_other_information->politically_exposed ? 'Sim, ' . ($adhesion->adhesion_other_information->politically_exposed_obs ?? '') : 'Não' ?></td>
             </tr>
             <tr>
@@ -431,7 +432,7 @@
     <div>
         <div class="small-note">
             Espaço para relógio protocolo<br>
-            A aceitação estará sujeita à análise do risco e a MONGERAL AEGON tem o prazo de até 15 dias, contados da data que vier a ser registrada pelo relógio protocolo, para manifestar-se em relação à aceitação ou recusa desta proposta. Este prazo será suspenso quando necessária a requisição de outros documentos ou dados para análise do risco. Essa eventual suspensão terminará quando forem protocolados os documentos ou dados para análise do risco. Caso não haja manifestação de recusa desta proposta pela MONGERAL AEGON no prazo antes referido, a aceitação da proposta se dará automaticamente. No caso de não aceitação da proposta, o valor aportado será devolvido, atualizado até a data da efetiva restituição, de acordo com a regulamentação em vigor.
+            A aceitação estará sujeita à análise do risco e a MAG Seguros tem o prazo de até 15 dias, contados da data que vier a ser registrada pelo relógio protocolo, para manifestar-se em relação à aceitação ou recusa desta proposta. Este prazo será suspenso quando necessária a requisição de outros documentos ou dados para análise do risco. Essa eventual suspensão terminará quando forem protocolados os documentos ou dados para análise do risco. Caso não haja manifestação de recusa desta proposta pela MAG Seguros no prazo antes referido, a aceitação da proposta se dará automaticamente. No caso de não aceitação da proposta, o valor aportado será devolvido, atualizado até a data da efetiva restituição, de acordo com a regulamentação em vigor.
         </div>
 
         <div class="section-title">PARA USO DA SEGURADORA</div>
@@ -518,10 +519,6 @@
                 <td><?= $adhesion->adhesion_proponent_statement->covid_sequelae ? 'Sim, ' . $adhesion->adhesion_proponent_statement->covid_sequelae_obs : 'Não' ?></td>
             </tr>
         </table>
-
-        <div class="small-note">
-            Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano PlenoPrev, bem como o material explicativo sobre o referido plano. Declaro também que tive prévio e expresso conhecimento e estou de acordo com os termos dos regulamentos dos planos de pecúlio, contratados pela Sul Previdência na MAG Seguros, e por mim custeados, que determinam como único beneficiário a Sul Previdência, o que não poderá ser alterado. Entendo que a responsabilidade pelo pagamento das rendas mensais de aposentadoria programada, aposentadoria por invalidez e pensão será da Sul Previdência. Desta maneira, reconheço que a minha assinatura na presente proposta implica na minha automática adesão aos referidos regulamentos, sabendo, desde já, que a aceitação dos planos de risco está sujeita à análise do risco. Declaro, ainda, que as informações por mim fornecidas são verdadeiras e ciente estou de que quaisquer omissões ou falsidades tornarão nula esta proposta, nos termos do Art. 766 do Código Civil, podendo vir a responder civil e criminalmente pelas inveracidades eventualmente verificadas. Autorizo, desde já, médicos, hospitais, clínicas ou quaisquer entidades públicas ou privadas a prestar à MAG Seguros informações relacionadas ao meu estado de saúde ou moléstias que eu possa sofrer ou ter sofrido, bem como resultados de exames e tratamentos instituídos, isentando-os, desde já, de qualquer responsabilidade que implique em ofensa ou sigilo profissional. Comprometo-me a informar à Sul Previdência a minha condição de pessoa politicamente exposta, mesmo que ocorrida após a assinatura da proposta, durante a vigência do plano, conforme os termos definidos na IN MPS nº 34/2020 e na Circular SUSEP nº 612/2020.
-        </div>
 
         <table class="signature-table invisible-table">
             <tr>
