@@ -270,7 +270,7 @@
                     ?>
                 </td>
                 <td colspan="2">
-                    Empresa que trabalha/última empresa<br><?= $adhesion->adhesion_other_information->company ?? '' ?>
+                    Empresa que trabalha/última empresa<br><?= $adhesion->adhesion_other_information->company ?? '<br>' ?>
                 </td>
             </tr>
             <tr>
