@@ -1920,8 +1920,14 @@ function createSecureCard($data, $type)
         }
 
         const nextPage = async () => {
-            if (registerPageIndex === registerPages.length - 1)
+            const btnPrimary = document.querySelector('#registerModal .modal-footer .btn-primary');
+
+            if (registerPageIndex === registerPages.length - 1) {
+                btnPrimary.disabled = true;
+                btnPrimary.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
                 window.location.reload();
+                return;
+            }
 
             let isValid = true;
             const form = document.querySelectorAll(`#${registerPages[registerPageIndex].id} input, #${registerPages[registerPageIndex].id} select`);
@@ -1962,16 +1968,24 @@ function createSecureCard($data, $type)
                     return;
                 }
 
-            const response = await saveForm(registerPages[registerPageIndex].id);
+            btnPrimary.disabled = true;
+            btnPrimary.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
 
-            registerPageIndex += 1;
+            try {
+                const response = await saveForm(registerPages[registerPageIndex].id);
 
-            if (registerPageIndex === 10) {
-                $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
-                $('#pix-copy-paste').val(response.copyAndPaste);
+                registerPageIndex += 1;
+
+                if (registerPageIndex === 10) {
+                    $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
+                    $('#pix-copy-paste').val(response.copyAndPaste);
+                }
+
+                updatePage(registerPageIndex)
+            } finally {
+                btnPrimary.disabled = false;
+                updateButtonPreviousNext(registerPageIndex);
             }
-
-            updatePage(registerPageIndex)
         }
 
         const previousPage = () => {
