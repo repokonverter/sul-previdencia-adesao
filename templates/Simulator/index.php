@@ -1038,7 +1038,10 @@ function createSecureCard($data, $type)
                                             <input type="hidden" name="otherInformations[mainOccupationDescription]" id="mainOccupationDescription">
                                             <input type="hidden" name="otherInformations[mainOccupationCode]" id="mainOccupationCode">
                                             <div class="input-group">
-                                                <input type="text" class="form-control" id="mainOccupationSearch" placeholder="Digite para buscar..." autocomplete="off">
+                                                <input type="text" class="form-control" id="mainOccupationSearch" placeholder="Digite para buscar..." autocomplete="off" required>
+                                                <div class="invalid-feedback">
+                                                    Preenchimento obrigatório.
+                                                </div>
                                                 <span class="input-group-text" id="occupationLoading" style="display:none;">
                                                     <div class="spinner-border spinner-border-sm" role="status">
                                                         <span class="visually-hidden">Carregando...</span>
@@ -1046,9 +1049,7 @@ function createSecureCard($data, $type)
                                                 </span>
                                             </div>
                                             <div id="occupationResults" class="list-group position-absolute w-100 shadow bg-white" style="max-height: 200px; overflow-y: auto; z-index: 1000;"></div>
-                                            <div class="invalid-feedback">
-                                                Preenchimento obrigatório.
-                                            </div>
+
                                         </div>
                                         <script>
                                             $(document).ready(function() {
@@ -1060,6 +1061,9 @@ function createSecureCard($data, $type)
                                                 $searchInput.on('input', function() {
                                                     clearTimeout(searchTimeout);
                                                     const term = $(this).val();
+
+                                                    $hiddenInput.val('');
+                                                    $('#mainOccupationDescription').val('');
 
                                                     if (term.length < 3) {
                                                         $resultsDiv.hide().empty();
@@ -1119,6 +1123,9 @@ function createSecureCard($data, $type)
                                                 $(document).on('click', function(e) {
                                                     if (!$(e.target).closest('.position-relative').length) {
                                                         $resultsDiv.hide();
+                                                        if (!$hiddenInput.val()) {
+                                                            $searchInput.val('');
+                                                        }
                                                     }
                                                 });
 
@@ -1138,7 +1145,7 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="category" class="form-label">Categoria*</label>
-                                        <select class="form-select" name="otherInformations[category]">
+                                        <select class="form-select" name="otherInformations[category]" required>
                                             <option value="">Selecione...</option>
                                             <option value="Aposentado">Aposentado</option>
                                             <option value="Autônomo">Autônomo</option>
@@ -1157,7 +1164,7 @@ function createSecureCard($data, $type)
                                         <label class="form-label">Renda mensal bruta aproximada*</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="otherInformations[monthlyIncome]" placeholder="Renda mensal bruta aproximada">
+                                            <input type="text" class="form-control money" name="otherInformations[monthlyIncome]" placeholder="Renda mensal bruta aproximada" required>
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -1169,7 +1176,7 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="company" class="form-label">Empresa que trabalha/última empresa*</label>
-                                        <input type="text" class="form-control" name="otherInformations[company]" placeholder="Empresa que trabalha/última empresa">
+                                        <input type="text" class="form-control" name="otherInformations[company]" placeholder="Empresa que trabalha/última empresa" required>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -1954,6 +1961,15 @@ function createSecureCard($data, $type)
                     }
                 }
             })
+
+            if (registerPageIndex === 6) {
+                const occupationCode = $('#mainOccupationCode').val();
+
+                if (!occupationCode) {
+                    $('#mainOccupationSearch').addClass('is-invalid');
+                    isValid = false;
+                }
+            }
 
             if (!isValid) {
                 $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
