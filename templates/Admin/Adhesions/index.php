@@ -1,10 +1,12 @@
 <?php
+
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\AdhesionInitialData> $adhesions
  */
 
-function getAdhesionStage($adhesion) {
+function getAdhesionStage($adhesion)
+{
     if (!empty($adhesion->adhesion_other_information))
         return 'Outras Informações (Finalizado)';
 
@@ -82,57 +84,62 @@ function getAdhesionStage($adhesion) {
             <thead class="table-light">
                 <tr>
                     <th>Cliente</th>
-                    <th>CPF</th>
                     <th>Celular</th>
                     <th>E-mail</th>
                     <th>Etapa</th>
+                    <th>Data/hora</th>
                     <th class="text-end">Ações</th>
                 </tr>
             </thead>
             <tbody>
-            <?php foreach ($adhesions as $adhesion): ?>
-                <tr>
-                    <td class="fw-semibold"><?= h($adhesion->name ?? $adhesion->adhesion_personal_data->name) ?></td>
-                    <td><?= h($adhesion->adhesion_personal_data->cpf ?? '—') ?></td>
-                    <td><?= h($adhesion->phone ?? '—') ?></td>
-                    <td><?= h($adhesion->email ?? '—') ?></td>
-                    <td><?= h(getAdhesionStage($adhesion)) ?></td>
-                    <td class="text-end">
-                        <?php
-                        if ($adhesion->adhesion_payment_detail) {
-                            echo $this->Html->link(
-                                '<i class="bi bi-file-pdf"></i>',
-                                ['action' => 'generatePdf', $adhesion->id],
-                                ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Gerar PDF da proposta']
-                            );
-                        }
-                        ?>
+                <?php foreach ($adhesions as $adhesion): ?>
+                    <tr>
+                        <td class="fw-semibold"><?= h($adhesion->name ?? $adhesion->adhesion_personal_data->name) ?></td>
+                        <td><?= h($adhesion->phone ?? '—') ?></td>
+                        <td><?= h($adhesion->email ?? '—') ?></td>
+                        <td><?= h(getAdhesionStage($adhesion)) ?></td>
+                        <td><?= h($adhesion->created->format('d/m/Y H:i:s') ?? '—') ?></td>
+                        <td class="text-end">
+                            <?php
+                            if ($adhesion->adhesion_payment_detail) {
+                                echo $this->Html->link(
+                                    '<i class="bi bi-file-pdf"></i>',
+                                    ['action' => 'generatePdf', $adhesion->id],
+                                    ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Gerar PDF da proposta']
+                                );
+                                echo $this->Html->link(
+                                    '<i class="bi bi-file-pdf"></i>',
+                                    ['action' => 'generateFormPdf', $adhesion->id],
+                                    ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Gerar PDF da inscrição']
+                                );
+                            }
+                            ?>
 
-                        <?= $this->Html->link(
-                            '<i class="bi bi-eye"></i>',
-                            ['action' => 'view', $adhesion->id],
-                            ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Visualizar']
-                        ) ?>
+                            <?= $this->Html->link(
+                                '<i class="bi bi-eye"></i>',
+                                ['action' => 'view', $adhesion->id],
+                                ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Visualizar']
+                            ) ?>
 
-                        <?= $this->Html->link(
-                            '<i class="bi bi-pencil-square"></i>',
-                            ['action' => 'edit', $adhesion->id],
-                            ['escape' => false, 'class' => 'btn btn-sm btn-secondary me-1', 'title' => 'Editar']
-                        ) ?>
+                            <?= $this->Html->link(
+                                '<i class="bi bi-pencil-square"></i>',
+                                ['action' => 'edit', $adhesion->id],
+                                ['escape' => false, 'class' => 'btn btn-sm btn-secondary me-1', 'title' => 'Editar']
+                            ) ?>
 
-                        <?= $this->Form->postLink(
-                            '<i class="bi bi-trash"></i>',
-                            ['action' => 'delete', $adhesion->id],
-                            [
-                                'escape' => false,
-                                'class' => 'btn btn-sm btn-danger me-1',
-                                'confirm' => 'Tem certeza que deseja remover este cadastro?',
-                                'title' => 'Remover'
-                            ]
-                        ) ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
+                            <?= $this->Form->postLink(
+                                '<i class="bi bi-trash"></i>',
+                                ['action' => 'delete', $adhesion->id],
+                                [
+                                    'escape' => false,
+                                    'class' => 'btn btn-sm btn-danger me-1',
+                                    'confirm' => 'Tem certeza que deseja remover este cadastro?',
+                                    'title' => 'Remover'
+                                ]
+                            ) ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
     </div>

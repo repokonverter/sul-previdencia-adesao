@@ -4,15 +4,15 @@
     </h2>
 
     <?= $this->Html->link(
-            ' Gerar PDF',
-            ['action' => 'generatePdf', $adhesion->id], // Ajuste o nome da variável de ID conforme necessário (ex: $id ou $entity->id)
-            ['escape' => false, 'class' => 'btn btn-primary']
+        ' Gerar PDF da proposta',
+        ['action' => 'generatePdf', $adhesion->id], // Ajuste o nome da variável de ID conforme necessário (ex: $id ou $entity->id)
+        ['escape' => false, 'class' => 'btn btn-primary']
     ) ?>
 
     <?= $this->Html->link(
-            ' Gerar Formulário PDF',
-            ['action' => 'generateFormPdf', $adhesion->id], // Ajuste o nome da variável de ID conforme necessário (ex: $id ou $entity->id)
-            ['escape' => false, 'class' => 'btn btn-primary']
+        ' Gerar PDF da inscrição',
+        ['action' => 'generateFormPdf', $adhesion->id], // Ajuste o nome da variável de ID conforme necessário (ex: $id ou $entity->id)
+        ['escape' => false, 'class' => 'btn btn-primary']
     ) ?>
 
 
@@ -61,8 +61,8 @@
             <p><strong>Plano para:</strong> <?= h($adhesion->adhesion_personal_data->plan_for ?? '—') ?></p>
             <p><strong>Nome:</strong> <?= h($adhesion->adhesion_personal_data->name ?? '—') ?></p>
             <p><strong>CPF:</strong> <?= h($adhesion->adhesion_personal_data->cpf ?? '—') ?></p>
-            <p><strong>Data de Nascimento:</strong> 
-                <?= isset($adhesion->adhesion_personal_data->birth_date) 
+            <p><strong>Data de Nascimento:</strong>
+                <?= isset($adhesion->adhesion_personal_data->birth_date)
                     ? $adhesion->adhesion_personal_data->birth_date->format('d/m/Y')
                     : '—' ?>
             </p>
@@ -118,8 +118,8 @@
                         <p><strong>Nome:</strong> <?= h($dep->name ?? '—') ?></p>
                         <p><strong>CPF:</strong> <?= h($dep->cpf ?? '—') ?></p>
                         <p><strong>Parentesco:</strong> <?= h($dep->kinship ?? '—') ?></p>
-                        <p><strong>Data de Nascimento:</strong> 
-                            <?= isset($dep->birth_date) 
+                        <p><strong>Data de Nascimento:</strong>
+                            <?= isset($dep->birth_date)
                                 ? $dep->birth_date->format('d/m/Y')
                                 : '—' ?>
                         </p>
@@ -146,9 +146,9 @@
 
                         <p><strong>Tipo:</strong> <?= h($doc->type ?? '—') ?></p>
                         <p><strong>Número do Documento:</strong> <?= h($doc->document_number ?? '—') ?></p>
-                        
+
                         <p><strong>Data de Emissão:</strong>
-                            <?= isset($doc->issue_date) 
+                            <?= isset($doc->issue_date)
                                 ? $doc->issue_date->format('d/m/Y')
                                 : '—' ?>
                         </p>
@@ -178,20 +178,20 @@
 
             <p><strong>Contribuição Mensal:</strong>
                 R$ <?= isset($adhesion->adhesion_plan->monthly_contribuition_amount)
-                    ? number_format($adhesion->adhesion_plan->monthly_contribuition_amount, 2, ',', '.')
-                    : '—' ?>
+                        ? number_format($adhesion->adhesion_plan->monthly_contribuition_amount, 2, ',', '.')
+                        : '—' ?>
             </p>
 
             <p><strong>Contribuição Inicial (Aporte):</strong>
                 R$ <?= isset($adhesion->adhesion_plan->value_founding_contribution)
-                    ? number_format($adhesion->adhesion_plan->value_founding_contribution, 2, ',', '.')
-                    : '—' ?>
+                        ? number_format($adhesion->adhesion_plan->value_founding_contribution, 2, ',', '.')
+                        : '—' ?>
             </p>
 
             <p><strong>Capital Segurado:</strong>
                 R$ <?= isset($adhesion->adhesion_plan->insured_capital)
-                    ? number_format($adhesion->adhesion_plan->insured_capital, 2, ',', '.')
-                    : '—' ?>
+                        ? number_format($adhesion->adhesion_plan->insured_capital, 2, ',', '.')
+                        : '—' ?>
             </p>
 
             <p><strong>Modelo de Contribuição:</strong>
@@ -310,27 +310,27 @@
                 <i class="bi bi-chat-dots"></i> Outras Informações
             </h5>
 
-            <p><strong>Ocupação Principal:</strong> 
+            <p><strong>Ocupação Principal:</strong>
                 <?= h($adhesion->adhesion_other_information->main_occupation ?? '—') ?>
             </p>
 
-            <p><strong>Categoria:</strong> 
+            <p><strong>Categoria:</strong>
                 <?= h($adhesion->adhesion_other_information->category ?? '—') ?>
             </p>
 
-            <p><strong>Residente Brasileiro:</strong> 
+            <p><strong>Residente Brasileiro:</strong>
                 <?= isset($adhesion->adhesion_other_information->brazilian_resident)
                     ? ($adhesion->adhesion_other_information->brazilian_resident ? 'Sim' : 'Não')
                     : '—' ?>
             </p>
 
-            <p><strong>Pessoa Politicamente Exposta (PEP):</strong> 
+            <p><strong>Pessoa Politicamente Exposta (PEP):</strong>
                 <?= isset($adhesion->adhesion_other_information->politically_exposed)
                     ? ($adhesion->adhesion_other_information->politically_exposed ? 'Sim' : 'Não')
                     : '—' ?>
             </p>
 
-            <p><strong>Obrigação Fiscal em Outros Países:</strong> 
+            <p><strong>Obrigação Fiscal em Outros Países:</strong>
                 <?= isset($adhesion->adhesion_other_information->obligation_other_countries)
                     ? ($adhesion->adhesion_other_information->obligation_other_countries ? 'Sim' : 'Não')
                     : '—' ?>
