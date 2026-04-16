@@ -32,6 +32,17 @@ class UsersController extends AppController
     public function index()
     {
         $query = $this->Users->find();
+        
+        $q = $this->request->getQuery('q');
+        if ($q) {
+            $query->where([
+                'OR' => [
+                    'Users.name LIKE' => "%$q%",
+                    'Users.email LIKE' => "%$q%"
+                ]
+            ]);
+        }
+
         $users = $this->paginate($query);
 
         $this->set(compact('users'));
