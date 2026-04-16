@@ -1,342 +1,269 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">
-        <i class="bi bi-person-vcard"></i> Detalhes do Cliente
+        <i class="bi bi-person-vcard"></i> Detalhes da Adesão
     </h2>
 
-    <?= $this->Html->link(
-        ' Gerar PDF da proposta',
-        ['action' => 'generatePdf', $adhesion->id], // Ajuste o nome da variável de ID conforme necessário (ex: $id ou $entity->id)
-        ['escape' => false, 'class' => 'btn btn-primary']
-    ) ?>
-
-    <?= $this->Html->link(
-        ' Gerar PDF da inscrição',
-        ['action' => 'generateFormPdf', $adhesion->id], // Ajuste o nome da variável de ID conforme necessário (ex: $id ou $entity->id)
-        ['escape' => false, 'class' => 'btn btn-primary']
-    ) ?>
-
-
-    <?= $this->Html->link(
-        '<i class="bi bi-arrow-left"></i> Voltar',
-        ['action' => 'index'],
-        ['escape' => false, 'class' => 'btn btn-outline-secondary']
-    ) ?>
+    <div>
+        <?= $this->Html->link(' Proposta PDF', ['action' => 'generatePdf', $adhesion->id], ['class' => 'btn btn-primary']) ?>
+        <?= $this->Html->link(' Inscrição PDF', ['action' => 'generateFormPdf', $adhesion->id], ['class' => 'btn btn-primary']) ?>
+        <?= $this->Html->link('<i class="bi bi-pencil"></i> Editar', ['action' => 'edit', $adhesion->id], ['escape' => false, 'class' => 'btn btn-warning']) ?>
+        <?= $this->Html->link('<i class="bi bi-arrow-left"></i> Voltar', ['action' => 'index'], ['escape' => false, 'class' => 'btn btn-outline-secondary']) ?>
+    </div>
 </div>
 
-<!-- Tabs -->
 <ul class="nav nav-tabs mb-4" role="tablist">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#dados-iniciais">Dados Iniciais</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dados-pessoais">Dados Pessoais</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#endereco">Endereço</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dependentes">Dependentes</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#documentos">Documentos</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#plano">Plano</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pagamento">Pagamento</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#beneficiarios">Beneficiários</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#declaracoes">Declarações do Proponente</a></li>
-
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#outras-infos">Outras Informações</a></li>
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#initialData">Dados Iniciais</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#personalData">Dados Pessoais</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#documents">Documentos</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#plan">Plano</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dependents">Beneficiários</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#addressData">Endereço</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#otherInformation">Outras Informações</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#proponentStatement">Declarações do Proponente</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pensionScheme">Regime de Previdência</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento</a></li>
 </ul>
 
-<div class="tab-content" style="margin-bottom: 80px !important;">
-
+<div class="tab-content" style="margin-bottom: 80px;">
     <!-- DADOS INICIAIS -->
-    <div id="dados-iniciais" class="tab-pane fade show active">
+    <div id="initialData" class="tab-pane fade show active">
         <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-info-circle"></i> Dados Iniciais</h5>
-            <p><strong>Nome:</strong> <?= h($adhesion->name ?? '—') ?></p>
-            <p><strong>E-mail:</strong> <?= h($adhesion->email ?? '—') ?></p>
-            <p><strong>Telefone:</strong> <?= h($adhesion->phone ?? '—') ?></p>
-            <p><strong>Data Envio:</strong> <?= h($adhesion->created ?? '—') ?></p>
+            <h5 class="fw-bold mb-3 text-primary">Dados Iniciais</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>Nome:</strong> <?= h($adhesion->name) ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>E-mail:</strong> <?= h($adhesion->email) ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Celular:</strong> <?= h($adhesion->phone) ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Criado em:</strong> <?= $adhesion->created->format('d/m/Y H:i') ?></p>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- DADOS PESSOAIS -->
-    <div id="dados-pessoais" class="tab-pane fade">
+    <div id="personalData" class="tab-pane fade">
         <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-person"></i> Dados Pessoais
-            </h5>
+            <h5 class="fw-bold mb-3 text-primary">Dados Pessoais</h5>
+            <?php $p = $adhesion->adhesion_personal_data; ?>
+            <div class="row">
+                <div class="col-md-12">
+                    <p><strong>O plano é para:</strong> <?= h($p->plan_for ?? '—') ?></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Nome completo:</strong> <?= h($p->name ?? '—') ?></p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>CPF:</strong> <?= h($p->cpf ?? '—') ?></p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Data de nasc.:</strong> <?= $p && $p->birth_date ? $p->birth_date->format('d/m/Y') : '—' ?></p>
+                </div>
 
-            <p><strong>Plano para:</strong> <?= h($adhesion->adhesion_personal_data->plan_for ?? '—') ?></p>
-            <p><strong>Nome:</strong> <?= h($adhesion->adhesion_personal_data->name ?? '—') ?></p>
-            <p><strong>CPF:</strong> <?= h($adhesion->adhesion_personal_data->cpf ?? '—') ?></p>
-            <p><strong>Data de Nascimento:</strong>
-                <?= isset($adhesion->adhesion_personal_data->birth_date)
-                    ? $adhesion->adhesion_personal_data->birth_date->format('d/m/Y')
-                    : '—' ?>
-            </p>
-            <p><strong>Nacionalidade:</strong> <?= h($adhesion->adhesion_personal_data->nacionality ?? '—') ?></p>
-            <p><strong>Gênero:</strong> <?= h($adhesion->adhesion_personal_data->gender ?? '—') ?></p>
-            <p><strong>Estado Civil:</strong> <?= h($adhesion->adhesion_personal_data->marital_status ?? '—') ?></p>
-            <p><strong>Número de Filhos:</strong> <?= h($adhesion->adhesion_personal_data->number_children ?? '—') ?></p>
-            <p><strong>Nome da Mãe:</strong> <?= h($adhesion->adhesion_personal_data->mother_name ?? '—') ?></p>
-            <p><strong>Nome do Pai:</strong> <?= h($adhesion->adhesion_personal_data->father_name ?? '—') ?></p>
+                <div class="col-md-4">
+                    <p><strong>Nacionalidade:</strong> <?= h($p->nacionality ?? '—') ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Gênero:</strong> <?= h($p->gender ?? '—') ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Estado civil:</strong> <?= h($p->marital_status ?? '—') ?></p>
+                </div>
 
-            <hr>
-
-            <h6 class="fw-semibold text-secondary mb-2">
-                <i class="bi bi-person-badge"></i> Representante Legal (se aplicável)
-            </h6>
-
-            <p><strong>Nome:</strong> <?= h($adhesion->adhesion_personal_data->name_legal_representative ?? '—') ?></p>
-            <p><strong>CPF:</strong> <?= h($adhesion->adhesion_personal_data->cpf_legal_representative ?? '—') ?></p>
-            <p><strong>Parentesco:</strong> <?= h($adhesion->adhesion_personal_data->affiliation_legal_representative ?? '—') ?></p>
-
-        </div>
-    </div>
-
-
-    <!-- ENDERECO -->
-    <div id="endereco" class="tab-pane fade">
-        <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-geo-alt"></i> Endereço
-            </h5>
-
-            <p><strong>CEP:</strong> <?= h($adhesion->adhesion_address->cep ?? '—') ?></p>
-            <p><strong>Endereço:</strong> <?= h($adhesion->adhesion_address->address ?? '—') ?></p>
-            <p><strong>Número:</strong> <?= h($adhesion->adhesion_address->number ?? '—') ?></p>
-            <p><strong>Bairro:</strong> <?= h($adhesion->adhesion_address->neighborhood ?? '—') ?></p>
-            <p><strong>Cidade:</strong> <?= h($adhesion->adhesion_address->city ?? '—') ?></p>
-            <p><strong>Estado:</strong> <?= h($adhesion->adhesion_address->state ?? '—') ?></p>
-            <p><strong>Complemento:</strong> <?= h($adhesion->adhesion_address->complement ?? '—') ?></p>
-        </div>
-    </div>
-
-
-    <!-- DEPENDENTES -->
-    <div id="dependentes" class="tab-pane fade">
-        <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-people"></i> Dependentes
-            </h5>
-
-            <?php if (!empty($adhesion->adhesion_dependents)): ?>
-                <?php foreach ($adhesion->adhesion_dependents as $dep): ?>
-                    <div class="border rounded p-3 mb-3 bg-light">
-                        <p><strong>Nome:</strong> <?= h($dep->name ?? '—') ?></p>
-                        <p><strong>CPF:</strong> <?= h($dep->cpf ?? '—') ?></p>
-                        <p><strong>Parentesco:</strong> <?= h($dep->kinship ?? '—') ?></p>
-                        <p><strong>Data de Nascimento:</strong>
-                            <?= isset($dep->birth_date)
-                                ? $dep->birth_date->format('d/m/Y')
-                                : '—' ?>
-                        </p>
-                        <p><strong>Participação (%):</strong> <?= h($dep->participation ?? '—') ?></p>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="text-muted fst-italic">Sem dependentes cadastrados.</p>
+                <div class="col-md-4">
+                    <p><strong>Nº de filhos:</strong> <?= h($p->number_children ?? '—') ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Nome da mãe:</strong> <?= h($p->mother_name ?? '—') ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Nome do pai:</strong> <?= h($p->father_name ?? '—') ?></p>
+                </div>
+            </div>
+            <?php if (!empty($p->name_legal_representative)): ?>
+                <div class="mt-3 p-3 border rounded bg-light">
+                    <h6>Representante Legal</h6>
+                    <p><strong>Nome:</strong> <?= h($p->name_legal_representative) ?></p>
+                    <p><strong>CPF:</strong> <?= h($p->cpf_legal_representative) ?></p>
+                    <p><strong>Filiação:</strong> <?= h($p->affiliation_legal_representative) ?></p>
+                </div>
             <?php endif; ?>
         </div>
     </div>
-
 
     <!-- DOCUMENTOS -->
-    <div id="documentos" class="tab-pane fade">
+    <div id="documents" class="tab-pane fade">
         <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-folder"></i> Documentos
-            </h5>
-
-            <?php if (!empty($adhesion->adhesion_documents)): ?>
-                <?php foreach ($adhesion->adhesion_documents as $doc): ?>
-                    <div class="border rounded p-3 mb-3 bg-light">
-
-                        <p><strong>Tipo:</strong> <?= h($doc->type ?? '—') ?></p>
-                        <p><strong>Número do Documento:</strong> <?= h($doc->document_number ?? '—') ?></p>
-
-                        <p><strong>Data de Emissão:</strong>
-                            <?= isset($doc->issue_date)
-                                ? $doc->issue_date->format('d/m/Y')
-                                : '—' ?>
-                        </p>
-
-                        <p><strong>Órgão Emissor:</strong> <?= h($doc->issuer ?? '—') ?></p>
-                        <p><strong>Local de Nascimento:</strong> <?= h($doc->place_birth ?? '—') ?></p>
-
-                    </div>
-                <?php endforeach; ?>
+            <h5 class="fw-bold mb-3 text-primary">Documentos</h5>
+            <?php if (!empty($adhesion->adhesion_document)): ?>
+                <div class="mb-3">
+                    <p><strong>Natureza:</strong> <?= h($adhesion->adhesion_document->type) ?></p>
+                    <p><strong>Nº do documento:</strong> <?= h($adhesion->adhesion_document->document_number) ?></p>
+                    <p><strong>Data de expedição:</strong> <?= $adhesion->adhesion_document->issue_date ? $adhesion->adhesion_document->issue_date->format('d/m/Y') : '—' ?></p>
+                    <p><strong>Órgão expedidor:</strong> <?= h($adhesion->adhesion_document->issuer) ?></p>
+                    <p><strong>Naturalidade:</strong> <?= h($adhesion->adhesion_document->place_birth) ?></p>
+                </div>
             <?php else: ?>
-                <p class="text-muted fst-italic">Nenhum documento cadastrado.</p>
+                <p>Nenhum documento registrado.</p>
             <?php endif; ?>
         </div>
     </div>
 
-
     <!-- PLANO -->
-    <div id="plano" class="tab-pane fade">
+    <div id="plan" class="tab-pane fade">
         <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-briefcase"></i> Plano
-            </h5>
+            <h5 class="fw-bold mb-3 text-primary">Plano</h5>
+            <?php $pl = $adhesion->adhesion_plan; // Pode vir como collection ou single dependendo do contain
+            ?>
+            <?php if ($pl): ?>
+                <p><strong>Idade entrada em benefício:</strong> <?= h($pl->benefit_entry_age) ?></p>
+                <p><strong>Contribuição mensal aposentadoria:</strong> R$ <?= number_format($pl->monthly_retirement_contribution, 2, ',', '.') ?></p>
+                <p><strong>Contribuição mensal pensão por morte:</strong> R$ <?= number_format($pl->monthly_survivors_pension_contribution, 2, ',', '.') ?></p>
+                <p><strong>Capital segurado pensão por morte:</strong> R$ <?= number_format($pl->survivors_pension_insured_capital, 2, ',', '.') ?></p>
+                <p><strong>Contribuição mensal invalidez:</strong> R$ <?= number_format($pl->monthly_disability_retirement_contribution, 2, ',', '.') ?></p>
+                <p><strong>Capital segurado invalidez:</strong> R$ <?= number_format($pl->disability_retirement_insured_capital, 2, ',', '.') ?></p>
+            <?php else: ?>
+                <p>Nenhum plano registrado.</p>
+            <?php endif; ?>
+        </div>
+    </div>
 
-            <p><strong>Idade de Entrada no Benefício:</strong>
-                <?= h($adhesion->adhesion_plan->benefit_entry_age ?? '—') ?>
-            </p>
+    <!-- BENEFICIÁRIOS -->
+    <div id="dependents" class="tab-pane fade">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">Beneficiários</h5>
+            <?php if (!empty($adhesion->adhesion_dependents)): ?>
+                <?php foreach ($adhesion->adhesion_dependents as $idx => $dep): ?>
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <h6>Beneficiário <?= $idx + 1 ?></h6>
+                        <p><strong>Nome:</strong> <?= h($dep->name) ?></p>
+                        <p><strong>Parentesco:</strong> <?= h($dep->kinship) ?></p>
+                        <p><strong>CPF:</strong> <?= h($dep->cpf) ?></p>
+                        <p><strong>Nascimento:</strong> <?= $dep->birth_date ? $dep->birth_date->format('d/m/Y') : '—' ?></p>
+                        <p><strong>Participação:</strong> <?= h($dep->participation) ?>%</p>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <p>Nenhum beneficiário registrado.</p>
+            <?php endif; ?>
+        </div>
+    </div>
 
-            <p><strong>Contribuição Mensal:</strong>
-                R$ <?= isset($adhesion->adhesion_plan->monthly_contribuition_amount)
-                        ? number_format($adhesion->adhesion_plan->monthly_contribuition_amount, 2, ',', '.')
-                        : '—' ?>
-            </p>
+    <!-- ENDEREÇO -->
+    <div id="addressData" class="tab-pane fade">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">Endereço</h5>
+            <?php $a = $adhesion->adhesion_address; ?>
+            <?php if ($a): ?>
+                <p><strong>CEP:</strong> <?= h($a->cep) ?></p>
+                <p><strong>Endereço:</strong> <?= h($a->address) ?>, <?= h($a->number) ?></p>
+                <p><strong>Bairro:</strong> <?= h($a->neighborhood) ?></p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Cidade:</strong> <?= h($a->city) ?></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>UF:</strong> <?= h($a->state) ?></p>
+                    </div>
+                </div>
+                <p><strong>Complemento:</strong> <?= h($a->complement ?? '—') ?></p>
+            <?php endif; ?>
+        </div>
+    </div>
 
-            <p><strong>Contribuição Inicial (Aporte):</strong>
-                R$ <?= isset($adhesion->adhesion_plan->value_founding_contribution)
-                        ? number_format($adhesion->adhesion_plan->value_founding_contribution, 2, ',', '.')
-                        : '—' ?>
-            </p>
+    <!-- OUTRAS INFORMAÇÕES -->
+    <div id="otherInformation" class="tab-pane fade">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">Outras Informações</h5>
+            <?php $o = $adhesion->adhesion_other_information; ?>
+            <p><strong>Ocupação principal:</strong> <?= h($o->main_occupation_description ?? '—') ?> (CBO: <?= h($o->main_occupation_code ?? '—') ?>)</p>
+            <p><strong>Categoria:</strong> <?= h($o->category ?? '—') ?></p>
+            <p><strong>Renda mensal bruta:</strong> R$ <?= number_format($o->monthly_income ?? 0, 2, ',', '.') ?></p>
+            <p><strong>Empresa:</strong> <?= h($o->company ?? '—') ?></p>
+            <p><strong>Residente no Brasil?</strong> <?= isset($o->brazilian_resident) ? ($o->brazilian_resident ? 'Sim' : 'Não') : '—' ?></p>
+            <p><strong>É PEP?</strong> <?= isset($o->politically_exposed) ? ($o->politically_exposed ? 'Sim' : 'Não') : '—' ?></p>
+            <?php if ($o && $o->politically_exposed): ?>
+                <p><strong>Obs PEP:</strong> <?= h($o->politically_exposed_obs) ?></p>
+            <?php endif; ?>
+            <p><strong>Obrigações fiscais em outros países?</strong> <?= isset($o->obligation_other_countries) ? ($o->obligation_other_countries ? 'Sim' : 'Não') : '—' ?></p>
+        </div>
+    </div>
 
-            <p><strong>Capital Segurado:</strong>
-                R$ <?= isset($adhesion->adhesion_plan->insured_capital)
-                        ? number_format($adhesion->adhesion_plan->insured_capital, 2, ',', '.')
-                        : '—' ?>
-            </p>
+    <!-- DECLARAÇÕES -->
+    <div id="proponentStatement" class="tab-pane fade">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">Declarações do Proponente</h5>
+            <?php $s = $adhesion->adhesion_proponent_statement; ?>
+            <?php
+            $fields = [
+                'health_problem' => 'Problema de saúde?',
+                'heart_disease' => 'Doença do coração?',
+                'suffered_organ_defects' => 'Deficiência de órgãos/membros?',
+                'surgery' => 'Fez cirurgia/biópsia?',
+                'away' => 'Afastado ou aposentado por invalidez?',
+                'practices_parachuting' => 'Pratica esportes de risco?',
+                'smoker' => 'É fumante?',
+                'gripe' => 'Sintomas de gripe?',
+                'covid' => 'Teve COVID?',
+                'covid_sequelae' => 'Sequelas de COVID?'
+            ];
+            foreach ($fields as $field => $label): ?>
+                <p><strong><?= $label ?></strong> <?= isset($s->$field) ? ($s->$field ? 'Sim' : 'Não') : '—' ?></p>
+                <?php $obs = $field . '_obs';
+                if (!empty($s->$obs)): ?>
+                    <p class="ms-3 text-muted">Obs: <?= h($s->$obs) ?></p>
+                <?php endif; ?>
+                <?php if ($field === 'smoker' && $s && $s->smoker): ?>
+                    <p class="ms-3 text-muted">Tipo: <?= $s->smoker_type ? 'Cigarro' : 'Outros (' . h($s->smoker_type_obs) . ')' ?> | Qtd: <?= h($s->smoker_qty) ?></p>
+                <?php endif; ?>
+                <hr>
+            <?php endforeach; ?>
+            <p><strong>Peso:</strong> <?= h($s->weight ?? '—') ?> Kg | <strong>Altura:</strong> <?= h($s->height ?? '—') ?> m</p>
+        </div>
+    </div>
 
-            <p><strong>Modelo de Contribuição:</strong>
-                <?= h($adhesion->adhesion_plan->contribution ?? '—') ?>
-            </p>
+    <!-- REGIME PREVIDÊNCIA -->
+    <div id="pensionScheme" class="tab-pane fade">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">Regime de Previdência</h5>
+            <?php $ps = $adhesion->adhesion_pension_scheme; ?>
+            <?php if ($ps): ?>
+                <p><strong>Regime:</strong> <?= h($ps->pension_scheme) ?></p>
+                <?php if ($ps->name): ?>
+                    <div class="mt-2 p-2 border rounded">
+                        <p><strong>Vinculado ao segurado:</strong> <?= h($ps->name) ?></p>
+                        <p><strong>CPF:</strong> <?= h($ps->cpf) ?></p>
+                        <p><strong>Grau de parentesco:</strong> <?= h($ps->kinship) ?></p>
+                    </div>
+                <?php endif; ?>
+            <?php else: ?>
+                <p>Nenhuma informação registrada.</p>
+            <?php endif; ?>
         </div>
     </div>
 
     <!-- PAGAMENTO -->
-    <div id="pagamento" class="tab-pane fade">
+    <div id="paymentDetail" class="tab-pane fade">
         <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-cash-stack"></i> Detalhes de Pagamento
-            </h5>
-
-            <?php $p = $adhesion->adhesion_payment_detail ?? null; ?>
-
-            <?php if ($p): ?>
-                <p><strong>Tipo de Pagamento:</strong> <?= h($p->payment_type ?? '—') ?></p>
-                <p><strong>Dia de Vencimento:</strong> <?= h($p->due_date ?? '—') ?></p>
-                <p><strong>Contribuição Total:</strong>
-                    R$ <?= number_format($p->total_contribution, 2, ',', '.') ?>
-                </p>
-
-                <hr>
-
-                <p><strong>Titular da Conta:</strong> <?= h($p->account_holder_name ?? '—') ?></p>
-                <p><strong>CPF do Titular:</strong> <?= h($p->account_holder_cpf ?? '—') ?></p>
-
-                <p><strong>Banco:</strong> <?= h($p->bank_number . ' - ' . $p->bank_name) ?></p>
-                <p><strong>Agência:</strong> <?= h($p->branch_number ?? '—') ?></p>
-                <p><strong>Conta:</strong> <?= h($p->account_number ?? '—') ?></p>
-            <?php else: ?>
-                <p class="text-muted fst-italic">Nenhuma informação de pagamento.</p>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- BENEFICIÁRIOS / PENSÃO -->
-    <div id="beneficiarios" class="tab-pane fade">
-        <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-people-fill"></i> Beneficiários / Pensão
-            </h5>
-
-            <?php if (!empty($adhesion->adhesion_pension_schemes)): ?>
-                <?php foreach ($adhesion->adhesion_pension_schemes as $p): ?>
-                    <div class="border rounded p-3 mb-3 bg-light">
-                        <p><strong>Tipo de Beneficiário:</strong> <?= h($p->pension_scheme ?? '—') ?></p>
-                        <p><strong>Nome:</strong> <?= h($p->name ?? '—') ?></p>
-                        <p><strong>CPF:</strong> <?= h($p->cpf ?? '—') ?></p>
-                        <p><strong>Parentesco:</strong> <?= h($p->kinship ?? '—') ?></p>
+            <h5 class="fw-bold mb-3 text-primary">Dados para Pagamento</h5>
+            <?php $pd = $adhesion->adhesion_payment_detail; ?>
+            <?php if ($pd): ?>
+                <p><strong>Vencimento:</strong> Dia <?= h($pd->due_date) ?></p>
+                <p><strong>Total contribuição:</strong> R$ <?= number_format($pd->total_contribution, 2, ',', '.') ?></p>
+                <p><strong>Meio de pagamento:</strong> <?= h($pd->payment_type) ?></p>
+                <?php if ($pd->payment_type === 'Débito em conta'): ?>
+                    <div class="mt-2 p-2 border rounded">
+                        <p><strong>Correntista:</strong> <?= h($pd->account_holder_name) ?> (CPF: <?= h($pd->account_holder_cpf) ?>)</p>
+                        <p><strong>Banco:</strong> <?= h($pd->bank_number) ?> - <?= h($pd->bank_name) ?></p>
+                        <p><strong>Agência:</strong> <?= h($pd->branch_number) ?> | <strong>Conta:</strong> <?= h($pd->account_number) ?></p>
                     </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="text-muted fst-italic">Nenhum beneficiário cadastrado.</p>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
-
-    <!-- DECLARAÇÕES DO PROPONENTE -->
-    <div id="declaracoes" class="tab-pane fade">
-        <div class="card p-4 shadow-sm">
-
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-file-earmark-text"></i> Declarações do Proponente
-            </h5>
-
-            <?php $s = $adhesion->adhesion_proponent_statement ?? null; ?>
-
-            <?php if ($s): ?>
-
-                <?php
-                $fields = [
-                    "health_problem" => "Possui problemas de saúde?",
-                    "heart_disease" => "Possui doenças cardíacas?",
-                    "suffered_organ_defects" => "Possui defeitos/lesões em órgão?",
-                    "surgery" => "Já passou por cirurgias?",
-                    "away" => "Está afastado atualmente?",
-                    "practices_parachuting" => "Pratica paraquedismo?",
-                    "smoker" => "É fumante?",
-                    "gripe" => "Teve gripe recentemente?",
-                    "covid" => "Teve COVID?",
-                    "covid_sequelae" => "Tem sequelas de COVID?"
-                ];
-                ?>
-
-                <?php foreach ($fields as $key => $label): ?>
-                    <p>
-                        <strong><?= $label ?>:</strong>
-                        <?= isset($s->$key) ? ($s->$key ? 'Sim' : 'Não') : '—' ?>
-
-                        <?php $obs = $key . "_obs"; ?>
-
-                        <?php if (!empty($s->$obs)): ?>
-                            <br><strong>Observação:</strong> <?= h($s->$obs) ?>
-                        <?php endif; ?>
-                    </p>
-                    <hr>
-                <?php endforeach; ?>
-
-                <p><strong>Peso:</strong> <?= h($s->weight ?? '—') ?></p>
-                <p><strong>Altura:</strong> <?= h($s->height ?? '—') ?></p>
-
-            <?php else: ?>
-                <p class="text-muted fst-italic">Nenhuma declaração registrada.</p>
-            <?php endif; ?>
-
-        </div>
-    </div>
-
-    <!-- OUTRAS INFORMACOES -->
-    <div id="outras-infos" class="tab-pane fade">
-        <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">
-                <i class="bi bi-chat-dots"></i> Outras Informações
-            </h5>
-
-            <p><strong>Ocupação Principal:</strong>
-                <?= h($adhesion->adhesion_other_information->main_occupation ?? '—') ?>
-            </p>
-
-            <p><strong>Categoria:</strong>
-                <?= h($adhesion->adhesion_other_information->category ?? '—') ?>
-            </p>
-
-            <p><strong>Residente Brasileiro:</strong>
-                <?= isset($adhesion->adhesion_other_information->brazilian_resident)
-                    ? ($adhesion->adhesion_other_information->brazilian_resident ? 'Sim' : 'Não')
-                    : '—' ?>
-            </p>
-
-            <p><strong>Pessoa Politicamente Exposta (PEP):</strong>
-                <?= isset($adhesion->adhesion_other_information->politically_exposed)
-                    ? ($adhesion->adhesion_other_information->politically_exposed ? 'Sim' : 'Não')
-                    : '—' ?>
-            </p>
-
-            <p><strong>Obrigação Fiscal em Outros Países:</strong>
-                <?= isset($adhesion->adhesion_other_information->obligation_other_countries)
-                    ? ($adhesion->adhesion_other_information->obligation_other_countries ? 'Sim' : 'Não')
-                    : '—' ?>
-            </p>
-        </div>
-    </div>
-
-
 </div>

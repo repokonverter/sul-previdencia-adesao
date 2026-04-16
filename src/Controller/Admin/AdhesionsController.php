@@ -82,6 +82,38 @@ class AdhesionsController extends AppController
         $this->set(compact('adhesion'));
     }
 
+    public function add()
+    {
+        $adhesion = $this->AdhesionInitialDatas->newEmptyEntity();
+        if ($this->request->is('post')) {
+            $adhesion = $this->AdhesionInitialDatas->patchEntity($adhesion, $this->request->getData(), [
+                'associated' => [
+                    'AdhesionPersonalDatas',
+                    'AdhesionAddresses',
+                    'AdhesionDependents',
+                    'AdhesionPlans',
+                    'AdhesionDocuments',
+                    'AdhesionOtherInformations',
+                    'AdhesionPaymentDetails',
+                    'AdhesionPensionSchemes',
+                    'AdhesionProponentStatements'
+                ]
+            ]);
+            
+            // Gerar UUID se não existir
+            if (!$adhesion->storage_uuid) {
+                $adhesion->storage_uuid = \Cake\Utility\Text::uuid();
+            }
+
+            if ($this->AdhesionInitialDatas->save($adhesion)) {
+                $this->Flash->success(__('A adesão foi salva com sucesso.'));
+                return $this->redirect(['action' => 'index']);
+            }
+            $this->Flash->error(__('A adesão não pôde ser salva. Por favor, tente novamente.'));
+        }
+        $this->set(compact('adhesion'));
+    }
+
     public function edit($id)
     {
         $adhesion = $this->AdhesionInitialDatas->get($id, [
@@ -91,7 +123,10 @@ class AdhesionsController extends AppController
                 'AdhesionDependents',
                 'AdhesionPlans',
                 'AdhesionDocuments',
-                'AdhesionOtherInformations'
+                'AdhesionOtherInformations',
+                'AdhesionPaymentDetails',
+                'AdhesionPensionSchemes',
+                'AdhesionProponentStatements'
             ]
         ]);
 
@@ -106,7 +141,10 @@ class AdhesionsController extends AppController
                         'AdhesionDependents',
                         'AdhesionPlans',
                         'AdhesionDocuments',
-                        'AdhesionOtherInformations'
+                        'AdhesionOtherInformations',
+                        'AdhesionPaymentDetails',
+                        'AdhesionPensionSchemes',
+                        'AdhesionProponentStatements'
                     ]
                 ]
             );
@@ -121,6 +159,7 @@ class AdhesionsController extends AppController
 
         $this->set(compact('adhesion'));
     }
+
 
     public function delete($id)
     {

@@ -22,7 +22,11 @@ class AdhesionInitialData extends Entity
         'adhesion_other_information' => true,
         'adhesion_documents' => true,
         'adhesion_dependents' => true,
+        'adhesion_pension_schemes' => true,
+        'adhesion_payment_details' => true,
+        'adhesion_proponent_statements' => true,
         'clicksign_data' => true,
         'pix_transaction' => true,
     ];
 }
+
