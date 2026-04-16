@@ -88,7 +88,7 @@
         </tr>
         <tr>
             <td><strong>Data de Nascimento:</strong></td>
-            <td><?= h($adhesion->adhesion_personal_data->birth_date ?? '') ?></td>
+            <td><?= h($adhesion->adhesion_personal_data->birth_date->format('d/m/Y') ?? '') ?></td>
 
             <td><strong>Nacionalidade:</strong></td>
             <td><?= h($adhesion->adhesion_personal_data->nacionality ?? '') ?></td>
