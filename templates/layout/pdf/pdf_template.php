@@ -296,7 +296,7 @@
             <tr>
                 <td>Telefone<br><?= $adhesion->phone ?? '' ?></td>
                 <td colspan="4">E-mail<br><?= $adhesion->email ?? '' ?></td>
-                <td>É participante?<br><?= $adhesion->is_participant ? 'Sim' : 'Não' ?></td>
+                <td>É participante do plano?<br><?= $adhesion->is_participant ? 'Sim' : 'Não' ?></td>
             </tr>
             <?php if ($adhesion->adhesion_personal_data->cpf_legal_representative) { ?>
                 <tr>
@@ -323,7 +323,7 @@
                 <td>Valor da Contribuição (1)<br>R$ <?= number_format($adhesion->adhesion_plan->monthly_retirement_contribution ?? 0, 2, ',', '.') ?></td>
             </tr>
             <tr>
-                <td colspan="3">Taxa de Carregamento do plano: 0%. O valor de contribuição será atualizado, anualmente, no mês de junho, pela variação do INPC.</td>
+                <td colspan="3">Taxa de Carregamento do plano: 0%. O valor de contribuição será atualizado, anualmente, no mês de junho, conforme o regulamento do plano.</td>
             </tr>
         </table>
         <div class="small-note">Inscrição do plano no Cadastro Nacional de Planos de Benefícios (CNPB) nº 2011/0017-65.</div>
@@ -401,7 +401,7 @@
                 </td>
             </tr>
         </table>
-        <div class="small-note">O valor da contribuição para o(s) pecúlio(s) será atualizado, anualmente, no mês de junho, pela variação do INPC e em função da nova idade atingida
+        <div class="small-note">O valor da contribuição para o(s) pecúlio(s) será atualizado, anualmente, no mês de junho, conforme o regulamento do plano e em função da nova idade atingida
             pelo participante. O registro destes planos na SUSEP não implica, por parte da autarquia, incentivo ou recomendação para sua comercialização.</div>
 
         <div class="section-title">DADOS PARA PAGAMENTO</div>
