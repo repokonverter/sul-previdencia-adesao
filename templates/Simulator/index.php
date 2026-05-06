@@ -659,7 +659,7 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="birthDate" class="form-label">Data de nasc.*</label>
-                                        <input type="date" max="9999-12-31" class="form-control" name="personalData[birthDate]" placeholder="Data de nascimento" required>
+                                        <input type="date" max="9999-12-31" class="form-control" name="personalData[birthDate]" placeholder="Data de nascimento" value="<?= $_GET['date']; ?>" required>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>

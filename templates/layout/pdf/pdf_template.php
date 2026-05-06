@@ -411,9 +411,9 @@
                 <td colspan="2">Total da contribuição (1+2)<br>R$ <?= number_format($adhesion->adhesion_payment_detail->total_contribution ?? 0, 2, ',', '.') ?></td>
                 <td colspan="2">Forma Pagamento<br><?= $adhesion->adhesion_payment_detail->payment_type ?? '' ?></td>
             </tr>
-            <?php if (($adhesion->adhesion_payment_detail->payment_type ?? '') == 'Débito em Conta'): ?>
+            <?php if ($adhesion->adhesion_payment_detail->payment_type == 'Débito em conta'): ?>
                 <tr>
-                    <td colspan="3">Nome do correntista<br><?= $adhesion->adhesion_payment_detail->account_holder ?? '' ?></td>
+                    <td colspan="3">Nome do correntista<br><?= $adhesion->adhesion_payment_detail->account_holder_name ?? '' ?></td>
                     <td colspan="2">CPF do correntista<br><?= $adhesion->adhesion_payment_detail->account_holder_cpf ?? '' ?></td>
                 </tr>
                 <tr>
