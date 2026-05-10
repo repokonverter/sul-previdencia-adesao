@@ -92,7 +92,7 @@
 
         /* Utilitários de Texto */
         .small-note {
-            font-size: 8pt;
+            font-size: 6pt;
             text-align: justify;
             margin-top: 3px;
             line-height: 1.2;
