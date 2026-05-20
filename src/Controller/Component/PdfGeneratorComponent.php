@@ -56,7 +56,7 @@ class PdfGeneratorComponent extends Component
             'footer' => [
                 'planManager' => 'Sociedade de Previdência Complementar Sul Previdência',
                 'cnpjPlanManager' => '12.148.125/0001-42',
-                'address' => 'Rua Vidal Ramos nº 31 - Sala 602 - Centro - Florianópolis - SC',
+                'address' => 'Rua Vidal Ramos nº 31 - Sala 1101 - Centro - Florianópolis - SC',
                 'site' => 'www.sulprevidencia.org.br'
             ]
         ];

@@ -231,8 +231,8 @@
                 <td>Sexo<br><?= $adhesion->adhesion_personal_data->gender ?? '' ?></td>
                 <td>Estado Civil<br><?= $adhesion->adhesion_personal_data->marital_status ?? '' ?></td>
                 <td>Nº de Filhos<br><?= $adhesion->adhesion_personal_data->number_childrens ?? 0 ?></td>
-                <td colspan="2">CPF / Tipo<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?><span class="bold"><?= '' //$adhesion->adhesion_personal_data->plan_for ?? ''
-                                                                                                                    ?></span></td>
+                <td colspan="2">CPF<br><?= $adhesion->adhesion_personal_data->cpf ?? '' ?><span class="bold"><?= '' //$adhesion->adhesion_personal_data->plan_for ?? ''
+                                                                                                                ?></span></td>
             </tr>
             <tr>
                 <td colspan="2">Nacionalidade<br><?= $adhesion->adhesion_personal_data->nacionality ?? '' ?></td>

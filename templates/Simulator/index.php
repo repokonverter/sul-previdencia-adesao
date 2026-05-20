@@ -2120,8 +2120,8 @@ function createSecureCard($data, $type)
             const count = $('#listDependents .dependentDiv').length;
             let participation = 100;
 
-            if (count === 3) {
-                alert('Limite de beneficiáios excedido, caso queira adicionar mais de 3 beneficiários, será necessário solicitar depois do plano efetuado.');
+            if (count === 4) {
+                alert('Limite de beneficiáios excedido, caso queira adicionar mais de 4 beneficiários, será necessário solicitar depois do plano efetuado.');
 
                 return;
             }
