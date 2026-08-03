@@ -515,10 +515,11 @@ function createSecureCard($data, $type)
                     <input type="date" max="9999-12-31" class="form-control" name="dateBirth" placeholder="XX/XX/XXXX" value="<?= $_GET['date']; ?>" required>
                 </div>
                 <div class="simulador-form-group">
-                    <label for="valor-investimento">Investimento mensal</label>
+                    <label for="valor-investimento">Investimento mensal <small class="text-muted">(mínimo R$ 100,00)</small></label>
                     <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal" value="<?= $_GET['value']; ?>" required>
                 </div>
             </form>
+            <div id="simulador-form-error" class="text-danger mb-2" style="display: none;"></div>
             <button class="simulador-btn" style="margin-bottom: 2rem;" onclick="simulate();">
                 Simular novamente
             </button>
@@ -838,12 +839,25 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício</label>
-                                        <input type="number" class="form-control" name="plans[benefitEntryAge]" placeholder="Idade para entrada em benefício" readonly>
+                                        <input type="number" class="form-control" name="plans[benefitEntryAge]" placeholder="Idade para entrada em benefício">
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col">
+                                    <div class="mb-3">
+                                        <label for="planMonthlyInvestment" class="form-label">Investimento mensal <small class="text-muted">(mínimo R$ 100,00)</small></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control money" id="planMonthlyInvestment" value="<?= number_format($totalMonthlyContributionPlan, 2, '.', ''); ?>">
+                                            <button type="button" class="btn btn-outline-primary" id="btnRecalculatePlan" onclick="recalculatePlan();">Recalcular</button>
+                                        </div>
+                                        <div id="planRecalculateError" class="text-danger mt-1" style="display: none;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="monthly_retirement_contribution" class="form-label">Contribuição mensal aposentadoria</label>
@@ -912,7 +926,7 @@ function createSecureCard($data, $type)
                             <div class="row">
                                 <div class="col text-center">
                                     <div>Total de contribuição mensal</div>
-                                    <div><?= Number::currency($totalMonthlyContributionPlan, null); ?></div>
+                                    <div id="planTotalMonthlyContribution"><?= Number::currency($totalMonthlyContributionPlan, null); ?></div>
                                 </div>
                             </div>
                         </div>
@@ -1188,12 +1202,19 @@ function createSecureCard($data, $type)
                                     <div class="mb-3">
                                         <label for="" class="form-label">Residente no Brasil?*</label>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="otherInformations[brazilianResident]" id="brazilianResidentYes" value="1">
+                                            <input class="form-check-input" type="radio" name="otherInformations[brazilianResident]" id="brazilianResidentYes" value="1" onclick="showHide(false, 'brazilianResidentObs')">
                                             <label class="form-check-label" for="brazilianResidentYes">Sim</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="otherInformations[brazilianResident]" id="brazilianResidentNo" value="0">
+                                            <input class="form-check-input" type="radio" name="otherInformations[brazilianResident]" id="brazilianResidentNo" value="0" onclick="showHide(true, 'brazilianResidentObs')">
                                             <label class="form-check-label" for="brazilianResidentNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="brazilianResidentObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar:*</label>
+                                            <input type="text" class="form-control" name="otherInformations[brazilianResidentObs]" placeholder="País de residência">
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -1227,12 +1248,19 @@ function createSecureCard($data, $type)
                                     <div class="mb-3">
                                         <label for="" class="form-label">Você tem obrigações fiscais com outros países?*</label>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="otherInformations[obligationOtherCountries]" id="obligationOtherCountriesYes" value="1">
+                                            <input class="form-check-input" type="radio" name="otherInformations[obligationOtherCountries]" id="obligationOtherCountriesYes" value="1" onclick="showHide(true, 'obligationOtherCountriesObs')">
                                             <label class="form-check-label" for="obligationOtherCountriesYes">Sim</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="otherInformations[obligationOtherCountries]" id="obligationOtherCountriesNo" value="0">
+                                            <input class="form-check-input" type="radio" name="otherInformations[obligationOtherCountries]" id="obligationOtherCountriesNo" value="0" onclick="showHide(false, 'obligationOtherCountriesObs')">
                                             <label class="form-check-label" for="obligationOtherCountriesNo">Não</label>
+                                            <div class="invalid-feedback">
+                                                Preenchimento obrigatório.
+                                            </div>
+                                        </div>
+                                        <div id="obligationOtherCountriesObs" class="mb-3" style="display: none;">
+                                            <label for="" class="form-label">Especificar:*</label>
+                                            <input type="text" class="form-control" name="otherInformations[obligationOtherCountriesObs]" placeholder="Especificar">
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -1623,7 +1651,7 @@ function createSecureCard($data, $type)
                                         <label class="form-label">Total da contribuição</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="paymentDetail[total_contribution]" placeholder="Total da contribuição - R$ (1+2)" value="<?= $totalMonthlyContributionPlan; ?>" readonly>
+                                            <input type="text" class="form-control money" id="paymentTotalContribution" name="paymentDetail[total_contribution]" placeholder="Total da contribuição - R$ (1+2)" value="<?= $totalMonthlyContributionPlan; ?>" readonly>
                                         </div>
                                     </div>
                                 </div>
@@ -1696,7 +1724,7 @@ function createSecureCard($data, $type)
                                     <p>Enviamos para o e-mail "<span id="conclusionEmail"></span>" a proposta para assinatura e abaixo o pix para adesão, utilize o QR Code/pix copia e cola para realizar o pagamento.</p>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div id="pix-payment-block" class="row">
                                 <div class="col-12 text-center">
                                     <img id="pix-qrcode" src="" alt="QR Code PIX" style="max-width: 200px; display: none; margin: 0 auto;" />
                                 </div>
@@ -1706,6 +1734,11 @@ function createSecureCard($data, $type)
                                         <input type="text" class="form-control" id="pix-copy-paste" readonly>
                                         <button class="btn btn-outline-secondary" type="button" id="btn-copy-pix">Copiar</button>
                                     </div>
+                                </div>
+                            </div>
+                            <div id="pix-pending-message" class="row" style="display: none;">
+                                <div class="col">
+                                    <p>Sua adesão foi registrada com sucesso, porém não foi possível gerar a cobrança Pix no momento. Nossa equipe entrará em contato para concluir o pagamento.</p>
                                 </div>
                             </div>
                         </div>
@@ -1993,11 +2026,20 @@ function createSecureCard($data, $type)
                 registerPageIndex += 1;
 
                 if (registerPageIndex === 10) {
-                    $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
-                    $('#pix-copy-paste').val(response.copyAndPaste);
+                    if (response.pixPending) {
+                        $('#pix-payment-block').hide();
+                        $('#pix-pending-message').show();
+                    } else {
+                        $('#pix-payment-block').show();
+                        $('#pix-pending-message').hide();
+                        $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
+                        $('#pix-copy-paste').val(response.copyAndPaste);
+                    }
                 }
 
                 updatePage(registerPageIndex)
+            } catch (error) {
+                alert(error?.message || 'Não foi possível avançar. Tente novamente em instantes.');
             } finally {
                 btnPrimary.disabled = false;
                 updateButtonPreviousNext(registerPageIndex);
@@ -2032,11 +2074,15 @@ function createSecureCard($data, $type)
                         if (response?.success === true && response?.initialDataId)
                             initialDataId = response.initialDataId;
 
+                        if (response?.success === false) {
+                            reject(response);
+                            return;
+                        }
+
                         resolve(response);
                     },
-                    error: (error) => {
-                        alert('Erro ao avançar!');
-                        reject(error);
+                    error: () => {
+                        reject({ message: 'Não foi possível se comunicar com o servidor. Verifique sua conexão e tente novamente.' });
                     }
                 })
             })
@@ -2063,6 +2109,55 @@ function createSecureCard($data, $type)
                 },
                 error: () => {
                     alert('CEP não encontrado!');
+                }
+            })
+        }
+
+        const recalculatePlan = () => {
+            const birthDate = $('#registerModal input[name="personalData[birthDate]"]').val();
+            const investmentInput = document.getElementById('planMonthlyInvestment');
+            const value = investmentInput.value.replace(/\./g, '').replace(',', '.');
+            const errorDiv = document.getElementById('planRecalculateError');
+            const btn = document.getElementById('btnRecalculatePlan');
+
+            errorDiv.style.display = 'none';
+            btn.disabled = true;
+
+            $.ajax({
+                type: 'GET',
+                url: `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'recalculate']) ?>`,
+                data: {
+                    date: birthDate,
+                    value: value
+                },
+                dataType: 'json',
+                success: (response) => {
+                    if (!response.success) {
+                        errorDiv.textContent = response.message || 'Não foi possível recalcular o plano.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+
+                    const formatMoney = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(response.benefitEntryAge);
+                    $('#registerModal input[name="plans[monthly_retirement_contribution]"]').val(formatMoney(response.monthlyRetirementContribution));
+                    $('#registerModal input[name="plans[monthly_survivors_pension_contribution]"]').val(formatMoney(response.monthlySurvivorsPensionContribution));
+                    $('#registerModal input[name="plans[survivors_pension_insured_capital]"]').val(formatMoney(response.survivorsPensionInsuredCapital));
+                    $('#registerModal input[name="plans[monthly_disability_retirement_contribution]"]').val(formatMoney(response.monthlyDisabilityRetirementContribution));
+                    $('#registerModal input[name="plans[disability_retirement_insured_capital]"]').val(formatMoney(response.disabilityRetirementInsuredCapital));
+                    $('#paymentTotalContribution').val(formatMoney(response.totalMonthlyContribution));
+                    document.getElementById('planTotalMonthlyContribution').textContent = response.totalMonthlyContribution.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    });
+                },
+                error: () => {
+                    errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';
+                    errorDiv.style.display = 'block';
+                },
+                complete: () => {
+                    btn.disabled = false;
                 }
             })
         }
@@ -2282,15 +2377,25 @@ function createSecureCard($data, $type)
 
         const simulate = () => {
             let isValid = true;
-            const date = $('#simulador-form input[name="dateBirth').val();
-            const value = $('#simulador-form input[name="monthlyInvestment').val().replace('.', '').replace(',', '.');
+            const date = $('#simulador-form input[name="dateBirth"]').val();
+            const monthlyInvestmentInput = document.querySelector('#simulador-form input[name="monthlyInvestment"]');
+            const value = monthlyInvestmentInput.value.replace(/\./g, '').replace(',', '.');
             const simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
             const form = document.querySelectorAll(`#simulador-form input`);
+            const errorDiv = document.getElementById('simulador-form-error');
+
+            errorDiv.style.display = 'none';
 
             form.forEach((input) => {
                 if (!input.checkValidity())
                     isValid = false;
             })
+
+            if (monthlyInvestmentInput.value && parseFloat(value) < 100) {
+                isValid = false;
+                errorDiv.textContent = 'Investimento mensal mínimo é R$ 100,00.';
+                errorDiv.style.display = 'block';
+            }
 
             if (!isValid) {
                 $(`#simulador-form`)[0].classList.add('was-validated')

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Authentication\PasswordHasher\DefaultPasswordHasher;
-use Authentication\PasswordHasher\PasswordHasherInterface;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -91,8 +89,4 @@ class UsersTable extends Table
         return $rules;
     }
 
-    public function passwordHasher(): PasswordHasherInterface
-    {
-        return new DefaultPasswordHasher();
-    }
 }

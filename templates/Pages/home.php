@@ -1396,12 +1396,12 @@ echo $this->Html->css('application');
                             </div>
                             <div class="col">
                                 <div class="mb-3">
-                                    <label for="monthlyInvestment" class="form-label">Investimento mensal*</label>
+                                    <label for="monthlyInvestment" class="form-label">Investimento mensal* <small class="text-muted">(mínimo R$ 100,00)</small></label>
                                     <div class="input-group">
                                         <span class="input-group-text">R$</span>
                                         <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal" required>
                                         <div class="invalid-feedback">
-                                            Preenchimento obrigatório.
+                                            O investimento mensal mínimo é de R$ 100,00.
                                         </div>
                                     </div>
                                 </div>
@@ -1457,7 +1457,8 @@ echo $this->Html->css('application');
     const simulate = () => {
         let isValid = true;
         const date = $('#simulatorModal input[name="dateBirth"]').val();
-        const value = $('#simulatorModal input[name="monthlyInvestment"]').val().replace('.', '').replace(',', '.');
+        const monthlyInvestmentInput = document.querySelector('#simulatorModal input[name="monthlyInvestment"]');
+        const value = monthlyInvestmentInput.value.replace(/\./g, '').replace(',', '.');
         const simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
         const form = document.querySelectorAll(`#simulatorForm input`);
 
@@ -1465,6 +1466,13 @@ echo $this->Html->css('application');
             if (!input.checkValidity())
                 isValid = false;
         })
+
+        if (monthlyInvestmentInput.value && parseFloat(value) < 100) {
+            isValid = false;
+            monthlyInvestmentInput.setCustomValidity('Investimento mensal mínimo é R$ 100,00.');
+        } else {
+            monthlyInvestmentInput.setCustomValidity('');
+        }
 
         if (!isValid) {
             $(`#simulatorForm`)[0].classList.add('was-validated')

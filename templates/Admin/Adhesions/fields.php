@@ -381,7 +381,10 @@
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Residente no Brasil?*</label><br>
-                    <?= $this->Form->radio('adhesion_other_information.brazilian_resident', ['1' => 'Sim', '0' => 'Não']) ?>
+                    <?= $this->Form->radio('adhesion_other_information.brazilian_resident', ['1' => 'Sim', '0' => 'Não'], ['onclick' => "showHide(this.value == '0', 'brazilianResidentObs')"]) ?>
+                    <div id="brazilianResidentObs" style="display:none;" class="mt-2">
+                        <?= $this->Form->control('adhesion_other_information.brazilian_resident_obs', ['label' => 'Especificar', 'class' => 'form-control']) ?>
+                    </div>
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">PEP (Pessoa Politicamente Exposta)?*</label><br>
@@ -392,7 +395,10 @@
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Obrigações fiscais em outros países?*</label><br>
-                    <?= $this->Form->radio('adhesion_other_information.obligation_other_countries', ['1' => 'Sim', '0' => 'Não']) ?>
+                    <?= $this->Form->radio('adhesion_other_information.obligation_other_countries', ['1' => 'Sim', '0' => 'Não'], ['onclick' => "showHide(this.value == '1', 'obligationOtherCountriesObs')"]) ?>
+                    <div id="obligationOtherCountriesObs" style="display:none;" class="mt-2">
+                        <?= $this->Form->control('adhesion_other_information.obligation_other_countries_obs', ['label' => 'Especificar', 'class' => 'form-control']) ?>
+                    </div>
                 </div>
             </div>
         </div>

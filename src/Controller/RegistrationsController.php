@@ -80,14 +80,6 @@ class RegistrationsController extends AppController
         $connection = $this->AdhesionInitialDatas->getConnection();
         $connection->begin();
 
-        // $clicksignService = new \App\Services\ClicksignService(
-        //     Configure::read('Clicksign.baseUrl'),
-        //     Configure::read('Clicksign.accessToken')
-        // );
-
-        // dd($clicksignService->getEnvelopes());
-
-
         try {
             $initialDataId = isset($data['initialDataId']) ? $data['initialDataId'] : null;
 
@@ -250,9 +242,11 @@ class RegistrationsController extends AppController
                         'main_occupation_code' => $otherInformationsData['mainOccupationCode'] ?? '',
                         'category' => $otherInformationsData['category'] ?? '',
                         'brazilian_resident' => $otherInformationsData['brazilianResident'] ?? false,
+                        'brazilian_resident_obs' => $otherInformationsData['brazilianResidentObs'] ?? '',
                         'politically_exposed' => $otherInformationsData['politicallyExposed'] ?? false,
                         'politically_exposed_obs' => $otherInformationsData['politicallyExposedObs'] ?? '',
                         'obligation_other_countries' => $otherInformationsData['obligationOtherCountries'] ?? false,
+                        'obligation_other_countries_obs' => $otherInformationsData['obligationOtherCountriesObs'] ?? '',
                         'company' => $otherInformationsData['company'] ?? '',
                         'monthly_income' => str_replace(',', '.', str_replace('.', '', $otherInformationsData['monthlyIncome'])) ?? null,
                     ],
@@ -483,10 +477,18 @@ class RegistrationsController extends AppController
                 } catch (\Exception $e) {
                     $connection->rollBack();
 
-                    dd($e);
-
                     Log::error('Erro integração Clicksign: ' . $e->getMessage());
+
+                    return $this->response->withType('application/json')
+                        ->withStringBody(json_encode([
+                            'success' => false,
+                            'message' => 'Falha ao processar a assinatura eletrônica: ' . $e->getMessage(),
+                        ]));
                 }
+
+                // Clicksign concluído com sucesso: commit agora para que a adesão e o
+                // envelope assinado fiquem persistidos independente do resultado do Pix.
+                $connection->commit();
 
                 try {
                     $sicoobConfig = [
@@ -539,8 +541,6 @@ class RegistrationsController extends AppController
                     if (!$this->PixTransactions->save($pixTransaction))
                         throw new \Exception('Falha ao salvar transação: ' . json_encode($pixTransaction));
 
-                    $connection->commit();
-
                     $qrCodeBase64 = Builder::create()
                         ->writer(new PngWriter())
                         ->writerOptions([])
@@ -563,11 +563,18 @@ class RegistrationsController extends AppController
                             'copyAndPaste' => $cobResponse['brcode'],
                         ]));
                 } catch (\Exception $e) {
-                    $connection->rollback();
-
-                    dd($e);
-
+                    // A adesão e o envelope de assinatura já foram persistidos (commit
+                    // acima), então uma falha no Pix não pode apagar o cadastro do
+                    // cliente. Registramos a cobrança como pendente e seguimos.
                     Log::error('Erro integração Sicoob: ' . $e->getMessage());
+
+                    return $this->response->withType('application/json')
+                        ->withStringBody(json_encode([
+                            'success' => true,
+                            'pixPending' => true,
+                            'message' => 'Adesão registrada com sucesso, mas não foi possível gerar a cobrança Pix no momento. Entraremos em contato para concluir o pagamento.',
+                            'initialDataId' => intval($initialDataId),
+                        ]));
                 }
             }
 
