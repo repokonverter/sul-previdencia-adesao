@@ -1,56 +1,66 @@
-# CakePHP Application Skeleton
+# Sul Previdência Adesão
 
-![Build Status](https://github.com/cakephp/app/actions/workflows/ci.yml/badge.svg?branch=5.x)
-[![Total Downloads](https://img.shields.io/packagist/dt/cakephp/app.svg?style=flat-square)](https://packagist.org/packages/cakephp/app)
-[![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen.svg?style=flat-square)](https://github.com/phpstan/phpstan)
+Aplicação web em CakePHP 5.x para adesão (inscrição) a planos de previdência da Sul Previdência. O usuário preenche um formulário multi-etapas que é salvo em PostgreSQL, gera documentos em PDF, envia para assinatura digital via Clicksign e cria uma cobrança Pix via Sicoob.
 
-A skeleton for creating applications with [CakePHP](https://cakephp.org) 5.x.
+## Requisitos
 
-The framework source code can be found here: [cakephp/cakephp](https://github.com/cakephp/cakephp).
+- PHP 8.1+
+- Composer
+- Docker (para o PostgreSQL local)
 
-## Installation
+## Configuração do ambiente
 
-1. Download [Composer](https://getcomposer.org/doc/00-intro.md) or update `composer self-update`.
-2. Run `php composer.phar create-project --prefer-dist cakephp/app [app_name]`.
+Copie `config/.env.example` para `config/.env` e preencha as variáveis, entre elas:
 
-If Composer is installed globally, run
+- `DB_*` — conexão com PostgreSQL (serviço Docker padrão: `pgsql-sul-prev:5432`, banco `adesao-sulprev-db`)
+- `CLICKSIGN_BASE_URL` / `CLICKSIGN_ACCESS_TOKEN` — API do Clicksign
+- `SICOOB_*` — API Pix da Sicoob (inclui certificado/chave em Base64 para mTLS)
+- `SECURITY_SALT` — salt de segurança do CakePHP
 
-```bash
-composer create-project --prefer-dist cakephp/app
-```
-
-In case you want to use a custom app dir name (e.g. `/myapp/`):
+## Comandos
 
 ```bash
-composer create-project --prefer-dist cakephp/app myapp
-```
+# Subir/parar o PostgreSQL (Docker)
+composer docker:start
+composer docker:stop
 
-You can now either use your machine's webserver to view the default home page, or start
-up the built-in webserver with:
-
-```bash
+# Servidor de desenvolvimento
 bin/cake server -p 8765
+
+# Banco de dados
+composer migrate          # bin/cake migrations migrate
+composer migrate:rollback # bin/cake migrations rollback
+composer seed             # bin/cake migrations seed
+
+# Testes
+composer test
+vendor/bin/phpunit tests/TestCase/Controller/RegistrationsControllerTest.php  # arquivo único
+
+# Padrão de código
+composer cs-check   # phpcs
+composer cs-fix      # phpcbf (correção automática)
 ```
 
-Then visit `http://localhost:8765` to see the welcome page.
+Os testes usam um banco SQLite em memória (`tmp/tests.sqlite`), configurado em `config/app_local.php` em `Datasources.test`.
 
-## Update
+## Arquitetura
 
-Since this skeleton is a starting point for your application and various files
-would have been modified as per your needs, there isn't a way to provide
-automated upgrades, so you have to do any updates manually.
+Visão geral do fluxo de requisições, modelo de dados e integrações está documentada em [`CLAUDE.md`](./CLAUDE.md).
 
-## Configuration
+Resumo:
 
-Read and edit the environment specific `config/app_local.php` and set up the
-`'Datasources'` and any other configuration relevant for your application.
-Other environment agnostic settings can be changed in `config/app.php`.
+- **Rotas públicas** (`/`) — página inicial, simulador de previdência, formulário de adesão (`RegistrationsController`) e consulta de CBO.
+- **Rotas administrativas** (`/admin/`) — protegidas pelo plugin `Authentication`; dashboard, listagem/consulta de adesões e download de PDFs, login de usuários.
+- **Integrações**: `ClicksignService` (assinatura digital) e `SicoobService` (cobrança Pix via mTLS).
+- **Frontend**: templates PHP simples em `templates/`, com o formulário de adesão em `templates/Pages/home.php` controlado por `webroot/js/application.js`.
 
-## Layout
+## Deploy
 
-The app skeleton uses [Milligram](https://milligram.io/) (v1.3) minimalist CSS
-framework by default. You can, however, replace it with any other library or
-custom styles.
-
-kamal app exec "bin/cake migrations seed"
+```bash
 kamal deploy -c config/deploy.yml
+kamal app exec "bin/cake migrations seed"
+```
+
+## Framework
+
+Construído sobre [CakePHP](https://cakephp.org) 5.x. Código-fonte do framework: [cakephp/cakephp](https://github.com/cakephp/cakephp).
