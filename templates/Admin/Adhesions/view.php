@@ -231,9 +231,15 @@
     <div id="pensionScheme" class="tab-pane fade">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Regime de Previdência</h5>
-            <?php $ps = $adhesion->adhesion_pension_scheme; ?>
-            <?php if ($ps): ?>
-                <p><strong>Regime:</strong> <?= h($ps->pension_scheme) ?></p>
+            <?php $pensionSchemes = $adhesion->adhesion_pension_schemes ?? []; ?>
+            <?php if (!empty($pensionSchemes)): ?>
+                <p><strong>Regime(s):</strong></p>
+                <ul>
+                    <?php foreach ($pensionSchemes as $ps): ?>
+                        <li><?= h($ps->pension_scheme) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php $ps = $pensionSchemes[0]; ?>
                 <?php if ($ps->name): ?>
                     <div class="mt-2 p-2 border rounded">
                         <p><strong>Vinculado ao segurado:</strong> <?= h($ps->name) ?></p>

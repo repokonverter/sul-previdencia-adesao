@@ -290,20 +290,26 @@ class RegistrationsController extends AppController
 
             if (!empty($data['pensionScheme'])) {
                 $pensionSchemesData = $data['pensionScheme'];
-                $pensionSchemes = !$initialDataAll->adhesion_pension_scheme ? $this->AdhesionPensionSchemes->newEmptyEntity() : $this->AdhesionPensionSchemes->get($initialDataAll->adhesion_pension_scheme->id);
-                $pensionSchemes = $this->AdhesionPensionSchemes->patchEntity(
-                    $pensionSchemes,
-                    [
-                        'adhesion_initial_data_id' => $initialDataId,
-                        'pension_scheme' => $pensionSchemesData['pensionSchemeType'] ?? '',
-                        'name' => $pensionSchemesData['name'] ?? null,
-                        'cpf' => $pensionSchemesData['cpf'] ?? null,
-                        'kinship' => $pensionSchemesData['kinship'] ?? null,
-                    ],
-                );
+                $pensionSchemeTypes = (array)($pensionSchemesData['pensionSchemeType'] ?? []);
 
-                if (!$this->AdhesionPensionSchemes->save($pensionSchemes))
-                    throw new \Exception('Falha ao salvar o regime de previdência: ' . json_encode($pensionSchemes->getErrors()));
+                $this->AdhesionPensionSchemes->deleteAll(['adhesion_initial_data_id' => $initialDataId]);
+
+                foreach ($pensionSchemeTypes as $pensionSchemeType) {
+                    $pensionScheme = $this->AdhesionPensionSchemes->newEmptyEntity();
+                    $pensionScheme = $this->AdhesionPensionSchemes->patchEntity(
+                        $pensionScheme,
+                        [
+                            'adhesion_initial_data_id' => $initialDataId,
+                            'pension_scheme' => $pensionSchemeType,
+                            'name' => $pensionSchemesData['name'] ?? null,
+                            'cpf' => $pensionSchemesData['cpf'] ?? null,
+                            'kinship' => $pensionSchemesData['kinship'] ?? null,
+                        ],
+                    );
+
+                    if (!$this->AdhesionPensionSchemes->save($pensionScheme))
+                        throw new \Exception('Falha ao salvar o regime de previdência: ' . json_encode($pensionScheme->getErrors()));
+                }
             }
 
             if (!empty($data['paymentDetail'])) {

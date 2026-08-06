@@ -26,7 +26,7 @@ ignorada/limpa; não é necessário backfill de dados legados.
 
 A cobrança PIX deixa de nascer dentro da requisição do formulário e passa a
 nascer **sob demanda**, na primeira abertura da página de pagamento. Um único
-mecanismo — *consultar o Sicoob (`GET /cob/{txid}`) e agir pelo status real*
+mecanismo — _consultar o Sicoob (`GET /cob/{txid}`) e agir pelo status real_
 — atende quatro entradas:
 
 1. Cliente abre a página de pagamento
@@ -38,24 +38,24 @@ O Sicoob é sempre a fonte da verdade; nada é inferido apenas do estado local.
 
 ## Decisões fechadas
 
-| Área | Decisão |
-|---|---|
-| Entrega ao cliente | Página própria `/pagamento/{storage_uuid}` + e-mail automático com o link |
-| Criação da cobrança | Lazy — só na primeira abertura da página de pagamento |
-| Lógica ao abrir a página | `GET /cob/{txid}`: `CONCLUIDA` → mostra pago; `ATIVA` → mostra brcode fresco (vindo da resposta, não do cache); expirada/removida → gera nova cobrança |
-| Expiração da cobrança | 24h (`calendario.expiracao = 86400`) |
-| Geração do txid | Nosso, via `PUT /cob/{txid}` (não mais `POST /cob`), formato legível: prefixo + id da adesão + nº da tentativa + preenchimento até 26–35 chars. Determinístico por (adesão, tentativa) — evita duplicidade mesmo com abas concorrentes |
-| Ordem da transação | Commit dos dados da adesão **antes** do bloco Clicksign. Clicksign passa a rodar em request separada, disparada pela página de pagamento |
-| Rastreio Clicksign | `clicksign_data` ganha status (pending/sent/failed), contador de tentativas, último erro |
-| Falha do Clicksign | Não derruba a adesão. Notifica por e-mail os usuários cadastrados no admin (tabela `users`) |
-| Webhook Sicoob | Apenas gatilho — ao receber, confirma via `GET /cob/{txid}` antes de marcar qualquer coisa. Token de segurança **no path**, não em query string: `/sicoob/webhook/{token}/pix` — o Sicoob acrescenta `/pix` ao final da URL cadastrada, o que quebraria um token em query string |
-| Admin | Tela de CRUD de webhooks cadastrados no Sicoob + botão manual "verificar pagamento" por adesão (mesma lógica do item acima, sob demanda) |
-| Provedor de e-mail | Resend |
-| Remetente | `plenoprev@konverter.com.br` — **provisório**, definido só em env var (endereço, nome de exibição, credenciais). Trocar deve ser mudança de config, não de código. Cliente ainda vai definir o domínio definitivo |
-| `App.fullBaseUrl` | Precisa ser configurado explicitamente — e-mail não tem request HTTP para inferir domínio, os links quebrariam sem isso |
+| Área                          | Decisão                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entrega ao cliente            | Página própria `/pagamento/{storage_uuid}` + e-mail automático com o link                                                                                                                                                                                                                                                                                               |
+| Criação da cobrança           | Lazy — só na primeira abertura da página de pagamento                                                                                                                                                                                                                                                                                                                   |
+| Lógica ao abrir a página      | `GET /cob/{txid}`: `CONCLUIDA` → mostra pago; `ATIVA` → mostra brcode fresco (vindo da resposta, não do cache); expirada/removida → gera nova cobrança                                                                                                                                                                                                                  |
+| Expiração da cobrança         | 24h (`calendario.expiracao = 86400`)                                                                                                                                                                                                                                                                                                                                    |
+| Geração do txid               | Nosso, via `PUT /cob/{txid}` (não mais `POST /cob`), formato legível: prefixo + id da adesão + nº da tentativa + preenchimento até 26–35 chars. Determinístico por (adesão, tentativa) — evita duplicidade mesmo com abas concorrentes                                                                                                                                  |
+| Ordem da transação            | Commit dos dados da adesão **antes** do bloco Clicksign. Clicksign passa a rodar em request separada, disparada pela página de pagamento                                                                                                                                                                                                                                |
+| Rastreio Clicksign            | `clicksign_data` ganha status (pending/sent/failed), contador de tentativas, último erro                                                                                                                                                                                                                                                                                |
+| Falha do Clicksign            | Não derruba a adesão. Notifica por e-mail os usuários cadastrados no admin (tabela `users`)                                                                                                                                                                                                                                                                             |
+| Webhook Sicoob                | Apenas gatilho — ao receber, confirma via `GET /cob/{txid}` antes de marcar qualquer coisa. Token de segurança **no path**, não em query string: `/sicoob/webhook/{token}/pix` — o Sicoob acrescenta `/pix` ao final da URL cadastrada, o que quebraria um token em query string                                                                                        |
+| Admin                         | Tela de CRUD de webhooks cadastrados no Sicoob + botão manual "verificar pagamento" por adesão (mesma lógica do item acima, sob demanda)                                                                                                                                                                                                                                |
+| Provedor de e-mail            | Resend                                                                                                                                                                                                                                                                                                                                                                  |
+| Remetente                     | `plenoprev@konverter.com.br` — **provisório**, definido só em env var (endereço, nome de exibição, credenciais). Trocar deve ser mudança de config, não de código. Cliente ainda vai definir o domínio definitivo                                                                                                                                                       |
+| `App.fullBaseUrl`             | Precisa ser configurado explicitamente — e-mail não tem request HTTP para inferir domínio, os links quebrariam sem isso                                                                                                                                                                                                                                                 |
 | Visual da página de pagamento | Herda a identidade visual do simulador (`templates/Simulator/index.php`): `--primary-color: #FF6B00`, texto `#333`, Arial, Bootstrap 5, card branco `border-radius: 24px`, `box-shadow: 0 4px 32px rgba(0,0,0,.10)`, barra superior 10px na cor primária, `max-width: 950px`, logo `logo_sul_transparente.png`. **Não** é o layout enterprise — isso é só para o e-mail |
-| Visual do e-mail | Layout "enterprise" — a ser desenhado, com o mesmo remetente/branding provisório acima |
-| Backfill de dados antigos | Não necessário — base atual é só teste |
+| Visual do e-mail              | Layout "enterprise" — a ser desenhado, com o mesmo remetente/branding provisório acima                                                                                                                                                                                                                                                                                  |
+| Backfill de dados antigos     | Não necessário — base atual é só teste                                                                                                                                                                                                                                                                                                                                  |
 
 ## Ordem de execução
 
@@ -94,11 +94,3 @@ Registradas para retomar em sessão futura — não implementar agora:
    todo `kamal deploy` apaga o histórico de erro. Com webhook, Resend e retry
    de Clicksign entrando, isso vai doer na hora de depurar. Sugestão: logar em
    stdout (`kamal app logs`).
-3. **Incoerência de meio de pagamento.** O passo `paymentDetail` do formulário
-   oferece apenas "Débito em conta (Somente BB)" e "Boleto bancário" como
-   opções — PIX não é uma opção visível — mas o sistema gera cobrança PIX para
-   todo cliente, independente da escolha. A nova página de pagamento vai pedir
-   PIX de alguém que escolheu débito em conta. É decisão de produto, não bug
-   de código; precisa de alguém do lado do cliente definir o comportamento
-   correto (esconder o PIX se o meio escolhido for outro? substituir as
-   opções por "PIX" apenas? gerar cobrança só se compatível?).

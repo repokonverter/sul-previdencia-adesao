@@ -23,6 +23,12 @@ class AdhesionPensionSchemesTable extends Table
 
     public function validationDefault(Validator $validator): Validator
     {
+        $validator
+            ->scalar('pension_scheme')
+            ->maxLength('pension_scheme', 50)
+            ->requirePresence('pension_scheme', 'create')
+            ->notEmptyString('pension_scheme');
+
         return $validator;
     }
 

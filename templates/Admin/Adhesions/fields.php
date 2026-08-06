@@ -463,25 +463,38 @@
                 <label class="form-label">Você está em algum regime de previdência?*</label><br>
                 <?= $this->Form->radio('adhesion_pension_scheme.any_pension_schema', ['1' => 'Sim', '0' => 'Não'], ['onclick' => 'pensionSchema(this.value == "1")']) ?>
             </div>
+            <?php
+                $pensionSchemes = $adhesion->adhesion_pension_schemes ?? [];
+                $pensionSchemeValues = array_map(fn($ps) => $ps->pension_scheme, $pensionSchemes);
+                $pensionSchemeMain = $pensionSchemes[0] ?? null;
+            ?>
             <div id="pensionSchemeType" style="display: none;" class="mt-3 p-3 border rounded bg-light">
                 <label id="pensionSchemeTypeLabel" class="form-label mb-3 fw-bold"></label>
                 <div class="mb-3">
-                    <?= $this->Form->radio('adhesion_pension_scheme.pension_scheme', [
-                        'Geral (INSS)' => 'Geral (INSS)',
-                        'Próprio (Servidor público)' => 'Próprio (Servidor público)',
-                        'Complementar (Fundos de pensão)' => 'Complementar (Fundos de pensão)'
-                    ]) ?>
+                    <?php foreach ([
+                        'Geral (INSS)',
+                        'Próprio (Servidor público)',
+                        'Complementar (Fundos de pensão)',
+                    ] as $option): ?>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="pension_scheme_type[]" id="pensionSchemeType<?= h(preg_replace('/[^A-Za-z]/', '', $option)) ?>" value="<?= h($option) ?>" <?= in_array($option, $pensionSchemeValues) ? 'checked' : '' ?>>
+                            <label class="form-check-label"><?= h($option) ?></label>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
                 <div id="pensionSchemeTypeKinship" style="display: none;">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <?= $this->Form->control('adhesion_pension_scheme.name', ['label' => 'Vinculado ao segurado*', 'class' => 'form-control']) ?>
+                            <label class="form-label">Vinculado ao segurado*</label>
+                            <input type="text" name="pension_scheme_name" class="form-control" value="<?= h($pensionSchemeMain->name ?? '') ?>">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <?= $this->Form->control('adhesion_pension_scheme.cpf', ['label' => 'CPF*', 'class' => 'form-control cpf']) ?>
+                            <label class="form-label">CPF*</label>
+                            <input type="text" name="pension_scheme_cpf" class="form-control cpf" value="<?= h($pensionSchemeMain->cpf ?? '') ?>">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <?= $this->Form->control('adhesion_pension_scheme.kinship', ['label' => 'Grau de parentesco*', 'class' => 'form-control']) ?>
+                            <label class="form-label">Grau de parentesco*</label>
+                            <input type="text" name="pension_scheme_kinship" class="form-control" value="<?= h($pensionSchemeMain->kinship ?? '') ?>">
                         </div>
                     </div>
                 </div>

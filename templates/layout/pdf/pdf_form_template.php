@@ -176,17 +176,22 @@
         </tr>
     </table>
 
+    <?php
+        $pensionSchemes = $adhesion->adhesion_pension_schemes ?? [];
+        $pensionSchemeValues = array_map(fn($ps) => $ps->pension_scheme, $pensionSchemes);
+        $pensionSchemeMain = $pensionSchemes[0] ?? null;
+    ?>
     <div class="note-box">
-        <?= !$adhesion->adhesion_pension_scheme->cpf ? 'DECLARO sob as penas da Lei, que sou segurado do' : 'DECLARO sob as penas da Lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao' ?> seguinte regime de previdência:
+        <?= !$pensionSchemeMain || !$pensionSchemeMain->cpf ? 'DECLARO sob as penas da Lei, que sou segurado do' : 'DECLARO sob as penas da Lei, que sou parente até segundo grau do segurado abaixo identificado, o qual é vinculado ao' ?> seguinte regime de previdência:
         <br>
-        (<?= $adhesion->adhesion_pension_scheme->pension_scheme == 'Geral (INSS)' ? 'X' : ' ' ?>) GERAL (INSS);
-        (<?= $adhesion->adhesion_pension_scheme->pension_scheme == 'Próprio (Servidor público)' ? 'X' : ' ' ?>) PRÓPRIO (Servidor Público);
-        (<?= $adhesion->adhesion_pension_scheme->pension_scheme == 'Complementar (Fundos de pensão)' ? 'X' : ' ' ?>) COMPLEMENTAR (Fundos de Pensão)
-        <?php if ($adhesion->adhesion_pension_scheme->cpf) { ?>
+        (<?= in_array('Geral (INSS)', $pensionSchemeValues) ? 'X' : ' ' ?>) GERAL (INSS);
+        (<?= in_array('Próprio (Servidor público)', $pensionSchemeValues) ? 'X' : ' ' ?>) PRÓPRIO (Servidor Público);
+        (<?= in_array('Complementar (Fundos de pensão)', $pensionSchemeValues) ? 'X' : ' ' ?>) COMPLEMENTAR (Fundos de Pensão)
+        <?php if ($pensionSchemeMain && $pensionSchemeMain->cpf) { ?>
             <br><br>
-            Vinculado ao Segurado: <?= h($adhesion->adhesion_pension_scheme->name) ?><br>
-            CPF do Segurado: <?= h($adhesion->adhesion_pension_scheme->cpf) ?><br>
-            Grau de Parentesco: <?= h($adhesion->adhesion_pension_scheme->kinship) ?>
+            Vinculado ao Segurado: <?= h($pensionSchemeMain->name) ?><br>
+            CPF do Segurado: <?= h($pensionSchemeMain->cpf) ?><br>
+            Grau de Parentesco: <?= h($pensionSchemeMain->kinship) ?>
         <?php } ?>
     </div>
 

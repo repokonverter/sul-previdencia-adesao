@@ -1590,17 +1590,17 @@ function createSecureCard($data, $type)
                                         <div class="mb-3">
                                             <label id="pensionSchemeTypeLabel" class="form-label"></label>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="pensionScheme[pensionSchemeType]" id="pensionSchemeTypeGeral" value="Geral (INSS)" required>
+                                                <input class="form-check-input" type="checkbox" name="pensionScheme[pensionSchemeType][]" id="pensionSchemeTypeGeral" value="Geral (INSS)">
                                                 <label class="form-check-label" for="pensionSchemeTypeGeral">Geral (INSS)</label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="pensionScheme[pensionSchemeType]" id="pensionSchemeTypeServidorPublico" value="Próprio (Servidor público)" required>
+                                                <input class="form-check-input" type="checkbox" name="pensionScheme[pensionSchemeType][]" id="pensionSchemeTypeServidorPublico" value="Próprio (Servidor público)">
                                                 <label class="form-check-label" for="pensionSchemeTypeServidorPublico">Próprio (Servidor público)</label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="pensionScheme[pensionSchemeType]" id="pensionSchemeTypeComplementar" value="Complementar (Fundos de pensão)" required>
+                                                <input class="form-check-input" type="checkbox" name="pensionScheme[pensionSchemeType][]" id="pensionSchemeTypeComplementar" value="Complementar (Fundos de pensão)">
                                                 <label class="form-check-label" for="pensionSchemeTypeComplementar">Complementar (Fundos de pensão)</label>
-                                                <div class="invalid-feedback">
+                                                <div class="invalid-feedback" id="pensionSchemeTypeInvalidFeedback">
                                                     Preenchimento obrigatório.
                                                 </div>
                                             </div>
@@ -1977,6 +1977,17 @@ function createSecureCard($data, $type)
                 if (!occupationCode) {
                     $('#mainOccupationSearch').addClass('is-invalid');
                     isValid = false;
+                }
+            }
+
+            if (registerPageIndex === 8 && $('#pensionSchemeType').is(':visible')) {
+                const pensionSchemeTypeChecked = $('#pensionSchemeType input[name="pensionScheme[pensionSchemeType][]"]:checked').length > 0;
+
+                if (!pensionSchemeTypeChecked) {
+                    $('#pensionSchemeTypeComplementar').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#pensionSchemeTypeComplementar').removeClass('is-invalid');
                 }
             }
 

@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Controller\Admin\AppController;
 use App\Model\Table\AdhesionInitialDatasTable;
+use App\Model\Table\AdhesionPensionSchemesTable;
 use App\Services\ClicksignService;
 use App\Services\PixPaymentService;
 use App\Services\SicoobService;
@@ -13,6 +14,7 @@ use App\Services\SicoobService;
 class AdhesionsController extends AppController
 {
     protected AdhesionInitialDatasTable $AdhesionInitialDatas;
+    protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
 
     public function initialize(): void
     {
@@ -21,6 +23,7 @@ class AdhesionsController extends AppController
         $this->loadComponent('PdfGenerator');
 
         $this->AdhesionInitialDatas = $this->fetchTable('AdhesionInitialDatas');
+        $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
 
         $this->paginate = [
             'order' => ['AdhesionInitialDatas.created' => 'DESC'],
@@ -130,23 +133,40 @@ class AdhesionsController extends AppController
                     'AdhesionDocuments',
                     'AdhesionOtherInformations',
                     'AdhesionPaymentDetails',
-                    'AdhesionPensionSchemes',
                     'AdhesionProponentStatements'
                 ]
             ]);
-            
+
             // Gerar UUID se não existir
             if (!$adhesion->storage_uuid) {
                 $adhesion->storage_uuid = \Cake\Utility\Text::uuid();
             }
 
             if ($this->AdhesionInitialDatas->save($adhesion)) {
+                $this->savePensionSchemes($adhesion->id, $this->request->getData());
                 $this->Flash->success(__('A adesão foi salva com sucesso.'));
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error(__('A adesão não pôde ser salva. Por favor, tente novamente.'));
         }
         $this->set(compact('adhesion'));
+    }
+
+    private function savePensionSchemes($adhesionInitialDataId, array $data): void
+    {
+        $this->AdhesionPensionSchemes->deleteAll(['adhesion_initial_data_id' => $adhesionInitialDataId]);
+
+        foreach ((array)($data['pension_scheme_type'] ?? []) as $pensionSchemeType) {
+            $pensionScheme = $this->AdhesionPensionSchemes->newEntity([
+                'adhesion_initial_data_id' => $adhesionInitialDataId,
+                'pension_scheme' => $pensionSchemeType,
+                'name' => $data['pension_scheme_name'] ?? null,
+                'cpf' => $data['pension_scheme_cpf'] ?? null,
+                'kinship' => $data['pension_scheme_kinship'] ?? null,
+            ]);
+
+            $this->AdhesionPensionSchemes->save($pensionScheme);
+        }
     }
 
     public function edit($id)
@@ -178,13 +198,13 @@ class AdhesionsController extends AppController
                         'AdhesionDocuments',
                         'AdhesionOtherInformations',
                         'AdhesionPaymentDetails',
-                        'AdhesionPensionSchemes',
                         'AdhesionProponentStatements'
                     ]
                 ]
             );
 
             if ($this->AdhesionInitialDatas->save($adhesion)) {
+                $this->savePensionSchemes($id, $this->request->getData());
                 $this->Flash->success('Cliente atualizado com sucesso.');
                 return $this->redirect(['action' => 'view', $id]);
             }

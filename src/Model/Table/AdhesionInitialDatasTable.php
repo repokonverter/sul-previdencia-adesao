@@ -37,7 +37,7 @@ class AdhesionInitialDatasTable extends Table
         $this->hasOne('AdhesionProponentStatements', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
-        $this->hasOne('AdhesionPensionSchemes', [
+        $this->hasMany('AdhesionPensionSchemes', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
         $this->hasOne('ClicksignDatas', [
