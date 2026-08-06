@@ -65,6 +65,19 @@ return function (RouteBuilder $routes): void {
          */
         $builder->connect('/pages/*', 'Pages::display');
 
+        $builder->connect(
+            '/pagamento/{storageUuid}',
+            ['controller' => 'Payments', 'action' => 'view'],
+            ['pass' => ['storageUuid']]
+        );
+
+        // O Sicoob acrescenta "/pix" ao final da URL de webhook cadastrada.
+        $builder->connect(
+            '/sicoob/webhook/{token}/pix',
+            ['controller' => 'Webhooks', 'action' => 'pix'],
+            ['pass' => ['token']]
+        );
+
         /*
          * Connect catchall routes for all controllers.
          *

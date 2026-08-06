@@ -265,5 +265,42 @@
                 <?php endif; ?>
             <?php endif; ?>
         </div>
+
+        <div class="card p-4 shadow-sm mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 text-primary">Cobranças Pix</h5>
+                <?= $this->Form->postLink(
+                    '<i class="bi bi-arrow-repeat"></i> Verificar pagamento',
+                    ['action' => 'checkPixPayment', $adhesion->id],
+                    ['escape' => false, 'class' => 'btn btn-sm btn-outline-primary']
+                ) ?>
+            </div>
+            <?php if (!empty($adhesion->pix_transactions)): ?>
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tentativa</th>
+                            <th>Txid</th>
+                            <th>Valor</th>
+                            <th>Pago</th>
+                            <th>Data pagamento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($adhesion->pix_transactions as $pix): ?>
+                            <tr>
+                                <td><?= h($pix->attempt) ?></td>
+                                <td class="text-break"><?= h($pix->txid) ?></td>
+                                <td>R$ <?= number_format($pix->amount, 2, ',', '.') ?></td>
+                                <td><?= $pix->paid ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>' ?></td>
+                                <td><?= h($pix->payment_date) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <p class="text-muted mb-0">Nenhuma cobrança Pix gerada ainda. O cliente ainda não abriu a página de pagamento.</p>
+            <?php endif; ?>
+        </div>
     </div>
 </div>

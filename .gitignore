@@ -58,3 +58,5 @@ yarn-error.log
 /webroot/bootstrap_u_i
 # Certificates
 /certificates
+
+CLAUDE.md

@@ -24,6 +24,9 @@ env:
   clear:
     DB_HOST: infra-dados-postgres
     DEBUG: true
+    APP_FULL_BASE_URL: https://plenoprev.konverter.com.br
+    MAIL_FROM_ADDRESS: plenoprev@konverter.com.br
+    MAIL_FROM_NAME: Sul Previdência
 
   secret:
     - SECURITY_SALT
@@ -39,6 +42,7 @@ env:
     - SICOOB_PIX_KEY
     - SICOOB_CERTIFICATE_BASE64
     - SICOOB_PRIVATE_KEY_BASE64
+    - RESEND_API_KEY
 
 builder:
   remote: "ssh://deploy@162.240.152.202:22022"

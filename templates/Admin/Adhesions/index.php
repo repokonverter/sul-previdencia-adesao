@@ -36,6 +36,22 @@ function getAdhesionStage($adhesion)
 
     return 'Dados Iniciais';
 }
+
+function getPixStatusBadge($adhesion)
+{
+    if (empty($adhesion->adhesion_payment_detail))
+        return '—';
+
+    $latestPix = $adhesion->pix_transactions[0] ?? null;
+
+    if (!$latestPix)
+        return '<span class="badge bg-secondary">Sem cobrança</span>';
+
+    if ($latestPix->paid)
+        return '<span class="badge bg-success">Pago</span>';
+
+    return '<span class="badge bg-warning text-dark">Aguardando</span>';
+}
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">Adesões</h2>
@@ -87,6 +103,7 @@ function getAdhesionStage($adhesion)
                     <th>Celular</th>
                     <th>E-mail</th>
                     <th>Etapa</th>
+                    <th>Pix</th>
                     <th>Data/hora</th>
                     <th class="text-end">Ações</th>
                 </tr>
@@ -98,6 +115,7 @@ function getAdhesionStage($adhesion)
                         <td><?= h($adhesion->phone ?? '—') ?></td>
                         <td><?= h($adhesion->email ?? '—') ?></td>
                         <td><?= h(getAdhesionStage($adhesion)) ?></td>
+                        <td><?= getPixStatusBadge($adhesion) ?></td>
                         <td><?= h($adhesion->created->format('d/m/Y H:i:s') ?? '—') ?></td>
                         <td class="text-end">
                             <?php

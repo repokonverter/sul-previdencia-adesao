@@ -3,11 +3,24 @@
 namespace App\Services;
 
 use Cake\Http\Client;
+use Cake\Core\Configure;
 use Exception;
 use Cake\Log\Log;
 
 class SicoobService
 {
+    public static function fromConfigure(): self
+    {
+        return new self([
+            'baseUrl' => Configure::read('Sicoob.baseUrl'),
+            'authUrl' => Configure::read('Sicoob.authUrl'),
+            'clientId' => Configure::read('Sicoob.clientId'),
+            'certificateBase64' => Configure::read('Sicoob.certificateBase64'),
+            'privateKeyBase64' => Configure::read('Sicoob.privateKeyBase64'),
+            'fixedToken' => Configure::read('Sicoob.fixedToken'),
+        ]);
+    }
+
     private $httpClient;
     private $baseUrl;
     private $authUrl;

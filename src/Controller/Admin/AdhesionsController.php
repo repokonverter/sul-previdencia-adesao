@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Controller\AppController;
+use App\Controller\Admin\AppController;
 use App\Model\Table\AdhesionInitialDatasTable;
 use App\Services\ClicksignService;
+use App\Services\PixPaymentService;
+use App\Services\SicoobService;
 
 class AdhesionsController extends AppController
 {
@@ -17,8 +19,6 @@ class AdhesionsController extends AppController
         parent::initialize();
 
         $this->loadComponent('PdfGenerator');
-
-        $this->viewBuilder()->setLayout('admin');
 
         $this->AdhesionInitialDatas = $this->fetchTable('AdhesionInitialDatas');
 
@@ -41,7 +41,8 @@ class AdhesionsController extends AppController
                 'AdhesionOtherInformations',
                 'AdhesionPaymentDetails',
                 'AdhesionPensionSchemes',
-                'AdhesionProponentStatements'
+                'AdhesionProponentStatements',
+                'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
             ]);
 
         $searchName = $this->request->getQuery('name');
@@ -75,11 +76,45 @@ class AdhesionsController extends AppController
                 'AdhesionOtherInformations',
                 'AdhesionPaymentDetails',
                 'AdhesionPensionSchemes',
-                'AdhesionProponentStatements'
+                'AdhesionProponentStatements',
+                'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
             ]
         ]);
 
         $this->set(compact('adhesion'));
+    }
+
+    public function checkPixPayment($id)
+    {
+        $this->request->allowMethod(['post']);
+
+        $pixTransactions = $this->fetchTable('PixTransactions');
+        $latest = $pixTransactions->find()
+            ->where(['adhesion_initial_data_id' => $id])
+            ->orderBy(['attempt' => 'DESC'])
+            ->first();
+
+        if (!$latest) {
+            $this->Flash->error('Nenhuma cobrança Pix foi gerada para esta adesão ainda.');
+
+            return $this->redirect(['action' => 'view', $id]);
+        }
+
+        try {
+            $pixPaymentService = new PixPaymentService(SicoobService::fromConfigure(), $pixTransactions);
+            $result = $pixPaymentService->confirmIfPaid($latest->txid);
+
+            if (!$result['found'])
+                $this->Flash->error('Cobrança não encontrada no Sicoob.');
+            elseif ($result['paid'])
+                $this->Flash->success('Pagamento confirmado no Sicoob.');
+            else
+                $this->Flash->info('Ainda não há confirmação de pagamento no Sicoob (status: ' . ($result['status'] ?? 'desconhecido') . ').');
+        } catch (\Exception $e) {
+            $this->Flash->error('Falha ao consultar o Sicoob: ' . $e->getMessage());
+        }
+
+        return $this->redirect(['action' => 'view', $id]);
     }
 
     public function add()

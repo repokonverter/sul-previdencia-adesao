@@ -16,19 +16,14 @@ use App\Model\Table\AdhesionPersonalDatasTable;
 use App\Model\Table\AdhesionPlansTable;
 use App\Model\Table\AdhesionProponentStatementsTable;
 use App\Model\Table\ClicksignDatasTable;
-use App\Model\Table\PixTransactionsTable;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
 use Cake\Http\Client;
 use Cake\Core\Configure;
 use App\View\Helper\BankHelper;
+use Cake\Routing\Router;
 use Cake\View\View;
-use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel;
-use Endroid\QrCode\RoundBlockSizeMode;
-use Endroid\QrCode\Writer\PngWriter;
 
 class RegistrationsController extends AppController
 {
@@ -43,7 +38,6 @@ class RegistrationsController extends AppController
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
     protected ClicksignDatasTable $ClicksignDatas;
-    protected PixTransactionsTable $PixTransactions;
     protected BankHelper $Bank;
 
     public function initialize(): void
@@ -61,7 +55,6 @@ class RegistrationsController extends AppController
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
         $this->ClicksignDatas = $this->fetchTable('ClicksignDatas');
-        $this->PixTransactions = $this->fetchTable('PixTransactions');
 
         $this->loadComponent('PdfGenerator');
 
@@ -79,6 +72,7 @@ class RegistrationsController extends AppController
         $data = $this->request->getData();
         $connection = $this->AdhesionInitialDatas->getConnection();
         $connection->begin();
+        $adhesionCommitted = false;
 
         try {
             $initialDataId = isset($data['initialDataId']) ? $data['initialDataId'] : null;
@@ -339,6 +333,11 @@ class RegistrationsController extends AppController
                 if (!$this->AdhesionPaymentDetails->save($paymentDetails))
                     throw new \Exception('Falha ao salvar o dado de pagamento: ' . json_encode($paymentDetails->getErrors()));
 
+                // Dados da adesão são insubstituíveis; commit agora para que nada abaixo
+                // (Clicksign, Sicoob) possa apagá-los em caso de falha de terceiro.
+                $connection->commit();
+                $adhesionCommitted = true;
+
                 $base64PdfForms = [
                     [
                         'file' => base64_encode($this->PdfGenerator->generatePdfApplicationForm($initialDataId, true)),
@@ -350,13 +349,14 @@ class RegistrationsController extends AppController
                     ]
                 ];
 
+                $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
+                $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
+
                 try {
-                    $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
                     $clicksign = new \App\Services\ClicksignService(
                         Configure::read('Clicksign.baseUrl'),
                         Configure::read('Clicksign.accessToken')
                     );
-                    $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
 
                     if (!$clicksignData->envelope_id) {
                         $documents = 0;
@@ -474,108 +474,46 @@ class RegistrationsController extends AppController
                         if (!$clicksignNotificationResponse['success'])
                             throw new \Exception('Falha ao notificar o envelope no clicksign: ' . json_encode($clicksignNotificationResponse['data']));
                     }
-                } catch (\Exception $e) {
-                    $connection->rollBack();
 
+                    $clicksignData = $this->ClicksignDatas->patchEntity($clicksignData, [
+                        'status' => 'sent',
+                        'attempts' => ($clicksignData->attempts ?? 0) + 1,
+                        'last_error' => null,
+                    ]);
+                    $this->ClicksignDatas->save($clicksignData);
+                } catch (\Exception $e) {
                     Log::error('Erro integração Clicksign: ' . $e->getMessage());
 
-                    return $this->response->withType('application/json')
-                        ->withStringBody(json_encode([
-                            'success' => false,
-                            'message' => 'Falha ao processar a assinatura eletrônica: ' . $e->getMessage(),
-                        ]));
+                    $clicksignData = $this->ClicksignDatas->patchEntity($clicksignData, [
+                        'adhesion_initial_data_id' => $initialDataId,
+                        'status' => 'failed',
+                        'attempts' => ($clicksignData->attempts ?? 0) + 1,
+                        'last_error' => $e->getMessage(),
+                    ]);
+                    $this->ClicksignDatas->save($clicksignData);
+
+                    $this->notifyAdminsOfClicksignFailure($initialDataId, $customerName, $e->getMessage());
                 }
 
-                // Clicksign concluído com sucesso: commit agora para que a adesão e o
-                // envelope assinado fiquem persistidos independente do resultado do Pix.
-                $connection->commit();
+                // A cobrança Pix não é mais criada aqui: nasce sob demanda quando o
+                // cliente abre a página de pagamento (ver PaymentsController), o que
+                // tira o Sicoob do caminho crítico desta requisição.
+                $paymentUrl = Router::url([
+                    'controller' => 'Payments',
+                    'action' => 'view',
+                    $initialDataAll->storage_uuid,
+                ], true);
 
-                try {
-                    $sicoobConfig = [
-                        'baseUrl' => Configure::read('Sicoob.baseUrl'),
-                        'authUrl' => Configure::read('Sicoob.authUrl'),
-                        'clientId' => Configure::read('Sicoob.clientId'),
-                        'certificateBase64' => Configure::read('Sicoob.certificateBase64'),
-                        'privateKeyBase64' => Configure::read('Sicoob.privateKeyBase64'),
-                        'fixedToken' => Configure::read('Sicoob.fixedToken'),
-                    ];
+                if (!empty($initialDataAll->email))
+                    $this->sendPaymentLinkEmail($initialDataAll->email, $customerName, $paymentUrl);
 
-                    $sicoob = new \App\Services\SicoobService($sicoobConfig);
-                    $customerName = 'Cliente';
-
-                    if (isset($initialDataAll->adhesion_personal_data->name))
-                        $customerName = $initialDataAll->adhesion_personal_data->name;
-
-                    $cpf = $initialDataAll->adhesion_personal_data->cpf;
-                    $cpf = preg_replace('/\D/', '', $cpf);
-                    $cobData = [
-                        'calendario' => [
-                            'expiracao' => 3600
-                        ],
-                        'devedor' => [
-                            'cpf' => $cpf,
-                            'nome' => $customerName
-                        ],
-                        'valor' => [
-                            'original' => number_format((float)$totalContribution, 2, '.', '')
-                        ],
-                        'chave' => Configure::read('Sicoob.pixKey'),
-                        'solicitacaoPagador' => 'Pagamento Adesão'
-                    ];
-
-                    $cobResponse = $sicoob->createCob($cobData);
-
-                    if (!$cobResponse)
-                        throw new \Exception('Falha ao criar cob: ' . json_encode($cobResponse));
-
-                    $pixTransaction = $this->PixTransactions->newEmptyEntity();
-                    $pixTransaction = $this->PixTransactions->patchEntity(
-                        $pixTransaction,
-                        [
-                            'adhesion_initial_data_id' => $initialDataId,
-                            'txid' => $cobResponse['txid'],
-                            'amount' => $totalContribution,
-                        ],
-                    );
-
-                    if (!$this->PixTransactions->save($pixTransaction))
-                        throw new \Exception('Falha ao salvar transação: ' . json_encode($pixTransaction));
-
-                    $qrCodeBase64 = Builder::create()
-                        ->writer(new PngWriter())
-                        ->writerOptions([])
-                        ->data($cobResponse['brcode'])
-                        ->encoding(new Encoding('UTF-8'))
-                        ->errorCorrectionLevel(ErrorCorrectionLevel::High)
-                        ->size(300)
-                        ->margin(10)
-                        ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
-                        ->validateResult(false)
-                        ->build()
-                        ->getDataUri();
-
-                    return $this->response->withType('application/json')
-                        ->withStringBody(json_encode([
-                            'success' => true,
-                            'message' => 'Adesão salva com sucesso!',
-                            'initialDataId' => intval($initialDataId),
-                            'qrCodeBase64' => $qrCodeBase64,
-                            'copyAndPaste' => $cobResponse['brcode'],
-                        ]));
-                } catch (\Exception $e) {
-                    // A adesão e o envelope de assinatura já foram persistidos (commit
-                    // acima), então uma falha no Pix não pode apagar o cadastro do
-                    // cliente. Registramos a cobrança como pendente e seguimos.
-                    Log::error('Erro integração Sicoob: ' . $e->getMessage());
-
-                    return $this->response->withType('application/json')
-                        ->withStringBody(json_encode([
-                            'success' => true,
-                            'pixPending' => true,
-                            'message' => 'Adesão registrada com sucesso, mas não foi possível gerar a cobrança Pix no momento. Entraremos em contato para concluir o pagamento.',
-                            'initialDataId' => intval($initialDataId),
-                        ]));
-                }
+                return $this->response->withType('application/json')
+                    ->withStringBody(json_encode([
+                        'success' => true,
+                        'message' => 'Adesão salva com sucesso!',
+                        'initialDataId' => intval($initialDataId),
+                        'redirectUrl' => $paymentUrl,
+                    ]));
             }
 
             $connection->commit();
@@ -587,14 +525,50 @@ class RegistrationsController extends AppController
                     'initialDataId' => intval($initialDataId),
                 ]));
         } catch (\Exception $e) {
-            $connection->rollback();
+            if (!$adhesionCommitted)
+                $connection->rollback();
+
             Log::error('Erro ao salvar adesão: ' . $e->getMessage());
 
             return $this->response->withType('application/json')
                 ->withStringBody(json_encode([
                     'success' => false,
-                    'message' => $e->getMessage(),
+                    'message' => $adhesionCommitted
+                        ? 'Sua adesão foi salva, mas houve um erro ao continuar o processamento: ' . $e->getMessage()
+                        : $e->getMessage(),
+                    'initialDataId' => $adhesionCommitted ? intval($initialDataId) : null,
                 ]));
+        }
+    }
+
+    private function notifyAdminsOfClicksignFailure(int $initialDataId, string $customerName, string $errorMessage): void
+    {
+        try {
+            $adminEmails = $this->fetchTable('Users')->find()->select(['email'])->extract('email')->toArray();
+
+            if (empty($adminEmails))
+                return;
+
+            \App\Services\ResendService::fromConfigure()->send(
+                $adminEmails,
+                'Falha na assinatura eletrônica - Adesão #' . $initialDataId,
+                \App\Services\EmailTemplates::clicksignFailureAlert($initialDataId, $customerName, $errorMessage)
+            );
+        } catch (\Exception $e) {
+            Log::error('Falha ao notificar admins sobre erro no Clicksign: ' . $e->getMessage());
+        }
+    }
+
+    private function sendPaymentLinkEmail(string $email, string $customerName, string $paymentUrl): void
+    {
+        try {
+            \App\Services\ResendService::fromConfigure()->send(
+                [$email],
+                'Sua adesão está quase concluída - falta o pagamento',
+                \App\Services\EmailTemplates::paymentLink($customerName, $paymentUrl)
+            );
+        } catch (\Exception $e) {
+            Log::error('Falha ao enviar e-mail de pagamento para ' . $email . ': ' . $e->getMessage());
         }
     }
 

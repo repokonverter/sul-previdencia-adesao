@@ -37,13 +37,19 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
     public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     {
+        $csrf = new CsrfProtectionMiddleware(['httponly' => true]);
+        // O Sicoob chama o webhook sem cookie/sessão; CSRF não se aplica a essa rota.
+        $csrf->skipCheckCallback(function ($request) {
+            return str_starts_with($request->getUri()->getPath(), '/sicoob/webhook/');
+        });
+
         $middlewareQueue
             ->add(new ErrorHandlerMiddleware(Configure::read('Error'), $this))
             ->add(new AssetMiddleware(['cacheTime' => Configure::read('Asset.cacheTime')]))
             ->add(new RoutingMiddleware($this))
             ->add(new BodyParserMiddleware())
             ->add(new AuthenticationMiddleware($this))
-            ->add(new CsrfProtectionMiddleware(['httponly' => true]));
+            ->add($csrf);
 
         return $middlewareQueue;
     }

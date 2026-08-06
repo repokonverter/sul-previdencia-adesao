@@ -1721,24 +1721,7 @@ function createSecureCard($data, $type)
                         <div id="conclusion" class="hidden">
                             <div class="row">
                                 <div class="col">
-                                    <p>Enviamos para o e-mail "<span id="conclusionEmail"></span>" a proposta para assinatura e abaixo o pix para adesão, utilize o QR Code/pix copia e cola para realizar o pagamento.</p>
-                                </div>
-                            </div>
-                            <div id="pix-payment-block" class="row">
-                                <div class="col-12 text-center">
-                                    <img id="pix-qrcode" src="" alt="QR Code PIX" style="max-width: 200px; display: none; margin: 0 auto;" />
-                                </div>
-                                <div class="col-12 mt-3">
-                                    <label for="pix-copy-paste" class="form-label">Pix Copia e Cola</label>
-                                    <div class="input-group mb-3">
-                                        <input type="text" class="form-control" id="pix-copy-paste" readonly>
-                                        <button class="btn btn-outline-secondary" type="button" id="btn-copy-pix">Copiar</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="pix-pending-message" class="row" style="display: none;">
-                                <div class="col">
-                                    <p>Sua adesão foi registrada com sucesso, porém não foi possível gerar a cobrança Pix no momento. Nossa equipe entrará em contato para concluir o pagamento.</p>
+                                    <p>Adesão registrada com sucesso. Redirecionando para o pagamento...</p>
                                 </div>
                             </div>
                         </div>
@@ -1820,15 +1803,6 @@ function createSecureCard($data, $type)
                 updatePage(registerPageIndex);
 
                 registerModal.show();
-            });
-
-            $('#btn-copy-pix').on('click', function() {
-                const copyText = document.getElementById("pix-copy-paste");
-                copyText.select();
-                copyText.setSelectionRange(0, 99999);
-                navigator.clipboard.writeText(copyText.value).then(() => {
-                    alert("Código PIX copiado!");
-                });
             });
 
             simulationChart();
@@ -1948,9 +1922,6 @@ function createSecureCard($data, $type)
                     $('#registerModal #paymentDetail').fadeIn().show();
                     break;
                 case 10:
-                    const email = $('#registerModal #initialData input[name="initialData[email]"]').val();
-
-                    $('#registerModal #conclusionEmail').html(email);
                     $('#registerModal #conclusion').fadeIn().show();
                     break;
             }
@@ -2023,19 +1994,13 @@ function createSecureCard($data, $type)
             try {
                 const response = await saveForm(registerPages[registerPageIndex].id);
 
-                registerPageIndex += 1;
+                if (response.redirectUrl) {
+                    window.location.href = response.redirectUrl;
 
-                if (registerPageIndex === 10) {
-                    if (response.pixPending) {
-                        $('#pix-payment-block').hide();
-                        $('#pix-pending-message').show();
-                    } else {
-                        $('#pix-payment-block').show();
-                        $('#pix-pending-message').hide();
-                        $('#pix-qrcode').attr('src', response.qrCodeBase64).show();
-                        $('#pix-copy-paste').val(response.copyAndPaste);
-                    }
+                    return;
                 }
+
+                registerPageIndex += 1;
 
                 updatePage(registerPageIndex)
             } catch (error) {

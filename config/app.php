@@ -58,7 +58,7 @@ return [
         'webroot' => 'webroot',
         'wwwRoot' => WWW_ROOT,
         //'baseUrl' => env('SCRIPT_NAME'),
-        'fullBaseUrl' => false,
+        'fullBaseUrl' => env('APP_FULL_BASE_URL') ?: false,
         'imageBaseUrl' => 'img/',
         'cssBaseUrl' => 'css/',
         'jsBaseUrl' => 'js/',
@@ -472,5 +472,11 @@ return [
         'privateKeyBase64' => env('SICOOB_PRIVATE_KEY_BASE64', null),
         'fixedToken' => env('SICOOB_FIXED_TOKEN', null),
         'pixKey' => env('SICOOB_PIX_KEY', null),
+    ],
+
+    'Resend' => [
+        'apiKey' => env('RESEND_API_KEY', null),
+        'fromAddress' => env('MAIL_FROM_ADDRESS', 'plenoprev@konverter.com.br'),
+        'fromName' => env('MAIL_FROM_NAME', 'Sul Previdência'),
     ],
 ];
