@@ -81,6 +81,7 @@ class AdhesionsController extends AppController
                 'AdhesionPensionSchemes',
                 'AdhesionProponentStatements',
                 'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
+                'IntegrationLogs' => ['sort' => ['IntegrationLogs.created' => 'DESC']],
             ]
         ]);
 
@@ -91,6 +92,8 @@ class AdhesionsController extends AppController
     {
         $this->request->allowMethod(['post']);
 
+        $tab = $this->request->getData('tab');
+
         $pixTransactions = $this->fetchTable('PixTransactions');
         $latest = $pixTransactions->find()
             ->where(['adhesion_initial_data_id' => $id])
@@ -100,7 +103,7 @@ class AdhesionsController extends AppController
         if (!$latest) {
             $this->Flash->error('Nenhuma cobrança Pix foi gerada para esta adesão ainda.');
 
-            return $this->redirect(['action' => 'view', $id]);
+            return $this->redirect(['action' => 'view', $id, '?' => array_filter(['tab' => $tab])]);
         }
 
         try {
@@ -117,7 +120,7 @@ class AdhesionsController extends AppController
             $this->Flash->error('Falha ao consultar o Sicoob: ' . $e->getMessage());
         }
 
-        return $this->redirect(['action' => 'view', $id]);
+        return $this->redirect(['action' => 'view', $id, '?' => array_filter(['tab' => $tab])]);
     }
 
     public function add()

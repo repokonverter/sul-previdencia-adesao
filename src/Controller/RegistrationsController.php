@@ -16,6 +16,7 @@ use App\Model\Table\AdhesionPersonalDatasTable;
 use App\Model\Table\AdhesionPlansTable;
 use App\Model\Table\AdhesionProponentStatementsTable;
 use App\Model\Table\ClicksignDatasTable;
+use App\Services\IntegrationLogger;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
@@ -344,6 +345,11 @@ class RegistrationsController extends AppController
                 $connection->commit();
                 $adhesionCommitted = true;
 
+                IntegrationLogger::logEvent([
+                    'adhesionId' => intval($initialDataId),
+                    'operation' => 'adhesion.finalized',
+                ]);
+
                 $base64PdfForms = [
                     [
                         'file' => base64_encode($this->PdfGenerator->generatePdfApplicationForm($initialDataId, true)),
@@ -355,6 +361,12 @@ class RegistrationsController extends AppController
                     ]
                 ];
 
+                IntegrationLogger::logEvent([
+                    'adhesionId' => intval($initialDataId),
+                    'operation' => 'application.pdfs_generated',
+                    'context' => ['files' => array_column($base64PdfForms, 'name')],
+                ]);
+
                 $customerName = $initialDataAll->adhesion_personal_data->name ?? 'Cliente';
                 $clicksignData = !$initialDataAll->clicksign_data ? $this->ClicksignDatas->newEmptyEntity() : $this->ClicksignDatas->get($initialDataAll->clicksign_data->id);
 
@@ -363,6 +375,7 @@ class RegistrationsController extends AppController
                         Configure::read('Clicksign.baseUrl'),
                         Configure::read('Clicksign.accessToken')
                     );
+                    $clicksign->forAdhesion(intval($initialDataId));
 
                     if (!$clicksignData->envelope_id) {
                         $documents = 0;
@@ -511,7 +524,7 @@ class RegistrationsController extends AppController
                 ], true);
 
                 if (!empty($initialDataAll->email))
-                    $this->sendPaymentLinkEmail($initialDataAll->email, $customerName, $paymentUrl);
+                    $this->sendPaymentLinkEmail(intval($initialDataId), $initialDataAll->email, $customerName, $paymentUrl);
 
                 return $this->response->withType('application/json')
                     ->withStringBody(json_encode([
@@ -536,6 +549,13 @@ class RegistrationsController extends AppController
 
             Log::error('Erro ao salvar adesão: ' . $e->getMessage());
 
+            IntegrationLogger::logEvent([
+                'adhesionId' => $adhesionCommitted ? intval($initialDataId) : null,
+                'operation' => 'adhesion.save_failed',
+                'success' => false,
+                'errorMessage' => $e->getMessage(),
+            ]);
+
             return $this->response->withType('application/json')
                 ->withStringBody(json_encode([
                     'success' => false,
@@ -555,7 +575,7 @@ class RegistrationsController extends AppController
             if (empty($adminEmails))
                 return;
 
-            \App\Services\ResendService::fromConfigure()->send(
+            \App\Services\ResendService::fromConfigure()->forAdhesion($initialDataId)->send(
                 $adminEmails,
                 'Falha na assinatura eletrônica - Adesão #' . $initialDataId,
                 \App\Services\EmailTemplates::clicksignFailureAlert($initialDataId, $customerName, $errorMessage)
@@ -565,10 +585,10 @@ class RegistrationsController extends AppController
         }
     }
 
-    private function sendPaymentLinkEmail(string $email, string $customerName, string $paymentUrl): void
+    private function sendPaymentLinkEmail(int $initialDataId, string $email, string $customerName, string $paymentUrl): void
     {
         try {
-            \App\Services\ResendService::fromConfigure()->send(
+            \App\Services\ResendService::fromConfigure()->forAdhesion($initialDataId)->send(
                 [$email],
                 'Sua adesão está quase concluída - falta o pagamento',
                 \App\Services\EmailTemplates::paymentLink($customerName, $paymentUrl)

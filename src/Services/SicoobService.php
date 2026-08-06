@@ -28,6 +28,7 @@ class SicoobService
     private $certificate;
     private $privateKey;
     private $accessToken;
+    private ?int $adhesionId = null;
 
     public function __construct(array $config)
     {
@@ -73,6 +74,17 @@ class SicoobService
     }
 
     /**
+     * Associates subsequent calls with an adhesion, so their log entries
+     * show up in that adhesion's "Integrações" tab in the admin.
+     */
+    public function forAdhesion(?int $adhesionId): static
+    {
+        $this->adhesionId = $adhesionId;
+
+        return $this;
+    }
+
+    /**
      * Authenticate and retrieve Access Token
      * Request: POST /token
      * Content-Type: application/x-www-form-urlencoded
@@ -99,6 +111,8 @@ class SicoobService
 
     private function _performAuthRequest()
     {
+        $startedAt = microtime(true);
+
         try {
             $response = $this->httpClient->post($this->authUrl, [
                 'grant_type' => 'client_credentials',
@@ -108,13 +122,40 @@ class SicoobService
                 'headers' => ['Content-Type' => 'application/x-www-form-urlencoded']
             ]);
 
+            $statusCode = $response->getStatusCode();
+
             if (!$response->isOk()) {
                 Log::error('Sicoob Auth Error: ' . $response->getStringBody());
-                throw new Exception('Falha na autenticação Sicoob: ' . $response->getStatusCode());
+
+                IntegrationLogger::logHttp([
+                    'adhesionId' => $this->adhesionId,
+                    'service' => 'sicoob',
+                    'operation' => 'sicoob.authenticate',
+                    'httpMethod' => 'POST',
+                    'url' => $this->authUrl,
+                    'statusCode' => $statusCode,
+                    'success' => false,
+                    'durationMs' => IntegrationLogger::elapsedMs($startedAt),
+                    'errorMessage' => 'Falha na autenticação Sicoob: ' . $statusCode,
+                ]);
+
+                throw new Exception('Falha na autenticação Sicoob: ' . $statusCode);
             }
 
             $body = $response->getJson();
             $this->accessToken = $body['access_token'] ?? null;
+
+            IntegrationLogger::logHttp([
+                'adhesionId' => $this->adhesionId,
+                'service' => 'sicoob',
+                'operation' => 'sicoob.authenticate',
+                'httpMethod' => 'POST',
+                'url' => $this->authUrl,
+                'statusCode' => $statusCode,
+                'success' => (bool)$this->accessToken,
+                'durationMs' => IntegrationLogger::elapsedMs($startedAt),
+                'errorMessage' => $this->accessToken ? null : 'Token de acesso não retornado pelo Sicoob.',
+            ]);
 
             if (!$this->accessToken) {
                 throw new Exception('Token de acesso não retornado pelo Sicoob.');
@@ -145,6 +186,10 @@ class SicoobService
         $headers = array_merge($defaultHeaders, $headers);
         $options = ['headers' => $headers, 'type' => 'json'];
 
+        $operation = 'sicoob.' . IntegrationLogger::operationFromCaller();
+        $startedAt = microtime(true);
+        $statusCode = null;
+
         try {
             $response = $this->httpClient->{$method}($url, $data, $options);
 
@@ -159,16 +204,53 @@ class SicoobService
                 throw new Exception('Sicoob: Não autorizado (401). Verifique o Token fixo.');
             }
 
-            if (!$response->isOk()) {
+            $statusCode = $response->getStatusCode();
+            $responseJson = $response->getJson();
+            $success = $response->isOk();
+            $errorMsg = null;
+
+            if (!$success) {
                 Log::warning("Sicoob API Error [{$method} {$url}]: " . $response->getStringBody());
                 // Extract detailed error if available
-                $errorBody = $response->getJson();
-                $errorMsg = $errorBody['mensagem'] ?? 'Erro na requisição Sicoob (' . $response->getStatusCode() . ')';
+                $errorMsg = $responseJson['mensagem'] ?? 'Erro na requisição Sicoob (' . $statusCode . ')';
+            }
+
+            IntegrationLogger::logHttp([
+                'adhesionId' => $this->adhesionId,
+                'service' => 'sicoob',
+                'operation' => $operation,
+                'httpMethod' => strtoupper($method),
+                'url' => $url,
+                'statusCode' => $statusCode,
+                'success' => $success,
+                'durationMs' => IntegrationLogger::elapsedMs($startedAt),
+                'requestBody' => $data,
+                'responseBody' => $responseJson,
+                'errorMessage' => $errorMsg,
+            ]);
+
+            if (!$success) {
                 throw new Exception($errorMsg);
             }
 
-            return $response->getJson();
+            return $responseJson;
         } catch (Exception $e) {
+            // Network failures never reach the isOk() check above, so $statusCode
+            // stays null here; log them now instead of leaving them invisible.
+            if ($statusCode === null) {
+                IntegrationLogger::logHttp([
+                    'adhesionId' => $this->adhesionId,
+                    'service' => 'sicoob',
+                    'operation' => $operation,
+                    'httpMethod' => strtoupper($method),
+                    'url' => $url,
+                    'success' => false,
+                    'durationMs' => IntegrationLogger::elapsedMs($startedAt),
+                    'requestBody' => $data,
+                    'errorMessage' => $e->getMessage(),
+                ]);
+            }
+
             throw $e;
         }
     }

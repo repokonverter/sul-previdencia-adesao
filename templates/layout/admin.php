@@ -14,6 +14,13 @@
         body {
             background-color: #f4f6f9;
             color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1 0 auto;
         }
 
         .navbar {
@@ -44,6 +51,7 @@
             background: #004b85;
             color: #fff;
             text-align: center;
+            flex-shrink: 0;
             margin-top: 50px;
         }
     </style>
@@ -65,6 +73,9 @@
                     <a class="nav-link" href="<?= $this->Url->build('/admin/adhesions') ?>">Adesões</a>
                 </li>
                 <!-- <li class="nav-item">
+                    <a class="nav-link" href="<?= $this->Url->build('/admin/integration-logs') ?>">Logs de Integração</a>
+                </li> -->
+                <!-- <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/pix-webhooks') ?>">Webhooks Pix</a>
                 </li> -->
                 <li class="nav-item">
@@ -79,7 +90,7 @@
         <?= $this->fetch('content') ?>
     </main>
 
-    <footer class="footer fixed-bottom border-top">
+    <footer class="footer border-top">
 
         Painel Administrativo &copy; <?= date('Y') ?> - Sul Previdência
     </footer>

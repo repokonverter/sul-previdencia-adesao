@@ -1,3 +1,35 @@
+<?php
+$validTabs = [
+    'initialData', 'personalData', 'documents', 'plan', 'dependents', 'addressData',
+    'otherInformation', 'proponentStatement', 'pensionScheme', 'paymentDetail', 'integrationLogs',
+];
+$activeTab = $this->request->getQuery('tab');
+if (!in_array($activeTab, $validTabs, true))
+    $activeTab = 'initialData';
+
+function navLinkClass(string $tabId, string $activeTab): string
+{
+    return 'nav-link' . ($tabId === $activeTab ? ' active' : '');
+}
+
+function tabPaneClass(string $tabId, string $activeTab): string
+{
+    return 'tab-pane fade' . ($tabId === $activeTab ? ' show active' : '');
+}
+
+function formatLogBody(?string $value): string
+{
+    if ($value === null || $value === '')
+        return '';
+
+    $decoded = json_decode($value, true);
+
+    if (json_last_error() === JSON_ERROR_NONE && $decoded !== null)
+        return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    return $value;
+}
+?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">
         <i class="bi bi-person-vcard"></i> Detalhes da Adesão
@@ -12,21 +44,22 @@
 </div>
 
 <ul class="nav nav-tabs mb-4" role="tablist">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#initialData">Dados Iniciais</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#personalData">Dados Pessoais</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#documents">Documentos</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#plan">Plano</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dependents">Beneficiários</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#addressData">Endereço</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#otherInformation">Outras Informações</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#proponentStatement">Declarações do Proponente</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pensionScheme">Regime de Previdência</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('initialData', $activeTab) ?>" data-bs-toggle="tab" href="#initialData">Dados Iniciais</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('personalData', $activeTab) ?>" data-bs-toggle="tab" href="#personalData">Dados Pessoais</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('documents', $activeTab) ?>" data-bs-toggle="tab" href="#documents">Documentos</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('plan', $activeTab) ?>" data-bs-toggle="tab" href="#plan">Plano</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('dependents', $activeTab) ?>" data-bs-toggle="tab" href="#dependents">Beneficiários</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('addressData', $activeTab) ?>" data-bs-toggle="tab" href="#addressData">Endereço</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('otherInformation', $activeTab) ?>" data-bs-toggle="tab" href="#otherInformation">Outras Informações</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('proponentStatement', $activeTab) ?>" data-bs-toggle="tab" href="#proponentStatement">Declarações do Proponente</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('pensionScheme', $activeTab) ?>" data-bs-toggle="tab" href="#pensionScheme">Regime de Previdência</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('paymentDetail', $activeTab) ?>" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('integrationLogs', $activeTab) ?>" data-bs-toggle="tab" href="#integrationLogs">Integrações</a></li>
 </ul>
 
 <div class="tab-content" style="margin-bottom: 80px;">
     <!-- DADOS INICIAIS -->
-    <div id="initialData" class="tab-pane fade show active">
+    <div id="initialData" class="<?= tabPaneClass('initialData', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Dados Iniciais</h5>
             <div class="row">
@@ -47,7 +80,7 @@
     </div>
 
     <!-- DADOS PESSOAIS -->
-    <div id="personalData" class="tab-pane fade">
+    <div id="personalData" class="<?= tabPaneClass('personalData', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Dados Pessoais</h5>
             <?php $p = $adhesion->adhesion_personal_data; ?>
@@ -97,7 +130,7 @@
     </div>
 
     <!-- DOCUMENTOS -->
-    <div id="documents" class="tab-pane fade">
+    <div id="documents" class="<?= tabPaneClass('documents', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Documentos</h5>
             <?php if (!empty($adhesion->adhesion_document)): ?>
@@ -115,7 +148,7 @@
     </div>
 
     <!-- PLANO -->
-    <div id="plan" class="tab-pane fade">
+    <div id="plan" class="<?= tabPaneClass('plan', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Plano</h5>
             <?php $pl = $adhesion->adhesion_plan; // Pode vir como collection ou single dependendo do contain
@@ -134,7 +167,7 @@
     </div>
 
     <!-- BENEFICIÁRIOS -->
-    <div id="dependents" class="tab-pane fade">
+    <div id="dependents" class="<?= tabPaneClass('dependents', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Beneficiários</h5>
             <?php if (!empty($adhesion->adhesion_dependents)): ?>
@@ -155,7 +188,7 @@
     </div>
 
     <!-- ENDEREÇO -->
-    <div id="addressData" class="tab-pane fade">
+    <div id="addressData" class="<?= tabPaneClass('addressData', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Endereço</h5>
             <?php $a = $adhesion->adhesion_address; ?>
@@ -177,7 +210,7 @@
     </div>
 
     <!-- OUTRAS INFORMAÇÕES -->
-    <div id="otherInformation" class="tab-pane fade">
+    <div id="otherInformation" class="<?= tabPaneClass('otherInformation', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Outras Informações</h5>
             <?php $o = $adhesion->adhesion_other_information; ?>
@@ -195,7 +228,7 @@
     </div>
 
     <!-- DECLARAÇÕES -->
-    <div id="proponentStatement" class="tab-pane fade">
+    <div id="proponentStatement" class="<?= tabPaneClass('proponentStatement', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Declarações do Proponente</h5>
             <?php $s = $adhesion->adhesion_proponent_statement; ?>
@@ -228,7 +261,7 @@
     </div>
 
     <!-- REGIME PREVIDÊNCIA -->
-    <div id="pensionScheme" class="tab-pane fade">
+    <div id="pensionScheme" class="<?= tabPaneClass('pensionScheme', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Regime de Previdência</h5>
             <?php $pensionSchemes = $adhesion->adhesion_pension_schemes ?? []; ?>
@@ -254,7 +287,7 @@
     </div>
 
     <!-- PAGAMENTO -->
-    <div id="paymentDetail" class="tab-pane fade">
+    <div id="paymentDetail" class="<?= tabPaneClass('paymentDetail', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Dados para Pagamento</h5>
             <?php $pd = $adhesion->adhesion_payment_detail; ?>
@@ -275,11 +308,14 @@
         <div class="card p-4 shadow-sm mt-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0 text-primary">Cobranças Pix</h5>
-                <?= $this->Form->postLink(
-                    '<i class="bi bi-arrow-repeat"></i> Verificar pagamento',
-                    ['action' => 'checkPixPayment', $adhesion->id],
-                    ['escape' => false, 'class' => 'btn btn-sm btn-outline-primary']
-                ) ?>
+                <?= $this->Form->create(null, ['url' => ['action' => 'checkPixPayment', $adhesion->id], 'style' => 'display:inline']) ?>
+                <?= $this->Form->hidden('tab', ['id' => 'checkPixPaymentTab', 'value' => $activeTab]) ?>
+                <?= $this->Form->button('<i class="bi bi-arrow-repeat"></i> Verificar pagamento', [
+                    'type' => 'submit',
+                    'escapeTitle' => false,
+                    'class' => 'btn btn-sm btn-outline-primary',
+                ]) ?>
+                <?= $this->Form->end() ?>
             </div>
             <?php if (!empty($adhesion->pix_transactions)): ?>
                 <table class="table table-sm mb-0">
@@ -309,4 +345,82 @@
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- INTEGRAÇÕES -->
+    <div id="integrationLogs" class="<?= tabPaneClass('integrationLogs', $activeTab) ?>">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">Linha do tempo de integrações</h5>
+            <?php if (!empty($adhesion->integration_logs)): ?>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Quando</th>
+                                <th>Serviço</th>
+                                <th>Operação</th>
+                                <th>Status</th>
+                                <th>Duração</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($adhesion->integration_logs as $log): ?>
+                                <tr>
+                                    <td><?= $log->created->format('d/m/Y H:i:s') ?></td>
+                                    <td><span class="badge bg-secondary"><?= h($log->service) ?></span></td>
+                                    <td><?= h($log->operation) ?></td>
+                                    <td><?= $log->success ? '<span class="badge bg-success">OK</span>' : '<span class="badge bg-danger">Falha</span>' ?></td>
+                                    <td><?= $log->duration_ms !== null ? h($log->duration_ms) . ' ms' : '—' ?></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#integrationLog-<?= $log->id ?>">
+                                            Detalhes
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="integrationLog-<?= $log->id ?>">
+                                    <td colspan="6">
+                                        <div class="p-3 bg-light border rounded">
+                                            <?php if ($log->url): ?>
+                                                <p class="mb-1 small text-break"><strong>URL:</strong> <?= h($log->http_method) ?> <?= h($log->url) ?></p>
+                                            <?php endif; ?>
+                                            <?php if ($log->error_message): ?>
+                                                <p class="mb-2 small text-danger"><strong>Erro:</strong> <?= h($log->error_message) ?></p>
+                                            <?php endif; ?>
+
+                                            <?php foreach (['Request' => $log->request_body, 'Response' => $log->response_body, 'Contexto' => $log->context] as $label => $value): ?>
+                                                <?php if ($value): ?>
+                                                    <details class="mb-2">
+                                                        <summary class="small fw-semibold text-primary" style="cursor: pointer;"><?= h($label) ?></summary>
+                                                        <pre class="small bg-white border rounded p-2 mt-1 mb-0" style="max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-all;"><?= h(formatLogBody($value)) ?></pre>
+                                                    </details>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <p class="text-muted mb-0">Nenhuma chamada a integrações registrada ainda para esta adesão.</p>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(trigger) {
+            trigger.addEventListener('shown.bs.tab', function(e) {
+                const tabId = e.target.getAttribute('href').substring(1);
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', tabId);
+                history.replaceState(null, '', url);
+
+                const tabInput = document.getElementById('checkPixPaymentTab');
+                if (tabInput) tabInput.value = tabId;
+            });
+        });
+    });
+</script>

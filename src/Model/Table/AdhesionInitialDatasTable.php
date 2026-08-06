@@ -53,6 +53,9 @@ class AdhesionInitialDatasTable extends Table
         $this->hasMany('PixTransactions', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
+        $this->hasMany('IntegrationLogs', [
+            'foreignKey' => 'adhesion_initial_data_id',
+        ]);
     }
 
     public function validationDefault(Validator $validator): Validator

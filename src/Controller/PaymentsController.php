@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Controller\AppController;
+use App\Services\IntegrationLogger;
 use App\Services\PixPaymentService;
 use App\Services\SicoobService;
 use Cake\Http\Exception\NotFoundException;
@@ -26,6 +27,11 @@ class PaymentsController extends AppController
 
         if (!$adhesion || !$adhesion->adhesion_payment_detail)
             throw new NotFoundException('Pagamento não encontrado.');
+
+        IntegrationLogger::logEvent([
+            'adhesionId' => $adhesion->id,
+            'operation' => 'payment_page.opened',
+        ]);
 
         $customerName = $adhesion->adhesion_personal_data->name ?? 'Cliente';
         $cpf = preg_replace('/\D/', '', $adhesion->adhesion_personal_data->cpf ?? '');

@@ -4,9 +4,15 @@ use Cake\Cache\Engine\FileEngine;
 use Cake\Database\Connection;
 use Cake\Database\Driver\Mysql;
 use Cake\Database\Driver\Postgres;
+use Cake\Log\Engine\ConsoleLog;
 use Cake\Log\Engine\FileLog;
 use Cake\Mailer\Transport\MailTransport;
 use function Cake\Core\env;
+
+// Cada deploy (kamal deploy) recria o container e apaga logs/ — sem volume Docker
+// para ela, esses arquivos nunca sobrevivem a um deploy. Em produção, LOG_TO_STDOUT
+// troca o destino para stdout/stderr, que o Docker retém e `kamal app logs` lê.
+$logToStdout = filter_var(env('LOG_TO_STDOUT', false), FILTER_VALIDATE_BOOLEAN);
 
 return [
     /*
@@ -340,7 +346,20 @@ return [
     /*
      * Configures logging options
      */
-    'Log' => [
+    'Log' => $logToStdout ? [
+        'debug' => [
+            'className' => ConsoleLog::class,
+            'stream' => 'php://stdout',
+            'scopes' => null,
+            'levels' => ['notice', 'info', 'debug'],
+        ],
+        'error' => [
+            'className' => ConsoleLog::class,
+            'stream' => 'php://stderr',
+            'scopes' => null,
+            'levels' => ['warning', 'error', 'critical', 'alert', 'emergency'],
+        ],
+    ] : [
         'debug' => [
             'className' => FileLog::class,
             'path' => LOGS,
@@ -478,5 +497,12 @@ return [
         'apiKey' => env('RESEND_API_KEY', null),
         'fromAddress' => env('MAIL_FROM_ADDRESS', 'plenoprev@konverter.com.br'),
         'fromName' => env('MAIL_FROM_NAME', 'Sul Previdência'),
+    ],
+
+    // Sem RESEND_API_KEY, ResendService manda por SMTP para o Mailpit em vez
+    // do Resend — cobre o ambiente local por padrão, sem precisar de flag.
+    'Mailpit' => [
+        'host' => env('MAILPIT_HOST', '127.0.0.1'),
+        'port' => env('MAILPIT_PORT', 1025),
     ],
 ];

@@ -83,14 +83,67 @@ Recomendado: deploy dessa correção com prioridade separada do resto, e avaliar
 se há logs de acesso no servidor para checar se os dados foram acessados
 enquanto a falha esteve ativa.
 
-## Pendências levantadas mas fora de escopo desta rodada
+## Pendências resolvidas em 2026-08-06 (sessão de grilling)
 
-Registradas para retomar em sessão futura — não implementar agora:
+1. ✅ **`DEBUG: true` em produção.** `config/deploy.yml` agora define
+   `DEBUG: false`. Como a rastreabilidade passou a vir da tabela
+   `integration_logs` e de stdout (item 2), não há mais motivo para expor
+   stack trace no navegador do cliente.
+2. ✅ **Logs efêmeros.** Novo env `LOG_TO_STDOUT` (ligado em produção via
+   `deploy.yml`) troca os engines `debug`/`error` de `FileLog` (arquivo em
+   `logs/`, apagado a cada `kamal deploy`) para `ConsoleLog` em
+   stdout/stderr, que o Docker retém e `kamal app logs` lê.
+3. ✅ **Logs completos de integração.** Nova tabela `integration_logs`
+   (migration `20260806000000_CreateIntegrationLogs`), FK anulável para
+   `adhesion_initial_data` (`ON DELETE CASCADE`). `App\Services\IntegrationLogger`
+   é o único ponto de escrita: `logHttp()` para chamadas HTTP (sucesso e
+   falha), `logEvent()` para marcos internos. Cobre:
+   - **Sicoob** — `SicoobService::request()` e `_performAuthRequest()`.
+   - **Clicksign** — `ClicksignService::_request()` (ponto único usado pelos
+     ~24 métodos públicos do serviço).
+   - **Resend** — `ResendService::send()`.
+   - **Webhook Sicoob recebido** — `WebhooksController::pix()`, direção
+     `inbound`, com o token do path redigido antes de persistir a URL.
+   - **Marcos internos** — `adhesion.finalized`, `application.pdfs_generated`,
+     `adhesion.save_failed`, `payment_page.opened`, `pix.charge_created`,
+     `pix.charge_regenerated`, `pix.payment_confirmed`.
 
-1. **`DEBUG: true` em produção** (`config/deploy.yml`). Em um app que trafega
-   CPF, dados bancários e dependentes, qualquer exceção não tratada expõe
-   stack trace (incluindo trechos de configuração) no navegador do cliente.
-2. **Logs efêmeros.** Não há volume Docker para `logs/` no `deploy.yml`, então
-   todo `kamal deploy` apaga o histórico de erro. Com webhook, Resend e retry
-   de Clicksign entrando, isso vai doer na hora de depurar. Sugestão: logar em
-   stdout (`kamal app logs`).
+   O rótulo de operação (`sicoob.get_cob`, `clicksign.create_envelope`, ...)
+   é derivado automaticamente do nome do método chamador via
+   `debug_backtrace()`, evitando editar cada um dos ~20-30 call sites.
+   Associação com a adesão é por contexto explícito: os três serviços
+   ganharam `forAdhesion(?int $id)`, chamado antes de cada operação (direto
+   em `RegistrationsController`, ou propagado por `PixPaymentService` a
+   partir do `adhesion_initial_data_id` já resolvido).
+
+   **Redação:** corpos são serializados como JSON; chaves sensíveis
+   (`content_base64`, `authorization`, `access_token`, etc.) viram
+   `[REDACTED]` ou `[REDACTED, X KB]` para valores grandes. CPF e dados
+   bancários **não** são redigidos — já existem em texto na própria adesão e
+   são o que se precisa conferir ao depurar. Corpos são truncados em 8 KB
+   (`…[truncado]`). Headers (onde vive `Authorization`) nunca são
+   persistidos — só request/response bodies.
+
+   Falha ao gravar um log nunca derruba o fluxo: `IntegrationLogger::logHttp()`
+   envolve a escrita em `try/catch` e cai para o log de arquivo/stdout se a
+   gravação falhar. Coberto por
+   `tests/TestCase/Services/IntegrationLoggerTest.php` (redação, truncagem,
+   falha de escrita silenciosa).
+
+4. ✅ **Leitura no admin.** Aba "Integrações" em `Admin/Adhesions::view()`
+   (linha do tempo da adesão, com request/response expansíveis) +
+   `/admin/integration-logs` (`Admin\IntegrationLogsController`) com filtro
+   por serviço/status/adesão, para os casos sem adesão associada (auth
+   Sicoob, webhook com token inválido).
+
+5. ✅ **Aba ativa após "Verificar pagamento".** A aba ativa agora é refletida
+   em `?tab=` na URL: `Admin/Adhesions/view.php` lê o parâmetro no
+   server-side para decidir qual aba renderiza como `active` (sem flash de
+   JS), e um listener em `shown.bs.tab` faz `history.replaceState` a cada
+   troca de aba. O formulário de "Verificar pagamento" carrega um campo
+   oculto `tab` com a aba atual, e `checkPixPayment()` devolve o mesmo `tab`
+   no redirect — por isso um F5 no meio da checagem também cai na aba
+   correta.
+
+Sem rotina de purga para `integration_logs`: o volume de adesões (34 desde
+o início) não justifica ainda.

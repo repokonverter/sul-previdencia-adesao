@@ -10,6 +10,7 @@ class ClicksignService
     private $httpClient;
     private $baseUrl;
     private $accessToken;
+    private ?int $adhesionId = null;
 
     public function __construct(string $baseUrl, string $accessToken)
     {
@@ -24,12 +25,23 @@ class ClicksignService
         ]);
     }
 
+    /**
+     * Associates subsequent calls with an adhesion, so their log entries
+     * show up in that adhesion's "Integrações" tab in the admin.
+     */
+    public function forAdhesion(?int $adhesionId): static
+    {
+        $this->adhesionId = $adhesionId;
+
+        return $this;
+    }
+
     private function _request(string $method, string $path, array $payload = [])
     {
         $url = $this->baseUrl . $path;
         $options = ['type' => 'json'];
-
         $method = strtolower($method);
+        $requestBodyForLog = $payload;
 
         if ($method === 'get') {
             if (!empty($payload))
@@ -39,6 +51,9 @@ class ClicksignService
         } else
             $payload = json_encode($payload);
 
+        $operation = 'clicksign.' . IntegrationLogger::operationFromCaller();
+        $startedAt = microtime(true);
+
         try {
             $response = $this->httpClient->{$method}(
                 $url,
@@ -46,25 +61,56 @@ class ClicksignService
                 $options
             );
         } catch (\Exception $e) {
+            IntegrationLogger::logHttp([
+                'adhesionId' => $this->adhesionId,
+                'service' => 'clicksign',
+                'operation' => $operation,
+                'httpMethod' => strtoupper($method),
+                'url' => $url,
+                'success' => false,
+                'durationMs' => IntegrationLogger::elapsedMs($startedAt),
+                'requestBody' => $requestBodyForLog,
+                'errorMessage' => $e->getMessage(),
+            ]);
+
             throw new Exception('Falha na comunicação com Clicksign: ' . $e->getMessage());
         }
 
-        if ($response->isOk())
+        $statusCode = $response->getStatusCode();
+        $responseJson = $response->getJson();
+        $success = $response->isOk();
+        $errorMessage = null;
+
+        if (!$success) {
+            $errorMessage = 'Erro Clicksign. Status: ' . $statusCode;
+
+            if (isset($responseJson['errors'])) {
+                $details = array_map(function ($error) {
+                    return $error['detail'] ?? 'Erro desconhecido.';
+                }, $responseJson['errors']);
+                $errorMessage .= '. Detalhes: ' . implode('; ', $details);
+            }
+        }
+
+        IntegrationLogger::logHttp([
+            'adhesionId' => $this->adhesionId,
+            'service' => 'clicksign',
+            'operation' => $operation,
+            'httpMethod' => strtoupper($method),
+            'url' => $url,
+            'statusCode' => $statusCode,
+            'success' => $success,
+            'durationMs' => IntegrationLogger::elapsedMs($startedAt),
+            'requestBody' => $requestBodyForLog,
+            'responseBody' => $responseJson,
+            'errorMessage' => $errorMessage,
+        ]);
+
+        if ($success)
             return [
                 'success' => true,
-                ...$response->getJson()
+                ...$responseJson
             ];
-
-        $errorMessage = 'Erro Clicksign. Status: ' . $response->getStatusCode();
-
-        $errorBody = $response->getJson();
-
-        if (isset($errorBody['errors'])) {
-            $details = array_map(function ($error) {
-                return $error['detail'] ?? 'Erro desconhecido.';
-            }, $errorBody['errors']);
-            $errorMessage .= '. Detalhes: ' . implode('; ', $details);
-        }
 
         throw new Exception($errorMessage);
     }

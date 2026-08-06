@@ -23,7 +23,8 @@ registry:
 env:
   clear:
     DB_HOST: infra-dados-postgres
-    DEBUG: true
+    DEBUG: false
+    LOG_TO_STDOUT: true
     APP_FULL_BASE_URL: https://plenoprev.konverter.com.br
     MAIL_FROM_ADDRESS: plenoprev@konverter.com.br
     MAIL_FROM_NAME: Sul Previdência

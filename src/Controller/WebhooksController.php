@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Controller\AppController;
+use App\Services\IntegrationLogger;
 use App\Services\PixPaymentService;
 use App\Services\SicoobService;
 use Cake\Http\Exception\NotFoundException;
@@ -30,10 +31,27 @@ class WebhooksController extends AppController
     {
         $this->request->allowMethod(['post']);
 
+        $rawBody = (string)$this->request->getBody();
+        // O token é o segredo deste endpoint (vive no path, não em header/query),
+        // então nunca deve ser persistido em claro no log.
+        $loggedUrl = str_replace($token, '[REDACTED]', (string)$this->request->getRequestTarget());
+
         $webhook = $this->fetchTable('PixWebhooks')->find()->where(['token' => $token])->first();
 
-        if (!$webhook)
+        if (!$webhook) {
+            IntegrationLogger::logHttp([
+                'service' => 'sicoob',
+                'operation' => 'sicoob.webhook_received',
+                'direction' => 'inbound',
+                'httpMethod' => 'POST',
+                'url' => $loggedUrl,
+                'success' => false,
+                'requestBody' => $rawBody,
+                'errorMessage' => 'Token de webhook inválido ou desconhecido.',
+            ]);
+
             throw new NotFoundException();
+        }
 
         $body = $this->request->getParsedBody();
         $pixEvents = is_array($body) ? ($body['pix'] ?? []) : [];
@@ -42,9 +60,10 @@ class WebhooksController extends AppController
             $pixEvents = [$body];
 
         if (empty($pixEvents))
-            Log::warning('Webhook Sicoob: payload sem formato reconhecido: ' . $this->request->getBody());
+            Log::warning('Webhook Sicoob: payload sem formato reconhecido: ' . $rawBody);
 
         $pixPaymentService = new PixPaymentService(SicoobService::fromConfigure(), $this->fetchTable('PixTransactions'));
+        $processedTxids = [];
 
         foreach ($pixEvents as $event) {
             $txid = $event['txid'] ?? null;
@@ -52,12 +71,25 @@ class WebhooksController extends AppController
             if (!$txid)
                 continue;
 
+            $processedTxids[] = $txid;
+
             try {
                 $pixPaymentService->confirmIfPaid($txid);
             } catch (\Exception $e) {
                 Log::error('Webhook Sicoob: falha ao confirmar txid ' . $txid . ': ' . $e->getMessage());
             }
         }
+
+        IntegrationLogger::logHttp([
+            'service' => 'sicoob',
+            'operation' => 'sicoob.webhook_received',
+            'direction' => 'inbound',
+            'httpMethod' => 'POST',
+            'url' => $loggedUrl,
+            'success' => true,
+            'requestBody' => $rawBody,
+            'context' => ['txids' => $processedTxids, 'events_count' => count($pixEvents)],
+        ]);
 
         return $this->response->withStatus(200);
     }

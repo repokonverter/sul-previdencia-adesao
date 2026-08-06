@@ -26,6 +26,8 @@ class PixPaymentService
      */
     public function resolve(int $adhesionId, string $cpf, string $customerName, float $amount): array
     {
+        $this->sicoob->forAdhesion($adhesionId);
+
         $latest = $this->pixTransactions->find()
             ->where(['adhesion_initial_data_id' => $adhesionId])
             ->orderBy(['attempt' => 'DESC'])
@@ -43,6 +45,12 @@ class PixPaymentService
                             'payment_date' => FrozenTime::now(),
                         ]);
                         $this->pixTransactions->save($latest);
+
+                        IntegrationLogger::logEvent([
+                            'adhesionId' => $adhesionId,
+                            'operation' => 'pix.payment_confirmed',
+                            'context' => ['txid' => $latest->txid],
+                        ]);
                     }
 
                     return ['status' => 'paid', 'txid' => $latest->txid];
@@ -76,6 +84,8 @@ class PixPaymentService
         if (!$pixTransaction)
             return ['found' => false];
 
+        $this->sicoob->forAdhesion($pixTransaction->adhesion_initial_data_id);
+
         $cobResponse = $this->sicoob->getCob($txid);
         $status = $cobResponse['status'] ?? null;
 
@@ -85,6 +95,12 @@ class PixPaymentService
                 'payment_date' => FrozenTime::now(),
             ]);
             $this->pixTransactions->save($pixTransaction);
+
+            IntegrationLogger::logEvent([
+                'adhesionId' => $pixTransaction->adhesion_initial_data_id,
+                'operation' => 'pix.payment_confirmed',
+                'context' => ['txid' => $txid],
+            ]);
         }
 
         return ['found' => true, 'paid' => $status === 'CONCLUIDA', 'status' => $status];
@@ -120,6 +136,12 @@ class PixPaymentService
 
         if (!$this->pixTransactions->save($pixTransaction))
             throw new Exception('Falha ao salvar transação Pix: ' . json_encode($pixTransaction->getErrors()));
+
+        IntegrationLogger::logEvent([
+            'adhesionId' => $adhesionId,
+            'operation' => $attempt > 1 ? 'pix.charge_regenerated' : 'pix.charge_created',
+            'context' => ['txid' => $txid, 'attempt' => $attempt],
+        ]);
 
         return ['status' => 'active', 'txid' => $txid, 'brcode' => $cobResponse['brcode'] ?? null];
     }
