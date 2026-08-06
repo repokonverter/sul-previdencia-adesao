@@ -5,6 +5,7 @@
  * @var string|null $csrfToken
  */
 
+use Cake\Core\Configure;
 use Cake\I18n\Number;
 
 $this->assign('title', 'Sul Previdência - Simulador');
@@ -1728,6 +1729,7 @@ function createSecureCard($data, $type)
                     </form>
                 </div>
                 <div class="modal-footer justify-content-between">
+                    <button type="button" id="fakerFillBtn" class="btn btn-outline-secondary me-auto" style="display: none;" onclick="fillStepWithFakeData(registerPages[registerPageIndex].id)">🎲 Preencher (dev)</button>
                     <button type="button" class="btn btn-secondary" onclick="previousPage()">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="nextPage()">Concordo</button>
                 </div>
@@ -1735,6 +1737,7 @@ function createSecureCard($data, $type)
         </div>
     </div>
     <script>
+        const isDebug = <?= Configure::read('debug') ? 'true' : 'false' ?>;
         const localStorageKey = 'adesaoSulPrevidencia';
         let draftUUID = localStorage.getItem(localStorageKey);
         let initialDataId = null;
@@ -1826,6 +1829,8 @@ function createSecureCard($data, $type)
         }
 
         const updateButtonPreviousNext = (pageIndex) => {
+            jQuery('#fakerFillBtn').toggle(isDebug && pageIndex !== 10);
+
             switch (pageIndex) {
                 case 1:
                 case 2:
@@ -2052,6 +2057,169 @@ function createSecureCard($data, $type)
                 })
             })
         }
+
+        const fakeFirstNames = ['Ana', 'Bruno', 'Carla', 'Daniel', 'Eduarda', 'Fábio', 'Gabriela', 'Hugo', 'Isabela', 'João', 'Larissa', 'Marcos', 'Natália', 'Otávio', 'Patrícia', 'Rafael', 'Sofia', 'Thiago'];
+        const fakeLastNames = ['Silva', 'Souza', 'Oliveira', 'Santos', 'Pereira', 'Costa', 'Almeida', 'Ribeiro', 'Carvalho', 'Gomes', 'Martins', 'Rocha'];
+
+        const fakePick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const fakeInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const fakeDigits = (n) => Array.from({
+            length: n
+        }, () => fakeInt(0, 9)).join('');
+
+        const fakeCPF = () => {
+            const calcDigit = (digits) => {
+                let sum = 0;
+                let weight = digits.length + 1;
+
+                digits.forEach((digit) => {
+                    sum += digit * weight;
+                    weight -= 1;
+                });
+
+                const rest = (sum * 10) % 11;
+
+                return rest === 10 ? 0 : rest;
+            };
+
+            const base = Array.from({
+                length: 9
+            }, () => fakeInt(0, 9));
+            const d1 = calcDigit(base);
+            const d2 = calcDigit([...base, d1]);
+            const all = [...base, d1, d2];
+
+            return `${all.slice(0, 3).join('')}.${all.slice(3, 6).join('')}.${all.slice(6, 9).join('')}-${all.slice(9).join('')}`;
+        };
+
+        const fakeName = () => `${fakePick(fakeFirstNames)} ${fakePick(fakeLastNames)}`;
+
+        const fakeEmail = () => {
+            const base = fakeName()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+                .replace(/[^a-z ]/g, '')
+                .trim()
+                .replace(/\s+/g, '.');
+
+            return `${base}.${fakeInt(100, 999)}@teste.dev`;
+        };
+
+        const fakePhone = () => `(${fakeInt(11, 99)}) 9${fakeDigits(4)}-${fakeDigits(4)}`;
+
+        const fakeCEP = () => '01310-930';
+
+        const fakeDateISO = (minAge, maxAge) => {
+            const today = new Date();
+            const age = fakeInt(minAge, maxAge);
+            const month = fakeInt(1, 12);
+            const day = fakeInt(1, 28);
+
+            return `${today.getFullYear() - age}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        };
+
+        const fakeMoney = (min, max) => `${fakeInt(min, max)},00`;
+
+        const fillStepWithFakeData = (stepId) => {
+            const $container = $(`#registerModal #${stepId}`);
+            const radioGroups = {};
+
+            $container.find('input[type=radio]').each(function() {
+                const name = $(this).attr('name');
+
+                if (!name)
+                    return;
+
+                radioGroups[name] = radioGroups[name] || [];
+                radioGroups[name].push(this);
+            });
+
+            const preferredRadioValues = {
+                'paymentDetail[payment_type]': 'Boleto bancário',
+            };
+
+            Object.entries(radioGroups).forEach(([name, options]) => {
+                const preferredValue = preferredRadioValues[name];
+                const preferredOption = preferredValue && options.find((option) => option.value === preferredValue);
+                const noOption = options.find((option) => option.value === '0');
+                const chosen = preferredOption || noOption || fakePick(options);
+
+                $(chosen).prop('checked', true).trigger('click').trigger('change');
+            });
+
+            $container.find('select').each(function() {
+                const $select = $(this);
+
+                if ($select.prop('disabled'))
+                    return;
+
+                const options = $select.find('option').filter((_, option) => option.value !== '').toArray();
+
+                if (options.length === 0)
+                    return;
+
+                $select.val(fakePick(options).value).trigger('change');
+            });
+
+            $container.find('input[type=text], input[type=email], input[type=number], input[type=date]').each(function() {
+                const $input = $(this);
+
+                if ($input.prop('readonly') || $input.prop('disabled'))
+                    return;
+
+                const name = $input.attr('name') || '';
+                const id = $input.attr('id') || '';
+                const type = $input.attr('type');
+                let value;
+
+                if (id === 'mainOccupationSearch') {
+                    $('#mainOccupationCode').val('999999');
+                    $('#mainOccupationDescription').val('Profissional liberal (dev)');
+                    value = 'Profissional liberal (dev)';
+                } else if ($input.hasClass('cpf')) {
+                    value = fakeCPF();
+                } else if ($input.hasClass('cep')) {
+                    value = fakeCEP();
+                } else if (type === 'email') {
+                    value = fakeEmail();
+                } else if (type === 'date') {
+                    value = name === 'personalData[birthDate]' ? fakeDateISO(25, 70) : fakeDateISO(1, 60);
+                } else if ($input.hasClass('phone')) {
+                    value = fakePhone();
+                } else if (name === 'proponentStatement[weight]') {
+                    value = fakeMoney(50, 120);
+                } else if (name === 'proponentStatement[height]') {
+                    value = fakeMoney(1, 2);
+                } else if ($input.hasClass('money')) {
+                    value = fakeMoney(1000, 20000);
+                } else if (name.includes('numberChildren')) {
+                    value = String(fakeInt(0, 3));
+                } else if (name.includes('benefitEntryAge')) {
+                    value = String(fakeInt(60, 70));
+                } else if (name === 'addresses[number]') {
+                    value = String(fakeInt(1, 9999));
+                } else if ($input.hasClass('participation')) {
+                    return;
+                } else if (type === 'number') {
+                    value = String(fakeInt(1, 100));
+                } else if (/name/i.test(name)) {
+                    value = fakeName();
+                } else {
+                    value = `Teste dev ${fakeInt(1, 999)}`;
+                }
+
+                const maxLength = parseInt($input.attr('maxlength'), 10);
+
+                if (!Number.isNaN(maxLength))
+                    value = value.slice(0, maxLength);
+
+                $input.val(value);
+
+                if (!$input.hasClass('cep') && id !== 'mainOccupationSearch')
+                    $input.trigger('input').trigger('change').trigger('blur');
+            });
+        };
 
         const getCEP = (value) => {
             const cep = value.replace(/[^0-9]/g, '');
