@@ -13,7 +13,8 @@
         "dompdf/dompdf": "^3.1",
         "endroid/qr-code": "^5.1",
         "friendsofcake/bootstrap-ui": "^5.1",
-        "mobiledetect/mobiledetectlib": "^4.8.03"
+        "mobiledetect/mobiledetectlib": "^4.8.03",
+        "symfony/console": "^6.4"
     },
     "require-dev": {
         "cakephp/bake": "^3.0.0",
