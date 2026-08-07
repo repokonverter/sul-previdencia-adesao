@@ -162,7 +162,18 @@ function getPixStatusBadge($adhesion)
         </table>
     </div>
 
-    <div class="card-footer text-center">
-        <?= $this->Paginator->numbers() ?>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="text-muted small">
+            <?= $this->Paginator->counter('Página {{page}} de {{pages}} ({{count}} registros)') ?>
+        </div>
+        <div>
+            <?= $this->Paginator->links([
+                'first' => true,
+                'prev' => true,
+                'next' => true,
+                'last' => true,
+                'class' => ['pagination', 'mb-0'],
+            ]) ?>
+        </div>
     </div>
 </div>
