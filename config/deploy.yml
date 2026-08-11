@@ -26,7 +26,7 @@ env:
     DEBUG: false
     LOG_TO_STDOUT: true
     APP_FULL_BASE_URL: https://plenoprev.konverter.com.br
-    MAIL_FROM_ADDRESS: plenoprev@konverter.com.br
+    MAIL_FROM_ADDRESS: atendimento@sulprevidencia.org.br
     MAIL_FROM_NAME: Sul Previdência
 
   secret:
