@@ -56,6 +56,7 @@ class AdhesionsController extends AppController
         $searchCpf  = $this->request->getQuery('cpf');
         $searchPromotionalCode = $this->request->getQuery('promotionalCode');
         $searchPartnerId = $this->request->getQuery('partnerId');
+        $searchBrokerCode = $this->request->getQuery('brokerCode');
 
         if ($searchName) {
             $query->where([
@@ -83,6 +84,14 @@ class AdhesionsController extends AppController
             // não entram nesse filtro.
             $query->innerJoinWith('PromotionalCodes')
                 ->where(['PromotionalCodes.partner_id' => (int)$searchPartnerId]);
+        }
+
+        if ($searchBrokerCode) {
+            // Mesmo padrão do filtro de código promocional: compara com o
+            // snapshot gravado na adesão, não com o cadastro atual.
+            $query->where([
+                'AdhesionInitialDatas.broker_code' => \App\Model\Entity\Broker::normalizeCode($searchBrokerCode),
+            ]);
         }
 
         $adhesions = $this->paginate($query);

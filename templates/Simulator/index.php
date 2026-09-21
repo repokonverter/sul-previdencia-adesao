@@ -910,6 +910,45 @@ function createSecureCard($data, $type)
                                 </div>
                             </div>
                             <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3" id="brokerCodeGroup">
+                                        <label for="brokerCode" class="form-label">
+                                            Corretor <span class="text-muted fw-normal">(opcional)</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="text"
+                                                class="form-control text-uppercase"
+                                                id="brokerCode"
+                                                name="plans[brokerCode]"
+                                                placeholder="Código do corretor, se você tiver um"
+                                                maxlength="30"
+                                                autocomplete="off"
+                                                spellcheck="false">
+                                            <span class="input-group-text d-none" id="brokerCodeSpinner">
+                                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            </span>
+                                            <button type="button" class="btn btn-outline-secondary d-none" id="brokerCodeRemove">
+                                                Remover
+                                            </button>
+                                        </div>
+                                        <div id="brokerCodeFeedback" class="small mt-1"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 d-none" id="riskRemovalGroup">
+                                    <label class="form-label d-block">Riscos incluídos no plano</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="removeSurvivorsPension" name="plans[removeSurvivorsPension]" value="1" onchange="recalculatePlan();">
+                                        <label class="form-check-label" for="removeSurvivorsPension">Remover pensão por morte</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="removeDisabilityRetirement" name="plans[removeDisabilityRetirement]" value="1" onchange="recalculatePlan();">
+                                        <label class="form-check-label" for="removeDisabilityRetirement">Remover aposentadoria por invalidez</label>
+                                    </div>
+                                    <div class="form-text">O valor do risco removido passa a compor a contribuição de previdência.</div>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="monthly_retirement_contribution" class="form-label">Contribuição mensal aposentadoria</label>
@@ -923,7 +962,7 @@ function createSecureCard($data, $type)
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" id="survivorsPensionPlanRow">
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="monthly_survivors_pension_contribution" class="form-label">Contribuição mensal pensão por morte</label>
@@ -949,7 +988,7 @@ function createSecureCard($data, $type)
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" id="disabilityRetirementPlanRow">
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="monthly_disability_retirement_contribution" class="form-label">Contribuição mensal aposentadoria por invalidez</label>
@@ -1860,6 +1899,7 @@ function createSecureCard($data, $type)
             });
 
             initPromotionalCode();
+            initBrokerCode();
 
             simulationChart();
         });
@@ -2293,6 +2333,183 @@ function createSecureCard($data, $type)
             initAssociationQuestion();
         };
 
+        /* ---------------------------------------------------------------
+         * Corretor e remoção de riscos
+         *
+         * Um corretor validado libera os toggles de remoção de risco. O
+         * servidor revalida o código a cada chamada de recálculo e na
+         * gravação final — os valores aqui são só conveniência de UI.
+         * ------------------------------------------------------------- */
+        const brokerValidateUrl = '<?= $this->Url->build(['controller' => 'Brokers', 'action' => 'validate', 'prefix' => false]) ?>';
+
+        let brokerState = { status: 'empty' };
+        let brokerDebounceTimer = null;
+        let brokerAbortController = null;
+
+        const brokerEls = () => ({
+            input: document.getElementById('brokerCode'),
+            spinner: document.getElementById('brokerCodeSpinner'),
+            remove: document.getElementById('brokerCodeRemove'),
+            feedback: document.getElementById('brokerCodeFeedback'),
+            riskGroup: document.getElementById('riskRemovalGroup'),
+        });
+
+        /**
+         * Mostra/esconde as linhas de contribuição de cada risco removido no
+         * próprio passo "Plano", e recalcula se a etapa de saúde deve
+         * aparecer na navegação (ver shouldSkipHealthStep()).
+         */
+        const updateRiskVisibility = () => {
+            const survivorsRemoved = document.getElementById('removeSurvivorsPension').checked;
+            const disabilityRemoved = document.getElementById('removeDisabilityRetirement').checked;
+
+            document.getElementById('survivorsPensionPlanRow').classList.toggle('d-none', survivorsRemoved);
+            document.getElementById('disabilityRetirementPlanRow').classList.toggle('d-none', disabilityRemoved);
+        };
+
+        const shouldSkipHealthStep = () => {
+            if (brokerState.status !== 'valid') return false;
+
+            return document.getElementById('removeSurvivorsPension').checked
+                && document.getElementById('removeDisabilityRetirement').checked;
+        };
+
+        const setBrokerState = (status, data = {}) => {
+            brokerState = { status };
+
+            const { input, spinner, remove, feedback, riskGroup } = brokerEls();
+
+            input.classList.remove('is-valid', 'is-invalid', 'border-warning');
+            spinner.classList.add('d-none');
+            remove.classList.add('d-none');
+            feedback.className = 'small mt-1';
+            feedback.textContent = '';
+
+            if (status === 'checking') {
+                spinner.classList.remove('d-none');
+            } else if (status === 'valid') {
+                input.classList.add('is-valid');
+                remove.classList.remove('d-none');
+                feedback.classList.add('text-success');
+                feedback.textContent = '✓ ' + data.name;
+                riskGroup.classList.remove('d-none');
+            } else if (status === 'invalid') {
+                input.classList.add('is-invalid');
+                feedback.classList.add('text-danger');
+                feedback.textContent = '✗ ' + (data.message || 'Código de corretor não encontrado.');
+            } else if (status === 'error') {
+                input.classList.add('border-warning');
+                feedback.classList.add('text-warning-emphasis');
+                feedback.innerHTML =
+                    'Não foi possível validar o código agora. ' +
+                    '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="brokerCodeRetry">Tentar novamente</button>.';
+
+                document.getElementById('brokerCodeRetry')
+                    .addEventListener('click', () => lookupBrokerCode(promoNormalize(input.value)));
+            }
+
+            // Sem corretor válido, os dois riscos sempre existem: some o
+            // grupo de toggles, desmarca ambos e recalcula para restaurá-los.
+            if (status !== 'valid') {
+                riskGroup.classList.add('d-none');
+
+                const survivors = document.getElementById('removeSurvivorsPension');
+                const disability = document.getElementById('removeDisabilityRetirement');
+                const hadRemoval = survivors.checked || disability.checked;
+
+                survivors.checked = false;
+                disability.checked = false;
+                updateRiskVisibility();
+
+                if (hadRemoval) recalculatePlan();
+            }
+        };
+
+        const clearBrokerCode = () => {
+            const { input } = brokerEls();
+
+            if (brokerAbortController) brokerAbortController.abort();
+            clearTimeout(brokerDebounceTimer);
+
+            input.value = '';
+            setBrokerState('empty');
+            input.focus();
+        };
+
+        const lookupBrokerCode = async (code) => {
+            if (!code || code.length < promoMinLength) {
+                setBrokerState(code ? 'invalid' : 'empty', {
+                    message: 'O código deve ter ao menos ' + promoMinLength + ' caracteres.'
+                });
+
+                return;
+            }
+
+            if (brokerAbortController) brokerAbortController.abort();
+            brokerAbortController = new AbortController();
+
+            setBrokerState('checking');
+
+            try {
+                const response = await fetch(brokerValidateUrl + '?code=' + encodeURIComponent(code), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: brokerAbortController.signal,
+                });
+
+                const result = await response.json();
+
+                setBrokerState(result.valid ? 'valid' : 'invalid', result);
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+
+                setBrokerState('error');
+            }
+        };
+
+        const initBrokerCode = () => {
+            const { input, remove } = brokerEls();
+
+            input.addEventListener('input', () => {
+                const normalized = promoNormalize(input.value);
+
+                if (input.value !== normalized) {
+                    const position = input.selectionStart;
+                    input.value = normalized;
+                    input.setSelectionRange(position, position);
+                }
+
+                clearTimeout(brokerDebounceTimer);
+
+                if (normalized === '') {
+                    if (brokerAbortController) brokerAbortController.abort();
+                    setBrokerState('empty');
+
+                    return;
+                }
+
+                brokerDebounceTimer = setTimeout(() => lookupBrokerCode(normalized), promoDebounceMs);
+            });
+
+            input.addEventListener('blur', () => {
+                const normalized = promoNormalize(input.value);
+
+                if (normalized === '' || brokerState.status === 'valid' || brokerState.status === 'checking') return;
+
+                clearTimeout(brokerDebounceTimer);
+                lookupBrokerCode(normalized);
+            });
+
+            remove.addEventListener('click', clearBrokerCode);
+
+            // Link de divulgação do corretor: ?broker=CODIGO chega preenchido e validado.
+            const fromUrl = promoNormalize(new URLSearchParams(window.location.search).get('broker'));
+
+            if (fromUrl) {
+                input.value = fromUrl;
+                lookupBrokerCode(fromUrl);
+            }
+        };
+
         const nextPage = async () => {
             const btnPrimary = document.querySelector('#registerModal .modal-footer .btn-primary');
 
@@ -2429,6 +2646,12 @@ function createSecureCard($data, $type)
 
                 registerPageIndex += 1;
 
+                // Sem nenhum risco contratado (corretor removeu os dois), a
+                // etapa de declarações de saúde não faz sentido e é pulada.
+                if (registerPageIndex === 7 && shouldSkipHealthStep()) {
+                    registerPageIndex += 1;
+                }
+
                 updatePage(registerPageIndex)
             } catch (error) {
                 alert(error?.message || 'Não foi possível avançar. Tente novamente em instantes.');
@@ -2444,6 +2667,10 @@ function createSecureCard($data, $type)
 
             if (registerPageIndex !== 0)
                 registerPageIndex -= 1;
+
+            if (registerPageIndex === 7 && shouldSkipHealthStep()) {
+                registerPageIndex -= 1;
+            }
 
             updatePage(registerPageIndex)
         }
@@ -2683,7 +2910,10 @@ function createSecureCard($data, $type)
                 url: `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'recalculate']) ?>`,
                 data: {
                     date: birthDate,
-                    value: value
+                    value: value,
+                    brokerCode: document.getElementById('brokerCode').value,
+                    removeSurvivorsPension: document.getElementById('removeSurvivorsPension').checked ? '1' : '',
+                    removeDisabilityRetirement: document.getElementById('removeDisabilityRetirement').checked ? '1' : '',
                 },
                 dataType: 'json',
                 success: (response) => {
@@ -2706,6 +2936,21 @@ function createSecureCard($data, $type)
                         style: 'currency',
                         currency: 'BRL'
                     });
+
+                    // O servidor é quem decide, de fato, se cada risco entra
+                    // no cálculo (corretor revalidado a cada chamada). Se ele
+                    // discordar do que os checkboxes mostravam — por exemplo,
+                    // o corretor foi desativado entre uma chamada e outra —
+                    // a UI se realinha ao que veio na resposta.
+                    if (response.hasSurvivorsPension !== undefined) {
+                        document.getElementById('removeSurvivorsPension').checked = !response.hasSurvivorsPension;
+                    }
+
+                    if (response.hasDisabilityRetirement !== undefined) {
+                        document.getElementById('removeDisabilityRetirement').checked = !response.hasDisabilityRetirement;
+                    }
+
+                    updateRiskVisibility();
                 },
                 error: () => {
                     errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';
@@ -2935,7 +3180,18 @@ function createSecureCard($data, $type)
             const date = $('#simulador-form input[name="dateBirth"]').val();
             const monthlyInvestmentInput = document.querySelector('#simulador-form input[name="monthlyInvestment"]');
             const value = monthlyInvestmentInput.value.replace(/\./g, '').replace(',', '.');
-            const simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
+            let simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
+
+            // "Simular novamente" recarrega esta mesma página: sem isto, um
+            // ?promo=/?broker= já em uso na URL atual se perderia no reload.
+            const incomingParams = new URLSearchParams(window.location.search);
+
+            ['promo', 'broker'].forEach((param) => {
+                const paramValue = incomingParams.get(param);
+
+                if (paramValue) simulatorUrl += `&${param}=${encodeURIComponent(paramValue)}`;
+            });
+
             const form = document.querySelectorAll(`#simulador-form input`);
             const errorDiv = document.getElementById('simulador-form-error');
 

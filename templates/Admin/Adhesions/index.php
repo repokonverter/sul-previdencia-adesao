@@ -54,6 +54,14 @@ function getPromotionalCodeCell($adhesion)
     return $cell;
 }
 
+function getBrokerCell($adhesion)
+{
+    if (empty($adhesion->broker_code))
+        return '<span class="text-muted">&mdash;</span>';
+
+    return '<code>' . h($adhesion->broker_code) . '</code><br><span class="text-muted small">' . h($adhesion->broker_name) . '</span>';
+}
+
 function getPixStatusBadge($adhesion)
 {
     if (empty($adhesion->adhesion_payment_detail))
@@ -108,7 +116,7 @@ function getPixStatusBadge($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <?php
                 $partnerOptions = [];
                 foreach ($partners as $partner) {
@@ -124,7 +132,15 @@ function getPixStatusBadge($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-2">
+                <?= $this->Form->control('brokerCode', [
+                    'label' => 'Corretor',
+                    'class' => 'form-control text-uppercase',
+                    'placeholder' => 'Buscar por código'
+                ]) ?>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
                 <?= $this->Form->button('<i class="bi bi-search"></i> Filtrar', [
                     'escapeTitle' => false,
                     'class' => 'btn btn-outline-primary w-100'
@@ -145,6 +161,7 @@ function getPixStatusBadge($adhesion)
                     <th>E-mail</th>
                     <th>Etapa</th>
                     <th>Código</th>
+                    <th>Corretor</th>
                     <th>Pix</th>
                     <th>Data/hora</th>
                     <th class="text-end">Ações</th>
@@ -158,6 +175,7 @@ function getPixStatusBadge($adhesion)
                         <td><?= h($adhesion->email ?? '—') ?></td>
                         <td><?= h(getAdhesionStage($adhesion)) ?></td>
                         <td><?= getPromotionalCodeCell($adhesion) ?></td>
+                        <td><?= getBrokerCell($adhesion) ?></td>
                         <td><?= getPixStatusBadge($adhesion) ?></td>
                         <td><?= h($adhesion->created->format('d/m/Y H:i:s') ?? '—') ?></td>
                         <td class="text-end">

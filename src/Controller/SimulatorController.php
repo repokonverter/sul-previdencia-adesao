@@ -31,26 +31,40 @@ class SimulatorController extends AppController
             return $this->redirect(['controller' => 'Pages', 'action' => 'display', 'home']);
         }
 
+        $age = $this->calculateAge($data['date']);
+        [$includeSurvivorsPension, $includeDisabilityRetirement] = $this->resolveRiskFlags(
+            $age,
+            $data['brokerCode'] ?? null,
+            $data['removeSurvivorsPension'] ?? null,
+            $data['removeDisabilityRetirement'] ?? null
+        );
+
         $simulations = $connection
             ->execute(
                 'SELECT *
-                FROM simulacao_previdencia(:date, :value)',
+                FROM simulacao_previdencia(:date, :value, :incluirMorte, :incluirInvalidez)',
                 [
                     'date' => $data['date'],
                     'value' => $data['value'],
+                    'incluirMorte' => $includeSurvivorsPension,
+                    'incluirInvalidez' => $includeDisabilityRetirement,
+                ],
+                [
+                    'incluirMorte' => 'boolean',
+                    'incluirInvalidez' => 'boolean',
                 ]
             )
             ->fetchAll('assoc');
         $totalMonthlyContributionPlan = $data['value'];
-        $age = $this->calculateAge($data['date']);
 
-        if ($age < 16) {
-            $simulations[1]['contribuicao_aposentadoria'] = $data['value'];
-            $simulations[1]['contribuicao_morte'] = 0;
-            $simulations[1]['contribuicao_invalidez'] = 0;
-        }
-
-        $this->set(compact('simulations', 'totalMonthlyContributionPlan', 'age', 'associations'));
+        $this->set(compact(
+            'simulations',
+            'totalMonthlyContributionPlan',
+            'age',
+            'associations',
+            'includeSurvivorsPension',
+            'includeDisabilityRetirement'
+        ));
     }
 
     function recalculate()
@@ -70,23 +84,30 @@ class SimulatorController extends AppController
                 ]));
         }
 
+        $age = $this->calculateAge($date);
+        [$includeSurvivorsPension, $includeDisabilityRetirement] = $this->resolveRiskFlags(
+            $age,
+            $this->request->getQuery('brokerCode'),
+            $this->request->getQuery('removeSurvivorsPension'),
+            $this->request->getQuery('removeDisabilityRetirement')
+        );
+
         $simulations = $connection
             ->execute(
                 'SELECT *
-                FROM simulacao_previdencia(:date, :value)',
+                FROM simulacao_previdencia(:date, :value, :incluirMorte, :incluirInvalidez)',
                 [
                     'date' => $date,
                     'value' => $value,
+                    'incluirMorte' => $includeSurvivorsPension,
+                    'incluirInvalidez' => $includeDisabilityRetirement,
+                ],
+                [
+                    'incluirMorte' => 'boolean',
+                    'incluirInvalidez' => 'boolean',
                 ]
             )
             ->fetchAll('assoc');
-        $age = $this->calculateAge($date);
-
-        if ($age < 16) {
-            $simulations[1]['contribuicao_aposentadoria'] = $value;
-            $simulations[1]['contribuicao_morte'] = 0;
-            $simulations[1]['contribuicao_invalidez'] = 0;
-        }
 
         $benefitEntryAge = $age <= 55 ? 65 : $age + 10;
 
@@ -100,7 +121,46 @@ class SimulatorController extends AppController
                 'monthlyDisabilityRetirementContribution' => (float)$simulations[1]['contribuicao_invalidez'],
                 'disabilityRetirementInsuredCapital' => (float)$simulations[1]['cobertura_invalidez'],
                 'totalMonthlyContribution' => $value,
+                // Ecoa de volta o que o servidor de fato aplicou: um corretor
+                // que ficou inválido/inativo entre a validação em tempo real
+                // e este recálculo faz os dois riscos voltarem, e o
+                // front-end precisa saber disso para reexibir a etapa da
+                // saúde e desmarcar os toggles.
+                'hasSurvivorsPension' => $includeSurvivorsPension,
+                'hasDisabilityRetirement' => $includeDisabilityRetirement,
             ]));
+    }
+
+    /**
+     * Determina se cada risco entra no cálculo da simulação.
+     *
+     * O servidor é a única autoridade aqui: as flags "removeX" só valem
+     * quando acompanhadas de um código de corretor que de fato existe e está
+     * ativo — nunca são aceitas sozinhas, senão bastaria montar a URL à mão
+     * para tirar os riscos sem corretor nenhum. Menor de 16 anos nunca tem
+     * risco, corretor ou não (mesma regra que já existia, agora também
+     * corrigindo o cálculo de saldo_acumulado/beneficio_mensal — antes desta
+     * mudança eles eram computados sobre os 100% da contribuição e só depois
+     * zerados em PHP, subestimando a projeção).
+     *
+     * @return array{0: bool, 1: bool} [incluirMorte, incluirInvalidez]
+     */
+    private function resolveRiskFlags(int $age, ?string $brokerCode, $removeSurvivorsPension, $removeDisabilityRetirement): array
+    {
+        if ($age < 16) {
+            return [false, false];
+        }
+
+        $broker = $this->fetchTable('Brokers')->findByCodeText($brokerCode);
+
+        if ($broker === null || !$broker->isUsable()) {
+            return [true, true];
+        }
+
+        return [
+            empty($removeSurvivorsPension),
+            empty($removeDisabilityRetirement),
+        ];
     }
 
     private function calculateAge($birthDate) {

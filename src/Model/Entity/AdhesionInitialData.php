@@ -18,6 +18,9 @@ class AdhesionInitialData extends Entity
         'promotional_code' => true,
         'association_partner_id' => true,
         'association_snapshot' => true,
+        'broker_id' => true,
+        'broker_name' => true,
+        'broker_code' => true,
         'created' => true,
         'modified' => true,
         'adhesion_personal_data' => true,
@@ -33,6 +36,7 @@ class AdhesionInitialData extends Entity
         'pix_transaction' => true,
         'promotional_code_entity' => true,
         'association_partner' => true,
+        'broker' => true,
     ];
 
     /**

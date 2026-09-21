@@ -15,6 +15,7 @@ use App\Model\Table\AdhesionPensionSchemesTable;
 use App\Model\Table\AdhesionPersonalDatasTable;
 use App\Model\Table\AdhesionPlansTable;
 use App\Model\Table\AdhesionProponentStatementsTable;
+use App\Model\Table\BrokersTable;
 use App\Model\Table\ClicksignDatasTable;
 use App\Model\Table\PromotionalCodesTable;
 use App\Services\IntegrationLogger;
@@ -41,6 +42,7 @@ class RegistrationsController extends AppController
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
     protected ClicksignDatasTable $ClicksignDatas;
     protected PromotionalCodesTable $PromotionalCodes;
+    protected BrokersTable $Brokers;
     protected BankHelper $Bank;
 
     public function initialize(): void
@@ -59,6 +61,7 @@ class RegistrationsController extends AppController
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
         $this->ClicksignDatas = $this->fetchTable('ClicksignDatas');
         $this->PromotionalCodes = $this->fetchTable('PromotionalCodes');
+        $this->Brokers = $this->fetchTable('Brokers');
 
         $this->loadComponent('PdfGenerator');
 
@@ -196,6 +199,38 @@ class RegistrationsController extends AppController
 
             if (isset($data['plans'])) {
                 $planData = $data['plans'];
+
+                // Corretor: trava na primeira validação bem-sucedida, do
+                // mesmo jeito que o código promocional e o vínculo
+                // associativo — e pelo mesmo motivo: o front-end é
+                // conveniência, não garantia. A etapa de idade e valores
+                // (aqui) é onde o campo existe no formulário.
+                if (empty($initialDataAll->broker_id)) {
+                    $broker = $this->Brokers->findByCodeText($planData['brokerCode'] ?? null);
+
+                    if ($broker !== null && $broker->isUsable()) {
+                        $initialDataAll = $this->AdhesionInitialDatas->patchEntity($initialDataAll, [
+                            'broker_id' => $broker->id,
+                            'broker_name' => $broker->name,
+                            'broker_code' => $broker->code,
+                        ]);
+
+                        $this->AdhesionInitialDatas->save($initialDataAll);
+                    }
+                }
+
+                // Quais riscos a adesão tem é recalculado aqui a partir do
+                // corretor gravado, nunca aceito das flags que o front-end
+                // mandou: sem corretor válido travado, os dois riscos
+                // sempre existem, como sempre foi antes desta funcionalidade.
+                $hasSurvivorsPension = true;
+                $hasDisabilityRetirement = true;
+
+                if (!empty($initialDataAll->broker_id)) {
+                    $hasSurvivorsPension = empty($planData['removeSurvivorsPension']);
+                    $hasDisabilityRetirement = empty($planData['removeDisabilityRetirement']);
+                }
+
                 $plans = !$initialDataAll->adhesion_plan ? $this->AdhesionPlans->newEmptyEntity() : $this->AdhesionPlans->get($initialDataAll->adhesion_plan->id);
                 $plans = $this->AdhesionPlans->patchEntity(
                     $plans,
@@ -207,6 +242,8 @@ class RegistrationsController extends AppController
                         'survivors_pension_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['survivors_pension_insured_capital'])) ?? null,
                         'monthly_disability_retirement_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_disability_retirement_contribution'])) ?? null,
                         'disability_retirement_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['disability_retirement_insured_capital'])) ?? null,
+                        'has_survivors_pension' => $hasSurvivorsPension,
+                        'has_disability_retirement' => $hasDisabilityRetirement,
                     ],
                 );
 
