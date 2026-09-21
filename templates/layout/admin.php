@@ -75,6 +75,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/partners') ?>">Parceiros</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= $this->Url->build('/admin/associations') ?>">Vínculos associativos</a>
+                </li>
                 <!-- <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/integration-logs') ?>">Logs de Integração</a>
                 </li> -->

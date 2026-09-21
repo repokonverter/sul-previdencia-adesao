@@ -2,6 +2,7 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Partner $partner
+ * @var bool $isAssociationScope
  */
 ?>
 <div class="container mt-4">
@@ -43,7 +44,7 @@
                     ]) ?>
                     <label class="form-check-label" for="active">Ativo</label>
                 </div>
-                <div class="form-text">Desativar impede novos usos de todos os códigos deste parceiro.</div>
+                <div class="form-text">Desativar impede novos usos de todos os códigos deste <?= $isAssociationScope ? 'vínculo' : 'parceiro' ?>.</div>
             </div>
         </div>
     </div>
@@ -79,6 +80,50 @@
             </div>
         <?php endif; ?>
     </div>
+
+    <?php if ($isAssociationScope): ?>
+        <hr>
+
+        <h5 class="mb-3">Declaração de comparecimento ao Plano</h5>
+        <p class="text-muted small">
+            Textos usados no formulário de inscrição (PDF enviado para assinatura) quando o
+            aderente escolhe este vínculo. Deixe em branco para usar o texto padrão (CEPREV).
+        </p>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <?= $this->Form->control('declaration_title', [
+                        'label' => 'Título do documento',
+                        'class' => 'form-control',
+                        'placeholder' => \App\Model\Entity\Partner::DEFAULT_DECLARATION_TITLE,
+                        'maxlength' => 120,
+                    ]) ?>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <?= $this->Form->control('declaration_institution_name', [
+                        'label' => 'Nome da instituição (parágrafo de tratamento de dados)',
+                        'class' => 'form-control',
+                        'placeholder' => \App\Model\Entity\Partner::DEFAULT_DECLARATION_INSTITUTION_NAME,
+                        'maxlength' => 120,
+                    ]) ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <?= $this->Form->control('declaration_body', [
+                'label' => 'Texto de comparecimento (opcional)',
+                'type' => 'textarea',
+                'class' => 'form-control',
+                'rows' => 4,
+                'placeholder' => 'Texto livre exibido no formulário, específico deste vínculo.',
+            ]) ?>
+        </div>
+    <?php endif; ?>
 
     <div class="text-end mt-3">
         <?= $this->Form->button('Salvar', ['class' => 'btn btn-success']) ?>

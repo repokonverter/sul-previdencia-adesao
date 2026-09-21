@@ -4,11 +4,12 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Partner $partner
  * @var iterable<\App\Model\Entity\PromotionalCode> $promotionalCodes
+ * @var string $entityLabelSingular
  */
 
 use Cake\I18n\Date;
 
-$this->assign('title', 'Parceiro: ' . $partner->name);
+$this->assign('title', $entityLabelSingular . ': ' . $partner->name);
 
 $baseUrl = rtrim($this->Url->build('/', ['fullBase' => true]), '/');
 
@@ -35,7 +36,7 @@ function getCodeValidityCell(\App\Model\Entity\PromotionalCode $code): string
 
     <div>
         <?= $this->Html->link(
-            '<i class="bi bi-pencil-square"></i> Editar parceiro',
+            '<i class="bi bi-pencil-square"></i> Editar ' . h(mb_strtolower($entityLabelSingular)),
             ['action' => 'edit', $partner->id],
             ['escape' => false, 'class' => 'btn btn-secondary me-1']
         ) ?>

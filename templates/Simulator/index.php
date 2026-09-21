@@ -620,9 +620,32 @@ function createSecureCard($data, $type)
                                     Preenchimento obrigatório.
                                 </div>
                             </div>
+                            <?php if (!empty($associations)): ?>
+                                <div class="mb-3" id="associationQuestionGroup">
+                                    <label class="form-label d-block">Possuí vínculo associativo?</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="associationAnswer" id="associationAnswerNo" value="no" checked>
+                                        <label class="form-check-label" for="associationAnswerNo">Não</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="associationAnswer" id="associationAnswerYes" value="yes">
+                                        <label class="form-check-label" for="associationAnswerYes">Sim</label>
+                                    </div>
+
+                                    <div class="mt-2 d-none" id="associationSelectGroup">
+                                        <select class="form-select" id="associationPartnerId" name="initialData[associationPartnerId]">
+                                            <option value="">Selecione seu vínculo</option>
+                                            <?php foreach ($associations as $association): ?>
+                                                <option value="<?= h($association->id) ?>"><?= h($association->name) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <div class="invalid-feedback">Selecione seu vínculo.</div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                             <div class="mb-3" id="promotionalCodeGroup">
-                                <label for="promotionalCode" class="form-label">
-                                    Código promocional <span class="text-muted fw-normal">(opcional)</span>
+                                <label for="promotionalCode" class="form-label" id="promotionalCodeLabel">
+                                    Código promocional <span class="text-muted fw-normal" id="promotionalCodeOptionalHint">(opcional)</span>
                                 </label>
                                 <div class="input-group">
                                     <input type="text"
@@ -1992,6 +2015,95 @@ function createSecureCard($data, $type)
             feedback: document.getElementById('promotionalCodeFeedback'),
         });
 
+        /* ---------------------------------------------------------------
+         * Vínculo associativo
+         *
+         * Só existe no DOM quando há ao menos um vínculo ativo cadastrado
+         * (ver SimulatorController::index()). O código promocional vira
+         * obrigatório quando a resposta é "sim", e passa a restringir a
+         * validação ao parceiro do vínculo selecionado.
+         * ------------------------------------------------------------- */
+        const hasAssociationQuestion = document.getElementById('associationQuestionGroup') !== null;
+
+        const associationEls = () => ({
+            yesRadio: document.getElementById('associationAnswerYes'),
+            noRadio: document.getElementById('associationAnswerNo'),
+            selectGroup: document.getElementById('associationSelectGroup'),
+            select: document.getElementById('associationPartnerId'),
+        });
+
+        const isAssociationYes = () => hasAssociationQuestion && associationEls().yesRadio.checked;
+
+        const currentAssociationId = () => isAssociationYes() ? (associationEls().select.value || '') : '';
+
+        const updatePromotionalCodeRequirement = () => {
+            const hint = document.getElementById('promotionalCodeOptionalHint');
+
+            if (hint) hint.textContent = isAssociationYes() ? '(obrigatório)' : '(opcional)';
+        };
+
+        const setAssociationAnswer = (isYes, partnerId = '') => {
+            if (!hasAssociationQuestion) return;
+
+            const { yesRadio, noRadio, selectGroup, select } = associationEls();
+
+            yesRadio.checked = isYes;
+            noRadio.checked = !isYes;
+            selectGroup.classList.toggle('d-none', !isYes);
+            select.required = isYes;
+
+            if (isYes && partnerId) select.value = String(partnerId);
+            if (!isYes) select.value = '';
+
+            updatePromotionalCodeRequirement();
+        };
+
+        /**
+         * Mostrado junto do erro do código quando a pessoa afirmou ter
+         * vínculo, mas o código não resolve: o vínculo nunca impede uma
+         * adesão, então sempre há uma saída para seguir sem ele.
+         */
+        const appendAssociationEscapeHatch = (feedback) => {
+            if (!isAssociationYes()) return;
+
+            const { select } = associationEls();
+            const option = select.options[select.selectedIndex];
+            const partnerName = option && option.value ? option.textContent : 'seu vínculo';
+
+            const hatch = document.createElement('div');
+            hatch.className = 'mt-1';
+            hatch.innerHTML = 'Não tem um código válido? Entre em contato com ' + partnerName +
+                ', ou <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="associationSkip">continue sem vínculo</button>.';
+            feedback.appendChild(hatch);
+
+            document.getElementById('associationSkip').addEventListener('click', () => {
+                setAssociationAnswer(false);
+                clearPromoCode();
+            });
+        };
+
+        const initAssociationQuestion = () => {
+            if (!hasAssociationQuestion) return;
+
+            const { yesRadio, noRadio, select } = associationEls();
+
+            // Trocar a resposta ou o vínculo selecionado revalida o código já
+            // digitado: ele pode não pertencer ao vínculo escolhido agora.
+            [yesRadio, noRadio].forEach((radio) => radio.addEventListener('change', () => {
+                setAssociationAnswer(yesRadio.checked);
+
+                const { input } = promoEls();
+
+                if (input.value) lookupPromoCode(input.value);
+            }));
+
+            select.addEventListener('change', () => {
+                const { input } = promoEls();
+
+                if (input.value) lookupPromoCode(input.value);
+            });
+        };
+
         const updatePartnerHeader = () => {
             const wrapper = document.getElementById('registerModalPartner');
             const logo = document.getElementById('registerModalPartnerLogo');
@@ -2057,6 +2169,8 @@ function createSecureCard($data, $type)
                 input.classList.add('is-invalid');
                 feedback.classList.add('text-danger');
                 feedback.textContent = '✗ ' + (data.message || 'Código promocional não encontrado.');
+
+                appendAssociationEscapeHatch(feedback);
             } else if (status === 'error') {
                 input.classList.add('border-warning');
                 feedback.classList.add('text-warning-emphasis');
@@ -2069,6 +2183,8 @@ function createSecureCard($data, $type)
                     .addEventListener('click', () => lookupPromoCode(promoNormalize(input.value)));
                 document.getElementById('promotionalCodeSkip')
                     .addEventListener('click', clearPromoCode);
+
+                appendAssociationEscapeHatch(feedback);
             }
 
             updatePartnerHeader();
@@ -2102,7 +2218,11 @@ function createSecureCard($data, $type)
             setPromoState('checking');
 
             try {
-                const response = await fetch(promoValidateUrl + '?code=' + encodeURIComponent(code), {
+                const associationId = currentAssociationId();
+                const url = promoValidateUrl + '?code=' + encodeURIComponent(code) +
+                    (associationId ? '&associationId=' + encodeURIComponent(associationId) : '');
+
+                const response = await fetch(url, {
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     signal: promoAbortController.signal,
                 });
@@ -2110,6 +2230,12 @@ function createSecureCard($data, $type)
                 const result = await response.json();
 
                 if (result.valid) {
+                    // Código de um vínculo associativo, mas a pergunta ainda
+                    // estava em "não": corrige a resposta em vez de bloquear.
+                    if (result.autoAssociation) {
+                        setAssociationAnswer(true, result.autoAssociation.id);
+                    }
+
                     setPromoState('valid', result);
                 } else {
                     setPromoState('invalid', result);
@@ -2163,6 +2289,8 @@ function createSecureCard($data, $type)
                 input.value = fromUrl;
                 lookupPromoCode(fromUrl);
             }
+
+            initAssociationQuestion();
         };
 
         const nextPage = async () => {
@@ -2207,6 +2335,24 @@ function createSecureCard($data, $type)
                     document.getElementById('promotionalCode').focus();
 
                     return;
+                }
+
+                // Vínculo associativo torna o código obrigatório e exige que
+                // o vínculo esteja selecionado.
+                if (isAssociationYes()) {
+                    if (promoState.status !== 'valid') {
+                        document.getElementById('promotionalCode').focus();
+
+                        return;
+                    }
+
+                    const { select } = associationEls();
+
+                    if (!select.value) {
+                        select.focus();
+
+                        return;
+                    }
                 }
             }
 

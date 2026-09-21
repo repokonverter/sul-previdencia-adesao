@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Component;
 
+use App\Model\Entity\Partner;
 use Cake\Controller\Component;
 use Cake\ORM\TableRegistry;
 use DateTime;
@@ -104,10 +105,22 @@ class PdfGeneratorComponent extends Component
                 'AdhesionPaymentDetails',
                 'ClicksignDatas',
                 'PixTransactions',
+                'AssociationPartners',
             ]
         );
+
+        // O snapshot gravado na adesão (association_texts) tem prioridade:
+        // reproduz sempre o texto que foi de fato assinado, mesmo que o
+        // cadastro do vínculo tenha mudado depois. Sem vínculo, usa os
+        // valores padrão (CEPREV).
+        $declaration = $adhesion->association_texts ?? [
+            'title' => Partner::DEFAULT_DECLARATION_TITLE,
+            'institutionName' => Partner::DEFAULT_DECLARATION_INSTITUTION_NAME,
+            'body' => Partner::DEFAULT_DECLARATION_BODY,
+        ];
+
         $controller = $this->getController();
-        $controller->set(compact('adhesion'));
+        $controller->set(compact('adhesion', 'declaration'));
 
         $builder = $controller->viewBuilder();
         $oldLayout = $builder->getLayout();

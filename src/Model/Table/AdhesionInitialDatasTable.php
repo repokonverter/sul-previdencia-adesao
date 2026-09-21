@@ -26,6 +26,15 @@ class AdhesionInitialDatasTable extends Table
             'propertyName' => 'promotional_code_entity',
         ]);
 
+        // Independente de PromotionalCodes: sobrevive a qualquer mudança no
+        // cadastro do código que originou o vínculo (ver migration
+        // AddAssociationsToPartnersAndAdhesions).
+        $this->belongsTo('AssociationPartners', [
+            'className' => 'Partners',
+            'foreignKey' => 'association_partner_id',
+            'propertyName' => 'association_partner',
+        ]);
+
         $this->hasOne('AdhesionPersonalDatas', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);

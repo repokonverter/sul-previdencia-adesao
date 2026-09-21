@@ -3,15 +3,17 @@
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\Partner> $partners
+ * @var string $entityLabelPlural
+ * @var string $entityLabelSingular
  */
 
-$this->assign('title', 'Parceiros');
+$this->assign('title', $entityLabelPlural);
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-primary">Parceiros</h2>
+    <h2 class="fw-bold text-primary"><?= h($entityLabelPlural) ?></h2>
 
     <?= $this->Html->link(
-        '<i class="bi bi-plus-circle me-1"></i> Novo Parceiro',
+        '<i class="bi bi-plus-circle me-1"></i> Novo(a) ' . h($entityLabelSingular),
         ['action' => 'add'],
         ['escape' => false, 'class' => 'btn btn-primary']
     ) ?>
@@ -103,7 +105,7 @@ $this->assign('title', 'Parceiros');
                                 [
                                     'escape' => false,
                                     'class' => 'btn btn-sm btn-danger me-1',
-                                    'confirm' => 'Tem certeza que deseja remover este parceiro e todos os seus códigos?',
+                                    'confirm' => 'Tem certeza que deseja remover ' . ($isAssociationScope ? 'este vínculo' : 'este parceiro') . ' e todos os seus códigos?',
                                     'title' => 'Remover',
                                 ]
                             ) ?>

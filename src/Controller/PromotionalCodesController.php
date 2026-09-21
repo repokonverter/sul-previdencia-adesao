@@ -69,6 +69,19 @@ class PromotionalCodesController extends AppController
 
         $partner = $promotionalCode->partner;
 
+        // Vínculo selecionado no formulário restringe o código: um código de
+        // outro parceiro (ou de nenhum vínculo) não pode ser usado para
+        // assinar a Declaração de um vínculo diferente do seu.
+        $associationId = $this->request->getQuery('associationId');
+
+        if ($associationId !== null && $associationId !== '' && (int)$associationId !== $partner->id) {
+            return $this->respond([
+                'valid' => false,
+                'reason' => 'wrong_partner',
+                'message' => sprintf('Este código não pertence a %s.', $partner->name),
+            ]);
+        }
+
         return $this->respond([
             'valid' => true,
             'code' => $promotionalCode->code,
@@ -77,6 +90,14 @@ class PromotionalCodesController extends AppController
             'logoUrl' => $partner->has_logo
                 ? Router::url(['controller' => 'Partners', 'action' => 'logo', $partner->id])
                 : null,
+            // Código pertence a um vínculo associativo, mas a pergunta "Possuí
+            // vínculo associativo?" ainda estava em "não": o formulário
+            // corrige a resposta sozinho em vez de bloquear (cobre o caso do
+            // link ?promo=CODIGO, que não passa pela pergunta).
+            'autoAssociation' => $associationId === null && $partner->is_association ? [
+                'id' => $partner->id,
+                'name' => $partner->name,
+            ] : null,
         ]);
     }
 

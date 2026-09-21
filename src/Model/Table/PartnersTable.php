@@ -34,6 +34,13 @@ class PartnersTable extends Table
         $this->hasMany('PromotionalCodes', [
             'foreignKey' => 'partner_id',
         ]);
+
+        // Adesões vinculadas a este parceiro como vínculo associativo, à
+        // parte de qualquer relação por código promocional (ver
+        // association_partner_id em AdhesionInitialDatasTable).
+        $this->hasMany('AdhesionInitialDatas', [
+            'foreignKey' => 'association_partner_id',
+        ]);
     }
 
     public function validationDefault(Validator $validator): Validator
@@ -57,12 +64,41 @@ class PartnersTable extends Table
             ->boolean('active')
             ->notEmptyString('active');
 
+        $validator
+            ->boolean('is_association')
+            ->allowEmptyString('is_association');
+
+        $validator
+            ->scalar('declaration_title')
+            ->allowEmptyString('declaration_title')
+            ->maxLength('declaration_title', 120);
+
+        $validator
+            ->scalar('declaration_institution_name')
+            ->allowEmptyString('declaration_institution_name')
+            ->maxLength('declaration_institution_name', 120);
+
+        $validator
+            ->scalar('declaration_body')
+            ->allowEmptyString('declaration_body');
+
         return $validator;
     }
 
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         return $rules;
+    }
+
+    /**
+     * Restringe a busca aos vínculos associativos (is_association = true) ou
+     * aos parceiros comuns (false). Os dois conjuntos são disjuntos: usado
+     * pelas telas "Parceiros" e "Vínculos associativos" no admin, que
+     * compartilham o mesmo controller e os mesmos templates.
+     */
+    public function findByAssociationScope(SelectQuery $query, bool $isAssociation): SelectQuery
+    {
+        return $query->where(['Partners.is_association' => $isAssociation]);
     }
 
     /**

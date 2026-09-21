@@ -16,6 +16,15 @@ class SimulatorController extends AppController
         $connection = ConnectionManager::get('default');
         $data = $_GET;
 
+        // Só oferece a pergunta "Possuí vínculo associativo?" quando há ao
+        // menos um vínculo ativo cadastrado — sem isso, o formulário
+        // permanece exatamente como era antes desta funcionalidade existir.
+        $associations = $this->fetchTable('Partners')->find()
+            ->find('byAssociationScope', isAssociation: true)
+            ->where(['Partners.active' => true])
+            ->orderBy(['Partners.name' => 'ASC'])
+            ->all();
+
         if ((float)str_replace(',', '.', (string)($data['value'] ?? 0)) < self::MINIMUM_MONTHLY_INVESTMENT) {
             $this->Flash->error('O investimento mensal mínimo é de R$ ' . number_format(self::MINIMUM_MONTHLY_INVESTMENT, 2, ',', '.') . '.');
 
@@ -41,7 +50,7 @@ class SimulatorController extends AppController
             $simulations[1]['contribuicao_invalidez'] = 0;
         }
 
-        $this->set(compact('simulations', 'totalMonthlyContributionPlan', 'age'));
+        $this->set(compact('simulations', 'totalMonthlyContributionPlan', 'age', 'associations'));
     }
 
     function recalculate()

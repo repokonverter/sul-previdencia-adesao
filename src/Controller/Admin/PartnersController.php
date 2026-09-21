@@ -17,6 +17,13 @@ class PartnersController extends AppController
     protected PartnersTable $Partners;
     protected PromotionalCodesTable $PromotionalCodes;
 
+    /**
+     * Falso aqui (tela "Parceiros"); AssociationsController sobrescreve para
+     * true (tela "Vínculos associativos"). Os dois conjuntos são disjuntos e
+     * compartilham este mesmo controller e os mesmos templates.
+     */
+    protected bool $isAssociationScope = false;
+
     public function initialize(): void
     {
         parent::initialize();
@@ -28,11 +35,36 @@ class PartnersController extends AppController
             'order' => ['Partners.name' => 'ASC'],
             'limit' => 20,
         ];
+
+        $this->set('isAssociationScope', $this->isAssociationScope);
+        $this->set('entityLabelPlural', $this->isAssociationScope ? 'Vínculos associativos' : 'Parceiros');
+        $this->set('entityLabelSingular', $this->isAssociationScope ? 'Vínculo associativo' : 'Parceiro');
+    }
+
+    /**
+     * Rótulo usado nas mensagens flash ("o parceiro" / "o vínculo
+     * associativo"). Ambos são masculinos, então o artigo não muda.
+     */
+    protected function entityLabel(): string
+    {
+        return $this->isAssociationScope ? 'vínculo associativo' : 'parceiro';
+    }
+
+    /**
+     * Impede que a URL de uma tela alcance um registro do outro conjunto,
+     * por exemplo abrindo /admin/associations/view/<id-de-um-parceiro-comum>.
+     */
+    protected function assertScope(\App\Model\Entity\Partner $partner): void
+    {
+        if ($partner->is_association !== $this->isAssociationScope) {
+            throw new \Cake\Http\Exception\NotFoundException();
+        }
     }
 
     public function index()
     {
-        $query = $this->Partners->find('withAdhesionCounts');
+        $query = $this->Partners->find('withAdhesionCounts')
+            ->find('byAssociationScope', isAssociation: $this->isAssociationScope);
 
         $q = $this->request->getQuery('q');
 
@@ -55,6 +87,7 @@ class PartnersController extends AppController
     public function view($id = null)
     {
         $partner = $this->Partners->get($id);
+        $this->assertScope($partner);
 
         $promotionalCodes = $this->PromotionalCodes->find('withAdhesionCounts')
             ->where(['PromotionalCodes.partner_id' => $partner->id])
@@ -66,7 +99,10 @@ class PartnersController extends AppController
 
     public function add()
     {
-        $partner = $this->Partners->newEntity(['color' => \App\Model\Entity\Partner::DEFAULT_COLOR]);
+        $partner = $this->Partners->newEntity([
+            'color' => \App\Model\Entity\Partner::DEFAULT_COLOR,
+            'is_association' => $this->isAssociationScope,
+        ]);
 
         if ($this->request->is('post')) {
             $partner = $this->Partners->patchEntity($partner, $this->formData());
@@ -82,6 +118,7 @@ class PartnersController extends AppController
     public function edit($id = null)
     {
         $partner = $this->Partners->get($id);
+        $this->assertScope($partner);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $partner = $this->Partners->patchEntity($partner, $this->formData());
@@ -108,25 +145,31 @@ class PartnersController extends AppController
         $this->request->allowMethod(['post', 'delete']);
 
         $partner = $this->Partners->get($id);
+        $this->assertScope($partner);
 
         $adhesions = $this->PromotionalCodes->AdhesionInitialDatas->find()
             ->innerJoinWith('PromotionalCodes')
             ->where(['PromotionalCodes.partner_id' => $partner->id])
             ->count();
 
-        if ($adhesions > 0) {
+        $adhesionsViaAssociation = $this->Partners->AdhesionInitialDatas->find()
+            ->where(['AdhesionInitialDatas.association_partner_id' => $partner->id])
+            ->count();
+
+        if ($adhesions > 0 || $adhesionsViaAssociation > 0) {
             $this->Flash->error(__(
-                'Este parceiro tem código(s) usado(s) em {0} adesão(ões) e não pode ser excluído. Desative-o para impedir novos usos.',
-                $adhesions
+                'Este {0} tem código(s) usado(s) em {1} adesão(ões) e não pode ser excluído. Desative-o para impedir novos usos.',
+                $this->entityLabel(),
+                max($adhesions, $adhesionsViaAssociation)
             ));
 
             return $this->redirect(['action' => 'index']);
         }
 
         if ($this->Partners->delete($partner)) {
-            $this->Flash->success(__('O parceiro foi removido com sucesso.'));
+            $this->Flash->success(__('O {0} foi removido com sucesso.', $this->entityLabel()));
         } else {
-            $this->Flash->error(__('Não foi possível remover o parceiro. Por favor, tente novamente.'));
+            $this->Flash->error(__('Não foi possível remover o {0}. Por favor, tente novamente.', $this->entityLabel()));
         }
 
         return $this->redirect(['action' => 'index']);
@@ -140,16 +183,19 @@ class PartnersController extends AppController
         $this->request->allowMethod(['post']);
 
         $partner = $this->Partners->get($id);
+        $this->assertScope($partner);
+
         $partner->active = !$partner->active;
 
         if ($this->Partners->save($partner)) {
             $this->Flash->success(__(
-                'O parceiro {0} foi {1}.',
+                'O {0} {1} foi {2}.',
+                $this->entityLabel(),
                 $partner->name,
                 $partner->active ? 'ativado' : 'desativado'
             ));
         } else {
-            $this->Flash->error(__('Não foi possível alterar o parceiro.'));
+            $this->Flash->error(__('Não foi possível alterar o {0}.', $this->entityLabel()));
         }
 
         return $this->redirect(['action' => 'index']);
@@ -158,6 +204,8 @@ class PartnersController extends AppController
     public function addCode($partnerId = null)
     {
         $partner = $this->Partners->get($partnerId);
+        $this->assertScope($partner);
+
         $promotionalCode = $this->PromotionalCodes->newEntity(['partner_id' => $partner->id]);
 
         if ($this->request->is('post')) {
@@ -182,6 +230,7 @@ class PartnersController extends AppController
     {
         $promotionalCode = $this->PromotionalCodes->get($id, contain: ['Partners']);
         $partner = $promotionalCode->partner;
+        $this->assertScope($partner);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $promotionalCode = $this->PromotionalCodes->patchEntity(
@@ -209,7 +258,8 @@ class PartnersController extends AppController
     {
         $this->request->allowMethod(['post', 'delete']);
 
-        $promotionalCode = $this->PromotionalCodes->get($id);
+        $promotionalCode = $this->PromotionalCodes->get($id, contain: ['Partners']);
+        $this->assertScope($promotionalCode->partner);
         $partnerId = $promotionalCode->partner_id;
 
         $adhesions = $this->PromotionalCodes->AdhesionInitialDatas->find()
@@ -241,7 +291,8 @@ class PartnersController extends AppController
     {
         $this->request->allowMethod(['post']);
 
-        $promotionalCode = $this->PromotionalCodes->get($id);
+        $promotionalCode = $this->PromotionalCodes->get($id, contain: ['Partners']);
+        $this->assertScope($promotionalCode->partner);
         $promotionalCode->active = !$promotionalCode->active;
 
         if ($this->PromotionalCodes->save($promotionalCode)) {
@@ -268,6 +319,9 @@ class PartnersController extends AppController
         unset($data['logo_file'], $data['remove_logo']);
 
         $data['active'] = (bool)($data['active'] ?? false);
+        // Não vem do formulário: é implícito na tela usada para chegar aqui
+        // (Parceiros vs. Vínculos associativos), nunca no que o navegador envia.
+        $data['is_association'] = $this->isAssociationScope;
 
         return $data;
     }

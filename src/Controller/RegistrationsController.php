@@ -122,6 +122,21 @@ class RegistrationsController extends AppController
                     if ($promotionalCode !== null && $promotionalCode->isUsable()) {
                         $patchData['promotional_code_id'] = $promotionalCode->id;
                         $patchData['promotional_code'] = $promotionalCode->code;
+
+                        // O vínculo associativo trava junto com o código, na
+                        // mesma chamada: nunca é aceito isoladamente a partir
+                        // do que o front-end alega, só quando acompanhado de
+                        // um código válido do próprio vínculo (parceiro com
+                        // is_association = true). Os textos da Declaração são
+                        // congelados agora, para que o PDF gerado depois
+                        // reproduza sempre o que foi de fato assinado, mesmo
+                        // que o cadastro do vínculo mude no futuro.
+                        $codePartner = $promotionalCode->partner;
+
+                        if ($codePartner !== null && $codePartner->is_association) {
+                            $patchData['association_partner_id'] = $codePartner->id;
+                            $patchData['association_snapshot'] = json_encode($codePartner->declarationTexts());
+                        }
                     }
                 }
 

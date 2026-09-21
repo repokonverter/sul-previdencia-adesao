@@ -1,9 +1,12 @@
 <?php
-$this->assign('title', 'Novo Parceiro');
+/**
+ * @var string $entityLabelSingular
+ */
+$this->assign('title', 'Novo(a) ' . $entityLabelSingular);
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">
-        <i class="bi bi-building-add"></i> Novo Parceiro
+        <i class="bi bi-building-add"></i> Novo(a) <?= h($entityLabelSingular) ?>
     </h2>
 
     <?= $this->Html->link(
