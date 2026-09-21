@@ -1,12 +1,16 @@
 services:
   pgsql:
-    image: postgres:alpine
+    # Fixo na major 16 (mesma usada em produção, ver config/deploy.yml) porque
+    # o Postgres 18+ mudou o layout de diretório de dados e recusa montar em
+    # /var/lib/postgresql/data como abaixo.
+    image: postgres:16-alpine
     ports:
       - '5433:5432'
     container_name: 'pgsql-sul-prev'
     restart: always
     volumes:
       - pg-data:/var/lib/postgresql/data
+      - ./docker/initdb.d:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_DB: adesao-sulprev-db
       POSTGRES_USER: admin
