@@ -6,6 +6,7 @@
  * @var float $amount
  * @var array $result
  * @var string|null $qrCodeBase64
+ * @var \App\Model\Entity\Partner|null $partner
  */
 
 use Cake\I18n\Number;
@@ -66,6 +67,25 @@ $logoAssetPath = 'logo_sul_transparente.png';
         margin-bottom: 24px;
     }
 
+    .payment-partner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin: -12px 0 24px;
+        padding: 4px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--partner-color, #ddd);
+        font-size: 0.85rem;
+        color: #666;
+    }
+
+    .payment-partner img {
+        max-height: 34px;
+        max-width: 130px;
+        object-fit: contain;
+    }
+
     .payment-title {
         text-align: center;
         font-size: 1.6rem;
@@ -106,6 +126,20 @@ $logoAssetPath = 'logo_sul_transparente.png';
     <div class="payment-header-bar"></div>
     <div class="payment-content">
         <?= $this->Html->image($logoAssetPath, ['alt' => 'Sul Previdencia', 'class' => 'payment-logo']) ?>
+
+        <?php if ($partner): ?>
+            <div class="payment-partner" style="--partner-color: <?= h($partner->color) ?>">
+                <span>em parceria com</span>
+                <?php if ($partner->has_logo): ?>
+                    <?= $this->Html->image(
+                        ['controller' => 'Partners', 'action' => 'logo', $partner->id],
+                        ['alt' => $partner->name]
+                    ) ?>
+                <?php else: ?>
+                    <strong><?= h($partner->name) ?></strong>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
         <?php if ($result['status'] === 'paid'): ?>
             <div class="payment-status-icon">✅</div>

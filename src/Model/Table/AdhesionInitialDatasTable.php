@@ -19,6 +19,13 @@ class AdhesionInitialDatasTable extends Table
 
         $this->addBehavior('Timestamp');
 
+        // propertyName explícito: o nome convencional ('promotional_code') colidiria
+        // com a coluna de snapshot do texto do código.
+        $this->belongsTo('PromotionalCodes', [
+            'foreignKey' => 'promotional_code_id',
+            'propertyName' => 'promotional_code_entity',
+        ]);
+
         $this->hasOne('AdhesionPersonalDatas', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);

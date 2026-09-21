@@ -3,6 +3,7 @@
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\AdhesionInitialData> $adhesions
+ * @var iterable<\App\Model\Entity\Partner> $partners
  */
 
 function getAdhesionStage($adhesion)
@@ -37,6 +38,22 @@ function getAdhesionStage($adhesion)
     return 'Dados Iniciais';
 }
 
+function getPromotionalCodeCell($adhesion)
+{
+    if (empty($adhesion->promotional_code))
+        return '<span class="text-muted">&mdash;</span>';
+
+    // O snapshot é a fonte da verdade; o parceiro vem do vínculo, quando ainda existe.
+    $partner = $adhesion->promotional_code_entity->partner->name ?? null;
+
+    $cell = '<code>' . h($adhesion->promotional_code) . '</code>';
+
+    if ($partner)
+        $cell .= '<br><span class="text-muted small">' . h($partner) . '</span>';
+
+    return $cell;
+}
+
 function getPixStatusBadge($adhesion)
 {
     if (empty($adhesion->adhesion_payment_detail))
@@ -67,7 +84,7 @@ function getPixStatusBadge($adhesion)
     <div class="card-body">
         <?= $this->Form->create(null, ['type' => 'get']) ?>
         <div class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-2">
                 <?= $this->Form->control('name', [
                     'label' => 'Nome',
                     'class' => 'form-control',
@@ -75,7 +92,7 @@ function getPixStatusBadge($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-2">
                 <?= $this->Form->control('cpf', [
                     'label' => 'CPF',
                     'class' => 'form-control',
@@ -83,7 +100,31 @@ function getPixStatusBadge($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-4 d-flex align-items-end">
+            <div class="col-md-2">
+                <?= $this->Form->control('promotionalCode', [
+                    'label' => 'Código promocional',
+                    'class' => 'form-control text-uppercase',
+                    'placeholder' => 'Buscar por código'
+                ]) ?>
+            </div>
+
+            <div class="col-md-3">
+                <?php
+                $partnerOptions = [];
+                foreach ($partners as $partner) {
+                    $partnerOptions[$partner->id] = $partner->name;
+                }
+                ?>
+                <?= $this->Form->control('partnerId', [
+                    'label' => 'Parceiro',
+                    'type' => 'select',
+                    'options' => $partnerOptions,
+                    'empty' => 'Todos os parceiros',
+                    'class' => 'form-select',
+                ]) ?>
+            </div>
+
+            <div class="col-md-3 d-flex align-items-end">
                 <?= $this->Form->button('<i class="bi bi-search"></i> Filtrar', [
                     'escapeTitle' => false,
                     'class' => 'btn btn-outline-primary w-100'
@@ -103,6 +144,7 @@ function getPixStatusBadge($adhesion)
                     <th>Celular</th>
                     <th>E-mail</th>
                     <th>Etapa</th>
+                    <th>Código</th>
                     <th>Pix</th>
                     <th>Data/hora</th>
                     <th class="text-end">Ações</th>
@@ -115,6 +157,7 @@ function getPixStatusBadge($adhesion)
                         <td><?= h($adhesion->phone ?? '—') ?></td>
                         <td><?= h($adhesion->email ?? '—') ?></td>
                         <td><?= h(getAdhesionStage($adhesion)) ?></td>
+                        <td><?= getPromotionalCodeCell($adhesion) ?></td>
                         <td><?= getPixStatusBadge($adhesion) ?></td>
                         <td><?= h($adhesion->created->format('d/m/Y H:i:s') ?? '—') ?></td>
                         <td class="text-end">

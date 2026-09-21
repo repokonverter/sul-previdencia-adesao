@@ -7,6 +7,7 @@ namespace App\Controller\Admin;
 use App\Controller\Admin\AppController;
 use App\Model\Table\AdhesionInitialDatasTable;
 use App\Model\Table\AdhesionPensionSchemesTable;
+use App\Model\Table\PartnersTable;
 use App\Services\ClicksignService;
 use App\Services\PixPaymentService;
 use App\Services\SicoobService;
@@ -15,6 +16,7 @@ class AdhesionsController extends AppController
 {
     protected AdhesionInitialDatasTable $AdhesionInitialDatas;
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
+    protected PartnersTable $Partners;
 
     public function initialize(): void
     {
@@ -24,6 +26,7 @@ class AdhesionsController extends AppController
 
         $this->AdhesionInitialDatas = $this->fetchTable('AdhesionInitialDatas');
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
+        $this->Partners = $this->fetchTable('Partners');
 
         $this->paginate = [
             'order' => ['AdhesionInitialDatas.created' => 'DESC'],
@@ -46,10 +49,13 @@ class AdhesionsController extends AppController
                 'AdhesionPensionSchemes',
                 'AdhesionProponentStatements',
                 'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
+                'PromotionalCodes.Partners',
             ]);
 
         $searchName = $this->request->getQuery('name');
         $searchCpf  = $this->request->getQuery('cpf');
+        $searchPromotionalCode = $this->request->getQuery('promotionalCode');
+        $searchPartnerId = $this->request->getQuery('partnerId');
 
         if ($searchName) {
             $query->where([
@@ -63,8 +69,26 @@ class AdhesionsController extends AppController
             ]);
         }
 
+        if ($searchPromotionalCode) {
+            // Compara com o snapshot gravado na adesão, para que o filtro continue
+            // funcionando mesmo que o código tenha sido editado depois.
+            $query->where([
+                'AdhesionInitialDatas.promotional_code' => \App\Model\Entity\PromotionalCode::normalizeCode($searchPromotionalCode),
+            ]);
+        }
+
+        if ($searchPartnerId) {
+            // O parceiro só é conhecido pelo vínculo atual, então adesões cujo
+            // código foi excluído (o parceiro nunca é, se o código foi usado)
+            // não entram nesse filtro.
+            $query->innerJoinWith('PromotionalCodes')
+                ->where(['PromotionalCodes.partner_id' => (int)$searchPartnerId]);
+        }
+
         $adhesions = $this->paginate($query);
-        $this->set(compact('adhesions'));
+        $partners = $this->Partners->find()->orderBy(['name' => 'ASC'])->all();
+
+        $this->set(compact('adhesions', 'partners'));
     }
 
     public function view($id)

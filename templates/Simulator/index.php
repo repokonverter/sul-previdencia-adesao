@@ -590,6 +590,11 @@ function createSecureCard($data, $type)
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
+                    <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 border rounded-pill px-3 py-1">
+                        <span class="text-muted small me-2 d-none d-sm-inline">em parceria com</span>
+                        <img id="registerModalPartnerLogo" src="" alt="" class="d-none" style="max-height:34px;max-width:130px;object-fit:contain;">
+                        <span id="registerModalPartnerLabel" class="fw-semibold small"></span>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
@@ -615,6 +620,29 @@ function createSecureCard($data, $type)
                                     Preenchimento obrigatório.
                                 </div>
                             </div>
+                            <div class="mb-3" id="promotionalCodeGroup">
+                                <label for="promotionalCode" class="form-label">
+                                    Código promocional <span class="text-muted fw-normal">(opcional)</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="text"
+                                        class="form-control text-uppercase"
+                                        id="promotionalCode"
+                                        name="initialData[promotionalCode]"
+                                        placeholder="Digite o código, se você tiver um"
+                                        maxlength="30"
+                                        autocomplete="off"
+                                        spellcheck="false">
+                                    <span class="input-group-text d-none" id="promotionalCodeSpinner">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    </span>
+                                    <button type="button" class="btn btn-outline-secondary d-none" id="promotionalCodeRemove">
+                                        Remover
+                                    </button>
+                                </div>
+                                <div id="promotionalCodeFeedback" class="small mt-1"></div>
+                            </div>
+
                             <p class="form-text">
                                 Em conformidade com a Lei Geral de Proteção de Dados (LGPD), informamos que os dados fornecidos serão
                                 armazenados em nosso sistema e utilizados exclusivamente para fins de pesquisa de satisfação e suporte ao longo do processo.
@@ -1808,6 +1836,8 @@ function createSecureCard($data, $type)
                 registerModal.show();
             });
 
+            initPromotionalCode();
+
             simulationChart();
         });
 
@@ -1935,6 +1965,206 @@ function createSecureCard($data, $type)
             updateButtonPreviousNext(registerPageIndex);
         }
 
+        /* ---------------------------------------------------------------
+         * Código promocional
+         *
+         * Estados: empty | checking | valid | invalid | error
+         * Apenas 'empty' e 'valid' permitem avançar da etapa 1.
+         * ------------------------------------------------------------- */
+        const promoValidateUrl = '<?= $this->Url->build(['controller' => 'PromotionalCodes', 'action' => 'validate', 'prefix' => false]) ?>';
+        const promoDebounceMs = 500;
+        const promoMinLength = 3;
+
+        let promoState = { status: 'empty', code: null, partnerName: null, logoUrl: null, color: null };
+        let promoDebounceTimer = null;
+        let promoAbortController = null;
+
+        const promoNormalize = (value) => (value || '')
+            .normalize('NFD')
+            .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+            .toUpperCase()
+            .replace(/[^A-Z0-9-]/g, '');
+
+        const promoEls = () => ({
+            input: document.getElementById('promotionalCode'),
+            spinner: document.getElementById('promotionalCodeSpinner'),
+            remove: document.getElementById('promotionalCodeRemove'),
+            feedback: document.getElementById('promotionalCodeFeedback'),
+        });
+
+        const updatePartnerHeader = () => {
+            const wrapper = document.getElementById('registerModalPartner');
+            const logo = document.getElementById('registerModalPartnerLogo');
+            const label = document.getElementById('registerModalPartnerLabel');
+
+            if (promoState.status !== 'valid') {
+                wrapper.classList.add('d-none');
+                wrapper.classList.remove('d-flex');
+                wrapper.style.borderColor = '';
+                logo.classList.add('d-none');
+                logo.removeAttribute('src');
+                label.textContent = '';
+
+                return;
+            }
+
+            wrapper.classList.remove('d-none');
+            wrapper.classList.add('d-flex');
+            wrapper.style.borderColor = promoState.color || '';
+
+            if (promoState.logoUrl) {
+                logo.src = promoState.logoUrl;
+                logo.alt = promoState.partnerName;
+                logo.classList.remove('d-none');
+                // Se a imagem falhar, cai para o nome do parceiro em texto.
+                logo.onerror = () => {
+                    logo.classList.add('d-none');
+                    label.textContent = promoState.partnerName;
+                };
+                label.textContent = '';
+            } else {
+                logo.classList.add('d-none');
+                logo.removeAttribute('src');
+                label.textContent = promoState.partnerName;
+            }
+        };
+
+        const setPromoState = (status, data = {}) => {
+            promoState = {
+                status,
+                code: data.code ?? null,
+                partnerName: data.partnerName ?? null,
+                logoUrl: data.logoUrl ?? null,
+                color: data.color ?? null,
+            };
+
+            const { input, spinner, remove, feedback } = promoEls();
+
+            input.classList.remove('is-valid', 'is-invalid', 'border-warning');
+            spinner.classList.add('d-none');
+            remove.classList.add('d-none');
+            feedback.className = 'small mt-1';
+            feedback.textContent = '';
+
+            if (status === 'checking') {
+                spinner.classList.remove('d-none');
+            } else if (status === 'valid') {
+                input.classList.add('is-valid');
+                remove.classList.remove('d-none');
+                feedback.classList.add('text-success');
+                feedback.textContent = '✓ ' + data.partnerName;
+            } else if (status === 'invalid') {
+                input.classList.add('is-invalid');
+                feedback.classList.add('text-danger');
+                feedback.textContent = '✗ ' + (data.message || 'Código promocional não encontrado.');
+            } else if (status === 'error') {
+                input.classList.add('border-warning');
+                feedback.classList.add('text-warning-emphasis');
+                feedback.innerHTML =
+                    'Não foi possível validar o código agora. ' +
+                    '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="promotionalCodeRetry">Tentar novamente</button>' +
+                    ' ou <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="promotionalCodeSkip">continuar sem o código</button>.';
+
+                document.getElementById('promotionalCodeRetry')
+                    .addEventListener('click', () => lookupPromoCode(promoNormalize(input.value)));
+                document.getElementById('promotionalCodeSkip')
+                    .addEventListener('click', clearPromoCode);
+            }
+
+            updatePartnerHeader();
+        };
+
+        const clearPromoCode = () => {
+            const { input } = promoEls();
+
+            if (promoAbortController) promoAbortController.abort();
+            clearTimeout(promoDebounceTimer);
+
+            input.value = '';
+            setPromoState('empty');
+            input.focus();
+        };
+
+        const lookupPromoCode = async (code) => {
+            if (!code || code.length < promoMinLength) {
+                setPromoState(code ? 'invalid' : 'empty', {
+                    message: 'O código deve ter ao menos ' + promoMinLength + ' caracteres.'
+                });
+
+                return;
+            }
+
+            // Cancela a consulta anterior para que uma resposta atrasada não
+            // sobrescreva o resultado de uma consulta mais recente.
+            if (promoAbortController) promoAbortController.abort();
+            promoAbortController = new AbortController();
+
+            setPromoState('checking');
+
+            try {
+                const response = await fetch(promoValidateUrl + '?code=' + encodeURIComponent(code), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: promoAbortController.signal,
+                });
+
+                const result = await response.json();
+
+                if (result.valid) {
+                    setPromoState('valid', result);
+                } else {
+                    setPromoState('invalid', result);
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+
+                setPromoState('error');
+            }
+        };
+
+        const initPromotionalCode = () => {
+            const { input, remove } = promoEls();
+
+            input.addEventListener('input', () => {
+                const normalized = promoNormalize(input.value);
+
+                if (input.value !== normalized) {
+                    const position = input.selectionStart;
+                    input.value = normalized;
+                    input.setSelectionRange(position, position);
+                }
+
+                clearTimeout(promoDebounceTimer);
+
+                if (normalized === '') {
+                    if (promoAbortController) promoAbortController.abort();
+                    setPromoState('empty');
+
+                    return;
+                }
+
+                promoDebounceTimer = setTimeout(() => lookupPromoCode(normalized), promoDebounceMs);
+            });
+
+            input.addEventListener('blur', () => {
+                const normalized = promoNormalize(input.value);
+
+                if (normalized === '' || promoState.status === 'valid' || promoState.status === 'checking') return;
+
+                clearTimeout(promoDebounceTimer);
+                lookupPromoCode(normalized);
+            });
+
+            remove.addEventListener('click', clearPromoCode);
+
+            // Link atribuído do parceiro: ?promo=CODIGO chega preenchido e validado.
+            const fromUrl = promoNormalize(new URLSearchParams(window.location.search).get('promo'));
+
+            if (fromUrl) {
+                input.value = fromUrl;
+                lookupPromoCode(fromUrl);
+            }
+        };
+
         const nextPage = async () => {
             const btnPrimary = document.querySelector('#registerModal .modal-footer .btn-primary');
 
@@ -1943,6 +2173,41 @@ function createSecureCard($data, $type)
                 btnPrimary.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
                 window.location.reload();
                 return;
+            }
+
+            // Etapa 1: um código promocional preenchido precisa estar resolvido
+            // antes de avançar. Campo vazio segue normalmente (é opcional).
+            if (registerPageIndex === 0) {
+                if (promoState.status === 'checking') {
+                    // Aguarda a consulta em andamento terminar e reavalia.
+                    // Um teto evita travar o botão para sempre caso a
+                    // requisição fique pendurada sem nunca resolver.
+                    btnPrimary.disabled = true;
+
+                    await new Promise((resolve) => {
+                        let elapsed = 0;
+                        const poll = setInterval(() => {
+                            elapsed += 100;
+
+                            if (promoState.status !== 'checking') {
+                                clearInterval(poll);
+                                resolve();
+                            } else if (elapsed >= 15000) {
+                                clearInterval(poll);
+                                setPromoState('error');
+                                resolve();
+                            }
+                        }, 100);
+                    });
+
+                    btnPrimary.disabled = false;
+                }
+
+                if (promoState.status === 'invalid' || promoState.status === 'error') {
+                    document.getElementById('promotionalCode').focus();
+
+                    return;
+                }
             }
 
             let isValid = true;

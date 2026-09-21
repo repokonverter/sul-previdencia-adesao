@@ -16,6 +16,7 @@ use App\Model\Table\AdhesionPersonalDatasTable;
 use App\Model\Table\AdhesionPlansTable;
 use App\Model\Table\AdhesionProponentStatementsTable;
 use App\Model\Table\ClicksignDatasTable;
+use App\Model\Table\PromotionalCodesTable;
 use App\Services\IntegrationLogger;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
@@ -39,6 +40,7 @@ class RegistrationsController extends AppController
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
     protected ClicksignDatasTable $ClicksignDatas;
+    protected PromotionalCodesTable $PromotionalCodes;
     protected BankHelper $Bank;
 
     public function initialize(): void
@@ -56,6 +58,7 @@ class RegistrationsController extends AppController
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
         $this->ClicksignDatas = $this->fetchTable('ClicksignDatas');
+        $this->PromotionalCodes = $this->fetchTable('PromotionalCodes');
 
         $this->loadComponent('PdfGenerator');
 
@@ -100,15 +103,29 @@ class RegistrationsController extends AppController
             if (isset($data['initialData'])) {
                 $initialData = $data['initialData'];
                 $initial = $initialDataId === null ? $this->AdhesionInitialDatas->newEmptyEntity() : $this->AdhesionInitialDatas->get($initialDataId);
-                $initial = $this->AdhesionInitialDatas->patchEntity(
-                    $initial,
-                    [
-                        'storage_uuid' => $data['storageUuid'],
-                        'name' => $initialData['name'] ?? '',
-                        'email' => $initialData['email'] ?? null,
-                        'phone' => $initialData['phone'] ?? null,
-                    ],
-                );
+
+                $patchData = [
+                    'storage_uuid' => $data['storageUuid'],
+                    'name' => $initialData['name'] ?? '',
+                    'email' => $initialData['email'] ?? null,
+                    'phone' => $initialData['phone'] ?? null,
+                ];
+
+                // Uma vez atribuído, o código promocional permanece mesmo que
+                // ele seja desativado depois (parceiro incluído) ou que um
+                // passo seguinte reenvie initialData sem o campo.
+                if (empty($initial->promotional_code_id)) {
+                    // O código enviado pelo formulário é revalidado aqui: a
+                    // checagem no navegador é conveniência, não garantia.
+                    $promotionalCode = $this->PromotionalCodes->findByCodeText($initialData['promotionalCode'] ?? null);
+
+                    if ($promotionalCode !== null && $promotionalCode->isUsable()) {
+                        $patchData['promotional_code_id'] = $promotionalCode->id;
+                        $patchData['promotional_code'] = $promotionalCode->code;
+                    }
+                }
+
+                $initial = $this->AdhesionInitialDatas->patchEntity($initial, $patchData);
 
                 $this->AdhesionInitialDatas->save($initial);
 

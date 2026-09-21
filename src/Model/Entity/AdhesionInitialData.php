@@ -14,6 +14,8 @@ class AdhesionInitialData extends Entity
         'name' => true,
         'email' => true,
         'phone' => true,
+        'promotional_code_id' => true,
+        'promotional_code' => true,
         'created' => true,
         'modified' => true,
         'adhesion_personal_data' => true,
@@ -27,6 +29,7 @@ class AdhesionInitialData extends Entity
         'adhesion_proponent_statements' => true,
         'clicksign_data' => true,
         'pix_transaction' => true,
+        'promotional_code_entity' => true,
     ];
 }
 
