@@ -75,10 +75,21 @@ class PromotionalCodesController extends AppController
         $associationId = $this->request->getQuery('associationId');
 
         if ($associationId !== null && $associationId !== '' && (int)$associationId !== $partner->id) {
+            // A mensagem cita o vínculo que a pessoa selecionou, não o
+            // parceiro a quem o código pertence de fato — é contra aquele
+            // que a comparação está sendo feita.
+            $selectedAssociation = $this->PromotionalCodes->Partners->find()
+                ->select(['name'])
+                ->where(['id' => (int)$associationId])
+                ->first();
+
             return $this->respond([
                 'valid' => false,
                 'reason' => 'wrong_partner',
-                'message' => sprintf('Este código não pertence a %s.', $partner->name),
+                'message' => sprintf(
+                    'Este código não pertence a %s.',
+                    $selectedAssociation->name ?? 'este vínculo'
+                ),
             ]);
         }
 

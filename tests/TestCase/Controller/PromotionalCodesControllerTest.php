@@ -66,5 +66,9 @@ class PromotionalCodesControllerTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertSame('wrong_partner', $result['reason']);
+        // A mensagem cita o vínculo selecionado (Sindilojas Exemplo, id 2),
+        // não o parceiro a quem o código pertence de fato (Corretora
+        // Parceira) — bug real já visto em produção antes desta asserção.
+        $this->assertSame('Este código não pertence a Sindilojas Exemplo.', $result['message']);
     }
 }
