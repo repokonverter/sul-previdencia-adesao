@@ -117,26 +117,34 @@
             };
 
         $(document).ready(function() {
-            $('.date').mask('00/00/0000');
-            $('.time').mask('00:00:00');
-            $('.date_time').mask('00/00/0000 00:00:00');
-            $('.cep').mask('00000-000');
-            $('.cpf').mask('000.000.000-00', {
+            // Restrito a elementos <input>: o FormHelper do CakePHP envolve
+            // todo controle 'type' => 'date' num <div class="... date">
+            // (a classe do wrapper é o próprio tipo do campo). Um seletor
+            // '.date' genérico pega esse <div> também, e o jquery.mask, ao
+            // tentar aplicar a máscara num elemento que não é input/textarea,
+            // apaga o conteúdo interno — o label e o <input type="date"> que
+            // deveriam estar ali somem do DOM. Some com nenhum erro no
+            // servidor (o HTML gerado está correto) nem no console.
+            $('input.date').mask('00/00/0000');
+            $('input.time').mask('00:00:00');
+            $('input.date_time').mask('00/00/0000 00:00:00');
+            $('input.cep').mask('00000-000');
+            $('input.cpf').mask('000.000.000-00', {
                 reverse: true
             });
-            $('.cnpj').mask('00.000.000/0000-00', {
+            $('input.cnpj').mask('00.000.000/0000-00', {
                 reverse: true
             });
-            $('.money').mask('000.000.000.000.000,00', {
+            $('input.money').mask('000.000.000.000.000,00', {
                 reverse: true
             });
-            $('.money2').mask("#.##0,00", {
+            $('input.money2').mask("#.##0,00", {
                 reverse: true
             });
-            $('.percent').mask('##0,00%', {
+            $('input.percent').mask('##0,00%', {
                 reverse: true
             });
-            $('.phone').mask(SPMaskBehavior, spOptions);
+            $('input.phone').mask(SPMaskBehavior, spOptions);
         });
     </script>
 </body>
