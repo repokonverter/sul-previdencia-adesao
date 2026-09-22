@@ -90,6 +90,13 @@ function createSecureCard($data, $type)
             overflow-x: hidden;
         }
 
+        /* Border própria, não a utilitária ".border" do Bootstrap: ela vem
+           com "!important", e sempre vence a cor do parceiro que o JS seta
+           via style.borderColor. */
+        .partner-badge {
+            border: 1px solid #dee2e6;
+        }
+
         .simulador-popup {
             max-width: 950px;
             margin: 48px auto;
@@ -590,7 +597,7 @@ function createSecureCard($data, $type)
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
-                    <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 border rounded-pill px-3 py-1">
+                    <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 partner-badge rounded-pill px-3 py-1">
                         <span class="text-muted small me-2 d-none d-sm-inline">em parceria com</span>
                         <img id="registerModalPartnerLogo" src="" alt="" class="d-none" style="max-height:34px;max-width:130px;object-fit:contain;">
                         <span id="registerModalPartnerLabel" class="fw-semibold small"></span>
