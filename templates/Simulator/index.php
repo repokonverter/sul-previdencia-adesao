@@ -1835,9 +1835,13 @@ function createSecureCard($data, $type)
     </div>
     <script>
         const isDebug = <?= Configure::read('debug') ? 'true' : 'false' ?>;
-        const localStorageKey = 'adesaoSulPrevidencia';
-        let draftUUID = localStorage.getItem(localStorageKey);
         let initialDataId = null;
+        // Devolvido pelo servidor quando a adesão nasce, e reenviado a cada
+        // gravação seguinte: é ele que autoriza escrever *nesta* adesão. Era
+        // gerado aqui e guardado no localStorage, mas initialDataId volta a
+        // null a cada recarregamento, então o mesmo valor acabava servindo a
+        // várias adesões e o link de pagamento ficava ambíguo.
+        let storageUuid = null;
         /* ---------------------------------------------------------------
          * Passos do formulário
          *
@@ -1981,12 +1985,6 @@ function createSecureCard($data, $type)
             const openModalBtn = document.getElementById('simulador-continuar');
             const registerModalEl = document.getElementById('registerModal');
             registerModal = new bootstrap.Modal(registerModalEl);
-
-            if (!draftUUID) {
-                draftUUID = self.crypto.randomUUID ? self.crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
-                localStorage.setItem(localStorageKey, draftUUID);
-                console.log('Novo UUID gerado:', draftUUID);
-            }
 
             openModalBtn.addEventListener('click', function() {
                 currentStepId = registerPages[0].id;
@@ -2713,12 +2711,16 @@ function createSecureCard($data, $type)
                     headers: {
                         'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
                     },
-                    data: formElements.serialize() + `&storageUuid=${draftUUID}${initialDataId !== null ? `&initialDataId=${initialDataId}` : ''}`,
+                    data: formElements.serialize()
+                        + (storageUuid !== null ? `&storageUuid=${encodeURIComponent(storageUuid)}` : '')
+                        + (initialDataId !== null ? `&initialDataId=${initialDataId}` : ''),
                     dataType: 'json',
                     beforeSend: () => {},
                     success: (response) => {
-                        if (response?.success === true && response?.initialDataId)
+                        if (response?.success === true && response?.initialDataId) {
                             initialDataId = response.initialDataId;
+                            storageUuid = response.storageUuid;
+                        }
 
                         if (response?.success === false) {
                             reject(response);
