@@ -1826,7 +1826,7 @@ function createSecureCard($data, $type)
                     </form>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <button type="button" id="fakerFillBtn" class="btn btn-outline-secondary me-auto" style="display: none;" onclick="fillStepWithFakeData(registerPages[registerPageIndex].id)">🎲 Preencher (dev)</button>
+                    <button type="button" id="fakerFillBtn" class="btn btn-outline-secondary me-auto" style="display: none;" onclick="fillStepWithFakeData(currentStepId)">🎲 Preencher (dev)</button>
                     <button type="button" class="btn btn-secondary" onclick="previousPage()">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="nextPage()">Concordo</button>
                 </div>
@@ -1838,13 +1838,38 @@ function createSecureCard($data, $type)
         const localStorageKey = 'adesaoSulPrevidencia';
         let draftUUID = localStorage.getItem(localStorageKey);
         let initialDataId = null;
+        /* ---------------------------------------------------------------
+         * Passos do formulário
+         *
+         * Esta lista é a ordem canônica. Cada passo se identifica pelo seu
+         * `id` — o mesmo do <div> correspondente e o mesmo que
+         * RegistrationsController::save() espera — e nunca por posição: a
+         * navegação opera sobre os passos *visíveis*, calculados na hora, e
+         * um passo condicional faz os índices deixarem de ser contíguos.
+         *
+         * Ganchos, todos opcionais:
+         *   visible()        o passo entra na navegação? (padrão: sim)
+         *   onEnter()        roda ao exibir o passo
+         *   beforeValidate() roda antes da validação do HTML; false aborta
+         *                    sem marcar o formulário
+         *   validate()       soma-se à validação do HTML; false marca o
+         *                    formulário como was-validated
+         *   afterValidate()  roda depois do portão de validação; false
+         *                    aborta (para quem já mostra o próprio aviso)
+         * ------------------------------------------------------------- */
         const registerPages = [{
                 title: 'Dados iniciais',
                 id: 'initialData',
+                beforeValidate: (btnPrimary) => validateInitialDataStep(btnPrimary),
             },
             {
                 title: 'Dados pessoais',
                 id: 'personalData',
+                onEnter: () => {
+                    const name = $('#registerModal #initialData input[name="initialData[name]"]').val();
+
+                    $('#registerModal #personalData input[name="personalData[name]"]').val(name);
+                },
             },
             {
                 title: 'Documentos',
@@ -1853,10 +1878,24 @@ function createSecureCard($data, $type)
             {
                 title: 'Plano',
                 id: 'plan',
+                onEnter: () => {
+                    const age = calculateAge($('#registerModal input[name="personalData[birthDate]"]').val());
+                    const benefitEntry = age <= 55 ? 65 : age + 10;
+
+                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
+                },
             },
             {
                 title: 'Beneficiário(s)',
                 id: 'dependents',
+                afterValidate: () => {
+                    if (checkDependents())
+                        return true;
+
+                    alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
+
+                    return false;
+                },
             },
             {
                 title: 'Endereço',
@@ -1865,14 +1904,58 @@ function createSecureCard($data, $type)
             {
                 title: 'Outras informações',
                 id: 'otherInformation',
+                validate: () => {
+                    if ($('#mainOccupationCode').val())
+                        return true;
+
+                    $('#mainOccupationSearch').addClass('is-invalid');
+
+                    return false;
+                },
             },
             {
                 title: 'Declarações do proponente',
                 id: 'proponentStatement',
+                // Sem nenhum risco contratado, a Declaração Pessoal de Saúde
+                // não tem o que subscrever e o passo sai da navegação.
+                visible: () => !shouldSkipHealthStep(),
             },
             {
                 title: 'Regime de previdência',
                 id: 'pensionScheme',
+                onEnter: () => {
+                    const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]:checked').val();
+                    const anyPensionSchema = $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]').is(':checked');
+
+                    if (planFor === 'Dependente') {
+                        $('#registerModal #pensionSchemeAnyPensionSchema').hide();
+
+                        pensionSchema(false);
+
+                        return;
+                    }
+
+                    $('#registerModal #pensionSchemeType').slideUp();
+
+                    if (!anyPensionSchema) {
+                        $('#registerModal #pensionSchemeAnyPensionSchema input[type="checkbox"]').prop('checked', false);
+                        $('#registerModal #pensionSchemeAnyPensionSchema').show();
+
+                        return;
+                    }
+
+                    $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]:checked').click();
+                },
+                validate: () => {
+                    if (!$('#pensionSchemeType').is(':visible'))
+                        return true;
+
+                    const checked = $('#pensionSchemeType input[name="pensionScheme[pensionSchemeType][]"]:checked').length > 0;
+
+                    $('#pensionSchemeTypeComplementar').toggleClass('is-invalid', !checked);
+
+                    return checked;
+                },
             },
             {
                 title: 'Dados para pagamento',
@@ -1883,7 +1966,15 @@ function createSecureCard($data, $type)
                 id: 'conclusion',
             },
         ];
-        let registerPageIndex = 0
+
+        let currentStepId = registerPages[0].id;
+
+        const visibleSteps = () => registerPages.filter((step) => !step.visible || step.visible());
+
+        const currentStep = () => registerPages.find((step) => step.id === currentStepId);
+
+        const currentPosition = () => visibleSteps().findIndex((step) => step.id === currentStepId);
+
         let registerModal;
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1898,9 +1989,9 @@ function createSecureCard($data, $type)
             }
 
             openModalBtn.addEventListener('click', function() {
-                registerPageIndex = 0;
+                currentStepId = registerPages[0].id;
 
-                updatePage(registerPageIndex);
+                updatePage();
 
                 registerModal.show();
             });
@@ -1928,111 +2019,43 @@ function createSecureCard($data, $type)
             $('#registerModal #divLegalRepresentative input').removeAttr('required');
         }
 
-        const updateButtonPreviousNext = (pageIndex) => {
-            jQuery('#fakerFillBtn').toggle(isDebug && pageIndex !== 10);
+        const updateButtonPreviousNext = () => {
+            const position = currentPosition();
+            const isFirst = position === 0;
+            const isLast = position === visibleSteps().length - 1;
 
-            switch (pageIndex) {
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                case 8:
-                case 9:
-                    jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior').show();
-                    jQuery('#registerModal .modal-footer .btn-primary').text('Próximo');
-                    break;
-                case 10:
-                    jQuery('#registerModal .modal-footer .btn-secondary').hide();
-                    jQuery('#registerModal .modal-footer .btn-primary').text('Fechar');
-                    break;
-                default:
-                    jQuery('#registerModal .modal-footer .btn-secondary').text('Cancelar').show();
-                    jQuery('#registerModal .modal-footer .btn-primary').text('Concordo');
-                    break;
+            jQuery('#fakerFillBtn').toggle(isDebug && !isLast);
+
+            if (isLast) {
+                jQuery('#registerModal .modal-footer .btn-secondary').hide();
+                jQuery('#registerModal .modal-footer .btn-primary').text('Fechar');
+
+                return;
             }
+
+            if (isFirst) {
+                jQuery('#registerModal .modal-footer .btn-secondary').text('Cancelar').show();
+                jQuery('#registerModal .modal-footer .btn-primary').text('Concordo');
+
+                return;
+            }
+
+            jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior').show();
+            jQuery('#registerModal .modal-footer .btn-primary').text('Próximo');
         }
 
-        const updatePage = (pageIndex) => {
-            $('#registerModal #initialData').hide();
-            $('#registerModal #personalData').hide();
-            $('#registerModal #documents').hide();
-            $('#registerModal #plan').hide();
-            $('#registerModal #dependents').hide();
-            $('#registerModal #addressData').hide();
-            $('#registerModal #otherInformation').hide();
-            $('#registerModal #proponentStatement').hide();
-            $('#registerModal #pensionScheme').hide();
-            $('#registerModal #paymentDetail').hide();
-            $('#registerModal #conclusion').hide();
+        const updatePage = () => {
+            registerPages.forEach((step) => $(`#registerModal #${step.id}`).hide());
 
-            switch (pageIndex) {
-                case 0:
-                    $('#registerModal #initialData').fadeIn().show();
-                    break;
-                case 1:
-                    const name = $('#registerModal #initialData input[name="initialData[name]"]').val();
+            const step = currentStep();
 
-                    $('#registerModal #personalData input[name="personalData[name]"]').val(name);
+            if (step.onEnter)
+                step.onEnter();
 
-                    $('#registerModal #personalData').fadeIn().show();
-                    break;
-                case 2:
-                    $('#registerModal #documents').fadeIn().show();
-                    break;
-                case 3:
-                    const age = calculateAge($('#registerModal input[name="personalData[birthDate]"]').val());
-                    const benefitEntry = age <= 55 ? 65 : age + 10;
+            $(`#registerModal #${step.id}`).fadeIn().show();
 
-                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
-
-                    $('#registerModal #plan').fadeIn().show();
-                    break;
-                case 4:
-                    $('#registerModal #dependents').fadeIn().show();
-                    break;
-                case 5:
-                    $('#registerModal #addressData').fadeIn().show();
-                    break;
-                case 6:
-                    $('#registerModal #otherInformation').fadeIn().show();
-                    break;
-                case 7:
-                    $('#registerModal #proponentStatement').fadeIn().show();
-                    break;
-                case 8:
-                    const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]:checked').val();
-                    const anyPensionSchema = $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]').is(':checked');
-
-                    if (planFor === 'Dependente') {
-                        $('#registerModal #pensionSchemeAnyPensionSchema').hide();
-
-                        pensionSchema(false);
-                    } else {
-                        $('#registerModal #pensionSchemeType').slideUp();
-
-                        if (!anyPensionSchema) {
-                            $('#registerModal #pensionSchemeAnyPensionSchema input[type="checkbox"]').prop('checked', false);
-                            $('#registerModal #pensionSchemeAnyPensionSchema').show();
-                        } else {
-                            $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]:checked').click();
-                        }
-                    }
-
-                    $('#registerModal #pensionScheme').fadeIn().show();
-                    break;
-                case 9:
-                    $('#registerModal #paymentDetail').fadeIn().show();
-                    break;
-                case 10:
-                    $('#registerModal #conclusion').fadeIn().show();
-                    break;
-            }
-
-            $('#registerModal .modal-body h4').html(registerPages[registerPageIndex].title);
-            updateButtonPreviousNext(registerPageIndex);
+            $('#registerModal .modal-body h4').html(step.title);
+            updateButtonPreviousNext();
         }
 
         /* ---------------------------------------------------------------
@@ -2517,71 +2540,81 @@ function createSecureCard($data, $type)
             }
         };
 
+        /**
+         * Gancho beforeValidate do passo "Dados iniciais": um código
+         * promocional preenchido precisa estar resolvido antes de avançar.
+         * Campo vazio segue normalmente (é opcional), a menos que a pessoa
+         * tenha afirmado ter vínculo associativo.
+         */
+        const validateInitialDataStep = async (btnPrimary) => {
+            if (promoState.status === 'checking') {
+                // Aguarda a consulta em andamento terminar e reavalia.
+                // Um teto evita travar o botão para sempre caso a
+                // requisição fique pendurada sem nunca resolver.
+                btnPrimary.disabled = true;
+
+                await new Promise((resolve) => {
+                    let elapsed = 0;
+                    const poll = setInterval(() => {
+                        elapsed += 100;
+
+                        if (promoState.status !== 'checking') {
+                            clearInterval(poll);
+                            resolve();
+                        } else if (elapsed >= 15000) {
+                            clearInterval(poll);
+                            setPromoState('error');
+                            resolve();
+                        }
+                    }, 100);
+                });
+
+                btnPrimary.disabled = false;
+            }
+
+            if (promoState.status === 'invalid' || promoState.status === 'error') {
+                document.getElementById('promotionalCode').focus();
+
+                return false;
+            }
+
+            // Vínculo associativo torna o código obrigatório e exige que
+            // o vínculo esteja selecionado.
+            if (isAssociationYes()) {
+                if (promoState.status !== 'valid') {
+                    document.getElementById('promotionalCode').focus();
+
+                    return false;
+                }
+
+                const { select } = associationEls();
+
+                if (!select.value) {
+                    select.focus();
+
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
         const nextPage = async () => {
             const btnPrimary = document.querySelector('#registerModal .modal-footer .btn-primary');
+            const step = currentStep();
 
-            if (registerPageIndex === registerPages.length - 1) {
+            if (currentPosition() === visibleSteps().length - 1) {
                 btnPrimary.disabled = true;
                 btnPrimary.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
                 window.location.reload();
                 return;
             }
 
-            // Etapa 1: um código promocional preenchido precisa estar resolvido
-            // antes de avançar. Campo vazio segue normalmente (é opcional).
-            if (registerPageIndex === 0) {
-                if (promoState.status === 'checking') {
-                    // Aguarda a consulta em andamento terminar e reavalia.
-                    // Um teto evita travar o botão para sempre caso a
-                    // requisição fique pendurada sem nunca resolver.
-                    btnPrimary.disabled = true;
-
-                    await new Promise((resolve) => {
-                        let elapsed = 0;
-                        const poll = setInterval(() => {
-                            elapsed += 100;
-
-                            if (promoState.status !== 'checking') {
-                                clearInterval(poll);
-                                resolve();
-                            } else if (elapsed >= 15000) {
-                                clearInterval(poll);
-                                setPromoState('error');
-                                resolve();
-                            }
-                        }, 100);
-                    });
-
-                    btnPrimary.disabled = false;
-                }
-
-                if (promoState.status === 'invalid' || promoState.status === 'error') {
-                    document.getElementById('promotionalCode').focus();
-
-                    return;
-                }
-
-                // Vínculo associativo torna o código obrigatório e exige que
-                // o vínculo esteja selecionado.
-                if (isAssociationYes()) {
-                    if (promoState.status !== 'valid') {
-                        document.getElementById('promotionalCode').focus();
-
-                        return;
-                    }
-
-                    const { select } = associationEls();
-
-                    if (!select.value) {
-                        select.focus();
-
-                        return;
-                    }
-                }
-            }
+            if (step.beforeValidate && !(await step.beforeValidate(btnPrimary)))
+                return;
 
             let isValid = true;
-            const form = document.querySelectorAll(`#${registerPages[registerPageIndex].id} input, #${registerPages[registerPageIndex].id} select`);
+            const form = document.querySelectorAll(`#${step.id} input, #${step.id} select`);
 
             form.forEach((input) => {
                 if (!input.checkValidity())
@@ -2606,44 +2639,23 @@ function createSecureCard($data, $type)
                 }
             })
 
-            if (registerPageIndex === 6) {
-                const occupationCode = $('#mainOccupationCode').val();
-
-                if (!occupationCode) {
-                    $('#mainOccupationSearch').addClass('is-invalid');
-                    isValid = false;
-                }
-            }
-
-            if (registerPageIndex === 8 && $('#pensionSchemeType').is(':visible')) {
-                const pensionSchemeTypeChecked = $('#pensionSchemeType input[name="pensionScheme[pensionSchemeType][]"]:checked').length > 0;
-
-                if (!pensionSchemeTypeChecked) {
-                    $('#pensionSchemeTypeComplementar').addClass('is-invalid');
-                    isValid = false;
-                } else {
-                    $('#pensionSchemeTypeComplementar').removeClass('is-invalid');
-                }
-            }
+            if (step.validate && !step.validate())
+                isValid = false;
 
             if (!isValid) {
-                $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
+                $(`#registerModalForm #${step.id}`)[0].classList.add('was-validated')
 
                 return;
             }
 
-            if (registerPageIndex === 4)
-                if (!checkDependents()) {
-                    alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
-
-                    return;
-                }
+            if (step.afterValidate && !step.afterValidate())
+                return;
 
             btnPrimary.disabled = true;
             btnPrimary.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
 
             try {
-                const response = await saveForm(registerPages[registerPageIndex].id);
+                const response = await saveForm(step.id);
 
                 if (response.redirectUrl) {
                     window.location.href = response.redirectUrl;
@@ -2651,35 +2663,43 @@ function createSecureCard($data, $type)
                     return;
                 }
 
-                registerPageIndex += 1;
+                // Os passos visíveis são recalculados *depois* de gravar: a
+                // resposta do servidor pode mudar quais riscos a adesão tem,
+                // e com isso fazer a etapa de saúde aparecer ou sair.
+                goToAdjacentStep(1);
 
-                // Sem nenhum risco contratado (corretor removeu os dois), a
-                // etapa de declarações de saúde não faz sentido e é pulada.
-                if (registerPageIndex === 7 && shouldSkipHealthStep()) {
-                    registerPageIndex += 1;
-                }
-
-                updatePage(registerPageIndex)
+                updatePage()
             } catch (error) {
                 alert(error?.message || 'Não foi possível avançar. Tente novamente em instantes.');
             } finally {
                 btnPrimary.disabled = false;
-                updateButtonPreviousNext(registerPageIndex);
+                updateButtonPreviousNext();
             }
         }
 
+        /**
+         * Move o passo corrente `offset` posições na lista de passos
+         * visíveis. Um passo invisível simplesmente não está na lista, então
+         * não existe "pular": a aritmética já o ignora.
+         */
+        const goToAdjacentStep = (offset) => {
+            const steps = visibleSteps();
+            const target = steps[steps.findIndex((step) => step.id === currentStepId) + offset];
+
+            if (target)
+                currentStepId = target.id;
+        };
+
         const previousPage = () => {
-            if (registerPageIndex === 0)
+            if (currentPosition() === 0) {
                 registerModal.hide();
 
-            if (registerPageIndex !== 0)
-                registerPageIndex -= 1;
-
-            if (registerPageIndex === 7 && shouldSkipHealthStep()) {
-                registerPageIndex -= 1;
+                return;
             }
 
-            updatePage(registerPageIndex)
+            goToAdjacentStep(-1);
+
+            updatePage()
         }
 
         const saveForm = async (id) => {
