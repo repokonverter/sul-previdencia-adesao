@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Controller\AppController;
+use App\Services\PlanSimulator;
 use Cake\Datasource\ConnectionManager;
 
 class SimulatorController extends AppController
 {
-    const MINIMUM_MONTHLY_INVESTMENT = 100.0;
-
     function index()
     {
-        $connection = ConnectionManager::get('default');
         $data = $_GET;
+        $simulator = $this->planSimulator();
+        $minimum = $simulator->parameters()->minimumMonthlyContribution();
 
         // Só oferece a pergunta "Possuí vínculo associativo?" quando há ao
         // menos um vínculo ativo cadastrado — sem isso, o formulário
@@ -25,37 +25,33 @@ class SimulatorController extends AppController
             ->orderBy(['Partners.name' => 'ASC'])
             ->all();
 
-        if ((float)str_replace(',', '.', (string)($data['value'] ?? 0)) < self::MINIMUM_MONTHLY_INVESTMENT) {
-            $this->Flash->error('O investimento mensal mínimo é de R$ ' . number_format(self::MINIMUM_MONTHLY_INVESTMENT, 2, ',', '.') . '.');
+        if ((float)str_replace(',', '.', (string)($data['value'] ?? 0)) < $minimum) {
+            $this->Flash->error('O investimento mensal mínimo é de R$ ' . number_format($minimum, 2, ',', '.') . '.');
 
             return $this->redirect(['controller' => 'Pages', 'action' => 'display', 'home']);
         }
 
-        $age = $this->calculateAge($data['date']);
-        [$includeSurvivorsPension, $includeDisabilityRetirement] = $this->resolveRiskFlags(
-            $age,
+        [$hasSurvivorsPension, $hasDisabilityRetirement] = $this->requestedRisks(
             $data['brokerCode'] ?? null,
             $data['removeSurvivorsPension'] ?? null,
             $data['removeDisabilityRetirement'] ?? null
         );
 
-        $simulations = $connection
-            ->execute(
-                'SELECT *
-                FROM simulacao_previdencia(:date, :value, :incluirMorte, :incluirInvalidez)',
-                [
-                    'date' => $data['date'],
-                    'value' => $data['value'],
-                    'incluirMorte' => $includeSurvivorsPension,
-                    'incluirInvalidez' => $includeDisabilityRetirement,
-                ],
-                [
-                    'incluirMorte' => 'boolean',
-                    'incluirInvalidez' => 'boolean',
-                ]
-            )
-            ->fetchAll('assoc');
+        [$includeSurvivorsPension, $includeDisabilityRetirement] = $simulator->effectiveRisks(
+            $data['date'],
+            $hasSurvivorsPension,
+            $hasDisabilityRetirement
+        );
+
+        $simulations = $simulator->simulate(
+            $data['date'],
+            (float)$data['value'],
+            $hasSurvivorsPension,
+            $hasDisabilityRetirement
+        );
+
         $totalMonthlyContributionPlan = $data['value'];
+        $age = PlanSimulator::ageOn($data['date']);
 
         $this->set(compact(
             'simulations',
@@ -72,49 +68,37 @@ class SimulatorController extends AppController
         $this->request->allowMethod(['get', 'ajax']);
         $this->autoRender = false;
 
-        $connection = ConnectionManager::get('default');
+        $simulator = $this->planSimulator();
+        $minimum = $simulator->parameters()->minimumMonthlyContribution();
         $date = $this->request->getQuery('date');
         $value = (float)str_replace(',', '.', (string)$this->request->getQuery('value'));
 
-        if (empty($date) || $value < self::MINIMUM_MONTHLY_INVESTMENT) {
+        if (empty($date) || $value < $minimum) {
             return $this->response->withType('application/json')
                 ->withStringBody(json_encode([
                     'success' => false,
-                    'message' => 'O investimento mensal mínimo é de R$ ' . number_format(self::MINIMUM_MONTHLY_INVESTMENT, 2, ',', '.') . '.',
+                    'message' => 'O investimento mensal mínimo é de R$ ' . number_format($minimum, 2, ',', '.') . '.',
                 ]));
         }
 
-        $age = $this->calculateAge($date);
-        [$includeSurvivorsPension, $includeDisabilityRetirement] = $this->resolveRiskFlags(
-            $age,
+        [$hasSurvivorsPension, $hasDisabilityRetirement] = $this->requestedRisks(
             $this->request->getQuery('brokerCode'),
             $this->request->getQuery('removeSurvivorsPension'),
             $this->request->getQuery('removeDisabilityRetirement')
         );
 
-        $simulations = $connection
-            ->execute(
-                'SELECT *
-                FROM simulacao_previdencia(:date, :value, :incluirMorte, :incluirInvalidez)',
-                [
-                    'date' => $date,
-                    'value' => $value,
-                    'incluirMorte' => $includeSurvivorsPension,
-                    'incluirInvalidez' => $includeDisabilityRetirement,
-                ],
-                [
-                    'incluirMorte' => 'boolean',
-                    'incluirInvalidez' => 'boolean',
-                ]
-            )
-            ->fetchAll('assoc');
+        [$includeSurvivorsPension, $includeDisabilityRetirement] = $simulator->effectiveRisks(
+            $date,
+            $hasSurvivorsPension,
+            $hasDisabilityRetirement
+        );
 
-        $benefitEntryAge = $age <= 55 ? 65 : $age + 10;
+        $simulations = $simulator->simulate($date, $value, $hasSurvivorsPension, $hasDisabilityRetirement);
 
         return $this->response->withType('application/json')
             ->withStringBody(json_encode([
                 'success' => true,
-                'benefitEntryAge' => $benefitEntryAge,
+                'benefitEntryAge' => $simulator->benefitEntryAge($date),
                 'monthlyRetirementContribution' => (float)$simulations[1]['contribuicao_aposentadoria'],
                 'monthlySurvivorsPensionContribution' => (float)$simulations[1]['contribuicao_morte'],
                 'survivorsPensionInsuredCapital' => (float)$simulations[1]['cobertura_morte'],
@@ -131,26 +115,26 @@ class SimulatorController extends AppController
             ]));
     }
 
-    /**
-     * Determina se cada risco entra no cálculo da simulação.
-     *
-     * O servidor é a única autoridade aqui: as flags "removeX" só valem
-     * quando acompanhadas de um código de corretor que de fato existe e está
-     * ativo — nunca são aceitas sozinhas, senão bastaria montar a URL à mão
-     * para tirar os riscos sem corretor nenhum. Menor de 16 anos nunca tem
-     * risco, corretor ou não (mesma regra que já existia, agora também
-     * corrigindo o cálculo de saldo_acumulado/beneficio_mensal — antes desta
-     * mudança eles eram computados sobre os 100% da contribuição e só depois
-     * zerados em PHP, subestimando a projeção).
-     *
-     * @return array{0: bool, 1: bool} [incluirMorte, incluirInvalidez]
-     */
-    private function resolveRiskFlags(int $age, ?string $brokerCode, $removeSurvivorsPension, $removeDisabilityRetirement): array
+    private function planSimulator(): PlanSimulator
     {
-        if ($age < 16) {
-            return [false, false];
-        }
+        return new PlanSimulator(
+            ConnectionManager::get('default'),
+            $this->fetchTable('PlanParameters')->current()
+        );
+    }
 
+    /**
+     * Quais riscos o pedido está querendo, antes das regras que não dependem
+     * de escolha (idade mínima, aplicada por PlanSimulator::effectiveRisks).
+     *
+     * As flags "removeX" só valem acompanhadas de um código de corretor que
+     * de fato existe e está ativo — nunca sozinhas, senão bastaria montar a
+     * URL à mão para tirar os riscos sem corretor nenhum.
+     *
+     * @return array{0: bool, 1: bool} [morte, invalidez]
+     */
+    private function requestedRisks(?string $brokerCode, $removeSurvivorsPension, $removeDisabilityRetirement): array
+    {
         $broker = $this->fetchTable('Brokers')->findByCodeText($brokerCode);
 
         if ($broker === null || !$broker->isUsable()) {
@@ -161,14 +145,5 @@ class SimulatorController extends AppController
             empty($removeSurvivorsPension),
             empty($removeDisabilityRetirement),
         ];
-    }
-
-    private function calculateAge($birthDate) {
-        $birthDateObj = new \DateTime($birthDate);
-        $currentDateObj = new \DateTime('today');
-
-        $ageInterval = $currentDateObj->diff($birthDateObj);
-
-        return $ageInterval->y;
     }
 }

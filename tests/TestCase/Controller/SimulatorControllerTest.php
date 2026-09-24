@@ -21,6 +21,7 @@ class SimulatorControllerTest extends TestCase
 
     protected array $fixtures = [
         'app.Brokers',
+        'app.PlanParameters',
     ];
 
     private function recalculate(array $query): array
