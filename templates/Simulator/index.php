@@ -1876,16 +1876,6 @@ function createSecureCard($data, $type)
                 id: 'documents',
             },
             {
-                title: 'Plano',
-                id: 'plan',
-                onEnter: () => {
-                    const age = calculateAge($('#registerModal input[name="personalData[birthDate]"]').val());
-                    const benefitEntry = age <= 55 ? 65 : age + 10;
-
-                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
-                },
-            },
-            {
                 title: 'Beneficiário(s)',
                 id: 'dependents',
                 afterValidate: () => {
@@ -1912,13 +1902,6 @@ function createSecureCard($data, $type)
 
                     return false;
                 },
-            },
-            {
-                title: 'Declarações do proponente',
-                id: 'proponentStatement',
-                // Sem nenhum risco contratado, a Declaração Pessoal de Saúde
-                // não tem o que subscrever e o passo sai da navegação.
-                visible: () => !shouldSkipHealthStep(),
             },
             {
                 title: 'Regime de previdência',
@@ -1956,6 +1939,23 @@ function createSecureCard($data, $type)
 
                     return checked;
                 },
+            },
+            {
+                title: 'Plano',
+                id: 'plan',
+                onEnter: () => {
+                    const age = calculateAge($('#registerModal input[name="personalData[birthDate]"]').val());
+                    const benefitEntry = age <= 55 ? 65 : age + 10;
+
+                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
+                },
+            },
+            {
+                title: 'Declarações do proponente',
+                id: 'proponentStatement',
+                // Sem nenhum risco contratado, a Declaração Pessoal de Saúde
+                // não tem o que subscrever e o passo sai da navegação.
+                visible: () => !shouldSkipHealthStep(),
             },
             {
                 title: 'Dados para pagamento',
