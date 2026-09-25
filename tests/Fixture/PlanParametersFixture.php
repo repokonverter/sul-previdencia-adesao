@@ -26,6 +26,7 @@ class PlanParametersFixture extends TestFixture
                 'disability_retirement_percent' => '10.00',
                 'survivors_pension_floor' => '16.00',
                 'disability_retirement_floor' => '10.00',
+                'resume_link_days' => 7,
                 'created' => '2026-01-01 00:00:00',
                 'updated' => '2026-01-01 00:00:00',
             ],

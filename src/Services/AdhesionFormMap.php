@@ -77,7 +77,10 @@ final class AdhesionFormMap
             'property' => 'adhesion_document',
             'fields' => [
                 'documentType' => ['column' => 'type'],
-                'typeOther' => ['column' => 'type_other'],
+                // type_other não está aqui porque não existe campo para ele no
+                // formulário -- havia só no save(), gravando null desde sempre.
+                // Fora do mapa, o patch não o toca, e um valor posto pelo admin
+                // sobrevive a um novo envio da etapa.
                 'documentNumber' => ['column' => 'document_number'],
                 'issueDate' => ['column' => 'issue_date', 'cast' => self::DATE],
                 'issuer' => ['column' => 'issuer'],
@@ -231,6 +234,56 @@ final class AdhesionFormMap
         foreach (self::SECTIONS[$section]['fields'] as $field => $spec) {
             $payload[$field] = self::castOut($entity->get($spec['column']), $spec['cast'] ?? null);
         }
+
+        return $payload;
+    }
+
+    /**
+     * A adesão inteira no formato que o formulário entende, para repopular
+     * uma proposta retomada.
+     *
+     * O regime de previdência não está em SECTIONS porque não é tradução
+     * campo-a-campo: uma etapa vira várias linhas, uma por tipo marcado, com
+     * o nome, CPF e parentesco repetidos em todas. Aqui ela volta a ser uma
+     * etapa só.
+     *
+     * @return array<string, mixed>
+     */
+    public static function toFormPayload(EntityInterface $adhesion): array
+    {
+        $payload = [];
+
+        foreach (self::SECTIONS as $section => $definition) {
+            $property = $definition['property'];
+
+            if ($property === null) {
+                $payload[$section] = self::toForm($section, $adhesion);
+
+                continue;
+            }
+
+            $related = $adhesion->get($property);
+
+            $payload[$section] = empty($definition['many'])
+                ? self::toForm($section, $related)
+                : array_values(array_map(
+                    fn(EntityInterface $item): array => self::toForm($section, $item),
+                    (array)$related
+                ));
+        }
+
+        $schemes = (array)$adhesion->get('adhesion_pension_schemes');
+        $first = $schemes[0] ?? null;
+
+        $payload['pensionScheme'] = $first === null ? [] : [
+            'pensionSchemeType' => array_values(array_map(
+                fn(EntityInterface $scheme): string => (string)$scheme->get('pension_scheme'),
+                $schemes
+            )),
+            'name' => $first->get('name'),
+            'cpf' => $first->get('cpf'),
+            'kinship' => $first->get('kinship'),
+        ];
 
         return $payload;
     }

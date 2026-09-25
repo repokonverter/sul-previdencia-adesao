@@ -28,6 +28,7 @@ use Cake\ORM\Entity;
  * @property string $disability_retirement_percent
  * @property string $survivors_pension_floor
  * @property string $disability_retirement_floor
+ * @property int $resume_link_days
  */
 class PlanParameter extends Entity
 {
@@ -37,6 +38,7 @@ class PlanParameter extends Entity
         'disability_retirement_percent' => true,
         'survivors_pension_floor' => true,
         'disability_retirement_floor' => true,
+        'resume_link_days' => true,
         'created' => true,
         'updated' => true,
     ];
@@ -54,6 +56,11 @@ class PlanParameter extends Entity
     public function disabilityRetirementRate(): float
     {
         return (float)$this->disability_retirement_percent / 100;
+    }
+
+    public function resumeLinkDays(): int
+    {
+        return (int)$this->resume_link_days;
     }
 
     public function survivorsPensionFloor(): float
