@@ -155,6 +155,52 @@ class SimulatorControllerTest extends TestCase
         $this->assertFalse($result['planLocked']);
     }
 
+    /**
+     * "Atualizar" traz o que o admin gravou, sem recalcular. Se recalculasse,
+     * um clique apagaria o valor negociado por telefone — que é exatamente o
+     * que ele existe para preservar.
+     */
+    public function testPlanStateReturnsWhatIsStoredRatherThanTheFormula(): void
+    {
+        [$id, $uuid] = $this->createAdhesion(true, true, adminOverridden: true);
+
+        $plans = TableRegistry::getTableLocator()->get('AdhesionPlans');
+        $plan = $plans->find()->where(['adhesion_initial_data_id' => $id])->firstOrFail();
+        $plans->saveOrFail($plans->patchEntity($plan, [
+            'monthly_retirement_contribution' => '800.00',
+            'monthly_survivors_pension_contribution' => '120.00',
+            'monthly_disability_retirement_contribution' => '80.00',
+        ]));
+
+        $this->get('/simulator/plan-state?' . http_build_query([
+            'initialDataId' => $id,
+            'storageUuid' => $uuid,
+        ]));
+
+        $this->assertResponseOk();
+        $result = json_decode((string)$this->_response->getBody(), true);
+
+        $this->assertTrue($result['success']);
+        // A fórmula sobre 1000 daria 740/160/100; estes são os valores gravados.
+        $this->assertEqualsWithDelta(800.0, $result['monthlyRetirementContribution'], 0.01);
+        $this->assertEqualsWithDelta(120.0, $result['monthlySurvivorsPensionContribution'], 0.01);
+        $this->assertEqualsWithDelta(1000.0, $result['totalMonthlyContribution'], 0.01);
+        $this->assertTrue($result['planLocked']);
+    }
+
+    public function testPlanStateRefusesWithoutTheAdhesionsOwnUuid(): void
+    {
+        [$id] = $this->createAdhesion(true, true);
+
+        $this->get('/simulator/plan-state?' . http_build_query([
+            'initialDataId' => $id,
+            'storageUuid' => 'uuid-que-nao-e-o-dela',
+        ]));
+
+        $this->assertResponseOk();
+        $this->assertFalse(json_decode((string)$this->_response->getBody(), true)['success']);
+    }
+
     public function testMinorUnderSixteenNeverHasRisks(): void
     {
         $tenYearsAgo = (new \DateTime('-10 years'))->format('Y-m-d');

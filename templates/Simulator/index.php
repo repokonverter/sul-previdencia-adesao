@@ -917,6 +917,7 @@ $createSecureCard = function ($data, $type)
                                             <span class="input-group-text">R$</span>
                                             <input type="text" class="form-control money" id="planMonthlyInvestment" value="<?= number_format($totalMonthlyContributionPlan, 2, '.', ''); ?>">
                                             <button type="button" class="btn btn-outline-primary" id="btnRecalculatePlan" onclick="recalculatePlan();">Recalcular</button>
+                                            <button type="button" class="btn btn-outline-secondary d-none" id="btnRefreshPlan" onclick="refreshPlanFromServer();" title="Traz os valores que a Sul Previdência gravou">Atualizar</button>
                                         </div>
                                         <div id="planRecalculateError" class="text-danger mt-1" style="display: none;"></div>
                                     </div>
@@ -1941,6 +1942,16 @@ $createSecureCard = function ($data, $type)
                     // pelo admin: as linhas correspondentes não podem aparecer.
                     updateRiskVisibility();
                     applyPlanLock();
+
+                    // Só faz sentido oferecer "Atualizar" quando existe uma
+                    // adesão gravada de onde puxar.
+                    document.getElementById('btnRefreshPlan')
+                        .classList.toggle('d-none', initialDataId === null);
+
+                    // Busca automática ao abrir o passo: o caso comum é o
+                    // proponente ao telefone enquanto o admin mexe, e ele não
+                    // tem por que saber que existe um botão.
+                    refreshPlanFromServer();
                 },
             },
             {
@@ -2890,6 +2901,71 @@ $createSecureCard = function ($data, $type)
             })
         }
 
+        /**
+         * Traz o plano como a Sul Previdência gravou, sem recalcular.
+         *
+         * Serve ao caso do proponente ao telefone com o atendimento: o admin
+         * mexe na adesão e o valor novo aparece na tela aberta, sem precisar
+         * de link nem de recarregar a página. "Recalcular" faria o oposto --
+         * rodaria a fórmula e apagaria o que acabou de ser combinado.
+         */
+        const refreshPlanFromServer = () => {
+            if (initialDataId === null || storageUuid === null) return;
+
+            const button = document.getElementById('btnRefreshPlan');
+
+            button.disabled = true;
+
+            $.ajax({
+                type: 'GET',
+                url: `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'planState']) ?>`,
+                data: { initialDataId, storageUuid },
+                dataType: 'json',
+                success: (response) => {
+                    if (!response.success) return;
+
+                    applyPlanResponse(response);
+                },
+                complete: () => {
+                    button.disabled = false;
+                },
+            });
+        };
+
+        /**
+         * Aplica na tela um plano vindo do servidor, seja do recálculo, seja
+         * do que está gravado. Os dois respondem no mesmo formato de
+         * propósito: a tela não precisa saber qual dos dois falou.
+         */
+        const applyPlanResponse = (response) => {
+            const formatMoney = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            $('#registerModal input[name="plans[benefitEntryAge]"]').val(response.benefitEntryAge);
+            $('#registerModal input[name="plans[monthly_retirement_contribution]"]').val(formatMoney(response.monthlyRetirementContribution));
+            $('#registerModal input[name="plans[monthly_survivors_pension_contribution]"]').val(formatMoney(response.monthlySurvivorsPensionContribution));
+            $('#registerModal input[name="plans[survivors_pension_insured_capital]"]').val(formatMoney(response.survivorsPensionInsuredCapital));
+            $('#registerModal input[name="plans[monthly_disability_retirement_contribution]"]').val(formatMoney(response.monthlyDisabilityRetirementContribution));
+            $('#registerModal input[name="plans[disability_retirement_insured_capital]"]').val(formatMoney(response.disabilityRetirementInsuredCapital));
+            $('#paymentTotalContribution').val(formatMoney(response.totalMonthlyContribution));
+            document.getElementById('planTotalMonthlyContribution').textContent = response.totalMonthlyContribution.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+
+            if (response.hasSurvivorsPension !== undefined)
+                hasSurvivorsPension = response.hasSurvivorsPension;
+
+            if (response.hasDisabilityRetirement !== undefined)
+                hasDisabilityRetirement = response.hasDisabilityRetirement;
+
+            if (response.planLocked !== undefined) {
+                planLocked = response.planLocked;
+                applyPlanLock();
+            }
+
+            updateRiskVisibility();
+        };
+
         const recalculatePlan = () => {
             const birthDate = $('#registerModal input[name="personalData[birthDate]"]').val();
             const investmentInput = document.getElementById('planMonthlyInvestment');
@@ -2919,35 +2995,10 @@ $createSecureCard = function ($data, $type)
                         return;
                     }
 
-                    const formatMoney = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(response.benefitEntryAge);
-                    $('#registerModal input[name="plans[monthly_retirement_contribution]"]').val(formatMoney(response.monthlyRetirementContribution));
-                    $('#registerModal input[name="plans[monthly_survivors_pension_contribution]"]').val(formatMoney(response.monthlySurvivorsPensionContribution));
-                    $('#registerModal input[name="plans[survivors_pension_insured_capital]"]').val(formatMoney(response.survivorsPensionInsuredCapital));
-                    $('#registerModal input[name="plans[monthly_disability_retirement_contribution]"]').val(formatMoney(response.monthlyDisabilityRetirementContribution));
-                    $('#registerModal input[name="plans[disability_retirement_insured_capital]"]').val(formatMoney(response.disabilityRetirementInsuredCapital));
-                    $('#paymentTotalContribution').val(formatMoney(response.totalMonthlyContribution));
-                    document.getElementById('planTotalMonthlyContribution').textContent = response.totalMonthlyContribution.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                    });
-
-                    // O servidor é quem decide quais riscos a adesão tem: a
-                    // tela se realinha ao que veio na resposta, que é como
-                    // ela fica sabendo de uma remoção feita no admin.
-                    if (response.hasSurvivorsPension !== undefined)
-                        hasSurvivorsPension = response.hasSurvivorsPension;
-
-                    if (response.hasDisabilityRetirement !== undefined)
-                        hasDisabilityRetirement = response.hasDisabilityRetirement;
-
-                    if (response.planLocked !== undefined) {
-                        planLocked = response.planLocked;
-                        applyPlanLock();
-                    }
-
-                    updateRiskVisibility();
+                    // O servidor é quem decide quais riscos a adesão tem e se o
+                    // plano está travado: a tela se realinha ao que veio, que é
+                    // como ela fica sabendo de uma mudança feita no admin.
+                    applyPlanResponse(response);
                 },
                 error: () => {
                     errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';

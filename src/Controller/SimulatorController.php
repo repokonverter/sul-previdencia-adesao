@@ -190,6 +190,74 @@ class SimulatorController extends AppController
             ->all();
     }
 
+    /**
+     * O plano como está gravado, sem recalcular nada.
+     *
+     * É a diferença entre os dois botões do passo: "Recalcular" roda a
+     * fórmula a partir do investimento digitado, e "Atualizar" traz o que o
+     * admin gravou. Se o segundo recalculasse, um clique apagaria o valor
+     * negociado por telefone -- que é exatamente o que ele existe para
+     * preservar.
+     */
+    function planState()
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+        $this->autoRender = false;
+
+        $adhesion = $this->identifiedAdhesion(
+            $this->request->getQuery('initialDataId'),
+            $this->request->getQuery('storageUuid')
+        );
+
+        if ($adhesion === null || $adhesion->adhesion_plan === null) {
+            return $this->response->withType('application/json')
+                ->withStringBody(json_encode(['success' => false]));
+        }
+
+        $plan = $adhesion->adhesion_plan;
+
+        return $this->response->withType('application/json')
+            ->withStringBody(json_encode([
+                'success' => true,
+                'benefitEntryAge' => $plan->benefit_entry_age,
+                'monthlyRetirementContribution' => (float)$plan->monthly_retirement_contribution,
+                'monthlySurvivorsPensionContribution' => (float)$plan->monthly_survivors_pension_contribution,
+                'survivorsPensionInsuredCapital' => (float)$plan->survivors_pension_insured_capital,
+                'monthlyDisabilityRetirementContribution' => (float)$plan->monthly_disability_retirement_contribution,
+                'disabilityRetirementInsuredCapital' => (float)$plan->disability_retirement_insured_capital,
+                'totalMonthlyContribution' => (float)$plan->monthly_retirement_contribution
+                    + (float)$plan->monthly_survivors_pension_contribution
+                    + (float)$plan->monthly_disability_retirement_contribution,
+                'hasSurvivorsPension' => (bool)$plan->has_survivors_pension,
+                'hasDisabilityRetirement' => (bool)$plan->has_disability_retirement,
+                'planLocked' => (bool)$plan->admin_overridden,
+            ]));
+    }
+
+    /**
+     * A adesão que o navegador diz ser, só quando ele prova. O id é
+     * sequencial e viaja no POST; quem autoriza falar sobre a adesão é o
+     * storage_uuid, conferido como em save().
+     */
+    private function identifiedAdhesion($initialDataId, $storageUuid): ?\App\Model\Entity\AdhesionInitialData
+    {
+        if (empty($initialDataId) || empty($storageUuid)) {
+            return null;
+        }
+
+        /** @var \App\Model\Entity\AdhesionInitialData|null $adhesion */
+        $adhesion = $this->fetchTable('AdhesionInitialDatas')->find()
+            ->where(['AdhesionInitialDatas.id' => (int)$initialDataId])
+            ->contain(['AdhesionPlans'])
+            ->first();
+
+        if ($adhesion === null || !hash_equals((string)$adhesion->storage_uuid, (string)$storageUuid)) {
+            return null;
+        }
+
+        return $adhesion;
+    }
+
     private function planSimulator(): PlanSimulator
     {
         return new PlanSimulator(
@@ -211,18 +279,9 @@ class SimulatorController extends AppController
      */
     private function storedPlanState($initialDataId, $storageUuid): array
     {
-        if (empty($initialDataId) || empty($storageUuid)) {
-            return [true, true, false];
-        }
+        $adhesion = $this->identifiedAdhesion($initialDataId, $storageUuid);
 
-        $adhesion = $this->fetchTable('AdhesionInitialDatas')->find()
-            ->where(['AdhesionInitialDatas.id' => (int)$initialDataId])
-            ->contain(['AdhesionPlans'])
-            ->first();
-
-        // Mesma checagem do save(): o id é sequencial e vem do navegador, o
-        // storage_uuid é o que autoriza falar sobre esta adesão.
-        if ($adhesion === null || !hash_equals((string)$adhesion->storage_uuid, (string)$storageUuid)) {
+        if ($adhesion === null) {
             return [true, true, false];
         }
 
