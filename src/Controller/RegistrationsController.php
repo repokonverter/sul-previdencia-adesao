@@ -26,6 +26,7 @@ use Cake\Http\Client;
 use Cake\Core\Configure;
 use App\View\Helper\BankHelper;
 use Cake\Routing\Router;
+use App\Services\AdhesionFormMap;
 use App\Utility\Money;
 use Cake\Utility\Text;
 use Cake\View\View;
@@ -174,26 +175,11 @@ class RegistrationsController extends AppController
             }
 
             if (isset($data['personalData'])) {
-                $personalData = $data['personalData'];
                 $personal = !$initialDataAll->adhesion_personal_data ? $this->AdhesionPersonalDatas->newEmptyEntity() : $this->AdhesionPersonalDatas->get($initialDataAll->adhesion_personal_data->id);
                 $personal = $this->AdhesionPersonalDatas->patchEntity(
                     $personal,
-                    [
-                        'adhesion_initial_data_id' => $initialDataId,
-                        'plan_for' => $personalData['planFor'] ?? '',
-                        'name' => $personalData['name'] ?? '',
-                        'cpf' => $personalData['cpf'] ?? '',
-                        'birth_date' => $personalData['birthDate'] ?? null,
-                        'nacionality' => $personalData['nacionality'] ?? '',
-                        'gender' => $personalData['gender'] ?? null,
-                        'marital_status' => $personalData['maritalStatus'] ?? null,
-                        'number_children' => $personalData['numberChildren'] ?? null,
-                        'mother_name' => $personalData['motherName'] ?? null,
-                        'father_name' => $personalData['fatherName'] ?? null,
-                        'name_legal_representative' => $personalData['nameLegalRepresentative'] ?? '',
-                        'cpf_legal_representative' => $personalData['cpfLegalRepresentative'] ?? '',
-                        'affiliation_legal_representative' => $personalData['affiliationLegalRepresentative'] ?? '',
-                    ],
+                    ['adhesion_initial_data_id' => $initialDataId]
+                        + AdhesionFormMap::toColumns('personalData', $data['personalData']),
                 );
 
                 if (!$this->AdhesionPersonalDatas->save($personal))
@@ -201,19 +187,11 @@ class RegistrationsController extends AppController
             }
 
             if (isset($data['documents'])) {
-                $documentsData = $data['documents'];
                 $documents = !$initialDataAll->adhesion_document ? $this->AdhesionDocuments->newEmptyEntity() : $this->AdhesionDocuments->get($initialDataAll->adhesion_document->id);
                 $documents = $this->AdhesionDocuments->patchEntity(
                     $documents,
-                    [
-                        'adhesion_initial_data_id' => $initialDataId,
-                        'type' => $documentsData['documentType'],
-                        'type_other' => $documentsData['typeOther'] ?? null,
-                        'document_number' => $documentsData['documentNumber'],
-                        'issue_date' => $documentsData['issueDate'] ?? null,
-                        'issuer' => $documentsData['issuer'] ?? null,
-                        'place_birth' => $documentsData['placeBirth'] ?? null,
-                    ],
+                    ['adhesion_initial_data_id' => $initialDataId]
+                        + AdhesionFormMap::toColumns('documents', $data['documents']),
                 );
 
                 if (!$this->AdhesionDocuments->save($documents))
@@ -252,22 +230,17 @@ class RegistrationsController extends AppController
                 // payload simplesmente não traz mais as flags, e tudo voltaria
                 // a true. Sem as chaves, o valor gravado permanece; numa
                 // adesão nova, o default da coluna dá os dois riscos.
+                $planColumns = AdhesionFormMap::toColumns('plans', $planData);
                 $planPatch = [
                     'adhesion_initial_data_id' => $initialDataId,
-                    'benefit_entry_age' => $planData['benefitEntryAge'] ?? null,
+                    'benefit_entry_age' => $planColumns['benefit_entry_age'],
                 ];
 
                 // Valor ajustado à mão pelo admin é valor negociado, e o
                 // formulário não o desfaz. A tela já mostra o passo travado,
                 // mas a tela é conveniência e o POST é forjável.
                 if (!$plans->admin_overridden) {
-                    $planPatch += [
-                        'monthly_retirement_contribution' => Money::parse($planData['monthly_retirement_contribution'] ?? null),
-                        'monthly_survivors_pension_contribution' => Money::parse($planData['monthly_survivors_pension_contribution'] ?? null),
-                        'survivors_pension_insured_capital' => Money::parse($planData['survivors_pension_insured_capital'] ?? null),
-                        'monthly_disability_retirement_contribution' => Money::parse($planData['monthly_disability_retirement_contribution'] ?? null),
-                        'disability_retirement_insured_capital' => Money::parse($planData['disability_retirement_insured_capital'] ?? null),
-                    ];
+                    $planPatch += $planColumns;
                 }
 
                 $plans = $this->AdhesionPlans->patchEntity($plans, $planPatch);
@@ -281,17 +254,10 @@ class RegistrationsController extends AppController
                     $this->AdhesionDependents->deleteAll(['adhesion_initial_data_id' => $initialDataId]);
 
                 foreach ($data['dependents'] as $dep) {
-                    $dependent = $this->AdhesionDependents->newEmptyEntity();
                     $dependent = $this->AdhesionDependents->patchEntity(
-                        $dependent,
-                        [
-                            'adhesion_initial_data_id' => $initialDataId,
-                            'name' => $dep['name'] ?? '',
-                            'cpf' => $dep['cpf'] ?? null,
-                            'birth_date' => $dep['birth_date'] ?? null,
-                            'kinship' => $dep['kinship'] ?? null,
-                            'participation' => str_replace(',', '.', $dep['participation']) ?? null,
-                        ],
+                        $this->AdhesionDependents->newEmptyEntity(),
+                        ['adhesion_initial_data_id' => $initialDataId]
+                            + AdhesionFormMap::toColumns('dependents', $dep),
                     );
 
                     if (!$this->AdhesionDependents->save($dependent))
@@ -300,20 +266,11 @@ class RegistrationsController extends AppController
             }
 
             if (!empty($data['addresses'])) {
-                $addrData = $data['addresses'];
                 $address = !$initialDataAll->adhesion_address ? $this->AdhesionAddresses->newEmptyEntity() : $this->AdhesionAddresses->get($initialDataAll->adhesion_address->id);
                 $address = $this->AdhesionAddresses->patchEntity(
                     $address,
-                    [
-                        'adhesion_initial_data_id' => $initialDataId,
-                        'cep' => str_replace(['.', '-'], '', $addrData['cep']) ?? '',
-                        'address' => $addrData['address'] ?? '',
-                        'number' => $addrData['number'] ?? '',
-                        'complement' => $addrData['complement'] ?? '',
-                        'neighborhood' => $addrData['neighborhood'] ?? '',
-                        'city' => $addrData['city'] ?? '',
-                        'state' => $addrData['state'] ?? '',
-                    ],
+                    ['adhesion_initial_data_id' => $initialDataId]
+                        + AdhesionFormMap::toColumns('addresses', $data['addresses']),
                 );
 
                 if (!$this->AdhesionAddresses->save($address))
@@ -321,24 +278,11 @@ class RegistrationsController extends AppController
             }
 
             if (!empty($data['otherInformations'])) {
-                $otherInformationsData = $data['otherInformations'];
                 $otherInformations = !$initialDataAll->adhesion_other_information ? $this->AdhesionOtherInformations->newEmptyEntity() : $this->AdhesionOtherInformations->get($initialDataAll->adhesion_other_information->id);
                 $otherInformations = $this->AdhesionOtherInformations->patchEntity(
                     $otherInformations,
-                    [
-                        'adhesion_initial_data_id' => $initialDataId,
-                        'main_occupation_description' => $otherInformationsData['mainOccupationDescription'] ?? '',
-                        'main_occupation_code' => $otherInformationsData['mainOccupationCode'] ?? '',
-                        'category' => $otherInformationsData['category'] ?? '',
-                        'brazilian_resident' => $otherInformationsData['brazilianResident'] ?? false,
-                        'brazilian_resident_obs' => $otherInformationsData['brazilianResidentObs'] ?? '',
-                        'politically_exposed' => $otherInformationsData['politicallyExposed'] ?? false,
-                        'politically_exposed_obs' => $otherInformationsData['politicallyExposedObs'] ?? '',
-                        'obligation_other_countries' => $otherInformationsData['obligationOtherCountries'] ?? false,
-                        'obligation_other_countries_obs' => $otherInformationsData['obligationOtherCountriesObs'] ?? '',
-                        'company' => $otherInformationsData['company'] ?? '',
-                        'monthly_income' => Money::parse($otherInformationsData['monthlyIncome'] ?? null),
-                    ],
+                    ['adhesion_initial_data_id' => $initialDataId]
+                        + AdhesionFormMap::toColumns('otherInformations', $data['otherInformations']),
                 );
 
                 if (!$this->AdhesionOtherInformations->save($otherInformations))
@@ -346,37 +290,11 @@ class RegistrationsController extends AppController
             }
 
             if (!empty($data['proponentStatement'])) {
-                $proponentStatementsData = $data['proponentStatement'];
                 $proponentStatements = !$initialDataAll->adhesion_proponent_statement ? $this->AdhesionProponentStatements->newEmptyEntity() : $this->AdhesionProponentStatements->get($initialDataAll->adhesion_proponent_statement->id);
                 $proponentStatements = $this->AdhesionProponentStatements->patchEntity(
                     $proponentStatements,
-                    [
-                        'adhesion_initial_data_id' => $initialDataId,
-                        'health_problem' => $proponentStatementsData['healthProblem'] ?? false,
-                        'health_problem_obs' => $proponentStatementsData['healthProblemObs'] ?? '',
-                        'heart_disease' => $proponentStatementsData['heartDisease'] ?? false,
-                        'heart_disease_obs' => $proponentStatementsData['heartDiseaseObs'] ?? '',
-                        'suffered_organ_defects' => $proponentStatementsData['sufferedOrganDefects'] ?? false,
-                        'suffered_organ_defects_obs' => $proponentStatementsData['sufferedOrganDefectsObs'] ?? '',
-                        'surgery' => $proponentStatementsData['surgery'] ?? false,
-                        'surgery_obs' => $proponentStatementsData['surgeryObs'] ?? '',
-                        'away' => $proponentStatementsData['away'] ?? false,
-                        'away_obs' => $proponentStatementsData['awayObs'] ?? '',
-                        'practices_parachuting' => $proponentStatementsData['practicesParachuting'] ?? false,
-                        'practices_parachuting_obs' => $proponentStatementsData['practicesParachutingObs'] ?? '',
-                        'smoker' => $proponentStatementsData['smoker'] ?? false,
-                        'smoker_type' => $proponentStatementsData['smokerType'] ?? false,
-                        'smoker_type_obs' => $proponentStatementsData['smokerTypeObs'] ?? '',
-                        'smoker_qty' => $proponentStatementsData['smokerQty'] ?? '',
-                        'weight' => str_replace(',', '.', $proponentStatementsData['weight']) ?? null,
-                        'height' => str_replace(',', '.', $proponentStatementsData['height']) ?? null,
-                        'gripe' => $proponentStatementsData['gripe'] ?? false,
-                        'gripe_obs' => $proponentStatementsData['gripeObs'] ?? '',
-                        'covid' => $proponentStatementsData['covid'] ?? false,
-                        'covid_obs' => $proponentStatementsData['covidObs'] ?? '',
-                        'covid_sequelae' => $proponentStatementsData['covidSequelae'] ?? false,
-                        'covid_sequelae_obs' => $proponentStatementsData['covidSequelaeObs'] ?? '',
-                    ],
+                    ['adhesion_initial_data_id' => $initialDataId]
+                        + AdhesionFormMap::toColumns('proponentStatement', $data['proponentStatement']),
                 );
 
                 if (!$this->AdhesionProponentStatements->save($proponentStatements))
