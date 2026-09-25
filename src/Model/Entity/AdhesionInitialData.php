@@ -35,7 +35,7 @@ class AdhesionInitialData extends Entity
         'adhesion_pension_schemes' => true,
         'adhesion_payment_details' => true,
         'adhesion_proponent_statements' => true,
-        'clicksign_data' => true,
+        'clicksign_datas' => true,
         'pix_transaction' => true,
         'promotional_code_entity' => true,
         'association_partner' => true,

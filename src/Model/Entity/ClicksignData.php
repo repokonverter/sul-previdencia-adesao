@@ -14,6 +14,8 @@ class ClicksignData extends Entity
         'status' => true,
         'attempts' => true,
         'last_error' => true,
+        'attempt' => true,
+        'canceled_at' => true,
         'created' => true,
         'updated' => true,
     ];

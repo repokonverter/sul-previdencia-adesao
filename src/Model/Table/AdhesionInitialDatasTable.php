@@ -60,7 +60,7 @@ class AdhesionInitialDatasTable extends AppTable
         $this->hasMany('AdhesionPensionSchemes', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
-        $this->hasOne('ClicksignDatas', [
+        $this->hasMany('ClicksignDatas', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
         $this->hasOne('AdhesionPaymentDetails', [

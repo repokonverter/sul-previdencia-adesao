@@ -391,6 +391,74 @@ $formatLogBody = function (?string $value): string
 
     <!-- INTEGRAÇÕES -->
     <div id="integrationLogs" class="<?= $tabPaneClass('integrationLogs', $activeTab) ?>">
+        <?php
+        $envelope = $adhesion->clicksign_datas[0] ?? null;
+        $changedAt = $adhesion->adhesion_plan?->admin_overridden_at;
+        // Documento gerado antes da última alteração está desatualizado. A
+        // comparação é de datas em vez de uma flag porque a pergunta é
+        // exatamente essa: o que o proponente tem em mãos é anterior ao que
+        // está gravado?
+        $documentsAreStale = $envelope !== null
+            && $changedAt !== null
+            && $envelope->created !== null
+            && $changedAt->greaterThan($envelope->created);
+        ?>
+
+        <?php if ($documentsAreStale): ?>
+            <div class="alert alert-warning">
+                <h6 class="fw-bold"><i class="bi bi-exclamation-triangle"></i> Documentos desatualizados</h6>
+                <p class="mb-2">
+                    O plano foi alterado em <strong><?= $changedAt->format('d/m/Y H:i') ?></strong>,
+                    depois de os documentos terem sido gerados em
+                    <strong><?= $envelope->created->format('d/m/Y H:i') ?></strong>.
+                    O que o proponente tem para assinar não reflete o que está gravado.
+                </p>
+                <?= $this->Form->postLink(
+                    '<i class="bi bi-arrow-repeat"></i> Regerar documentos e reenviar para assinatura',
+                    ['action' => 'regenerateDocuments', $adhesion->id],
+                    [
+                        'escape' => false,
+                        'class' => 'btn btn-warning btn-sm',
+                        'confirm' => 'O envelope atual será cancelado e o proponente receberá um e-mail '
+                            . 'pedindo que assine os documentos novos. Continuar?',
+                    ]
+                ) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($adhesion->clicksign_datas)): ?>
+            <div class="card p-4 shadow-sm mb-3">
+                <h5 class="fw-bold mb-3 text-primary">Envelopes de assinatura</h5>
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 90px;">Tentativa</th>
+                            <th>Envelope</th>
+                            <th style="width: 120px;">Situação</th>
+                            <th style="width: 160px;">Criado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($adhesion->clicksign_datas as $attempt): ?>
+                            <tr>
+                                <td>#<?= h($attempt->attempt) ?></td>
+                                <td><code class="small"><?= h($attempt->envelope_id) ?></code></td>
+                                <td>
+                                    <span class="badge bg-<?= match ($attempt->status) {
+                                        'sent' => 'success',
+                                        'failed' => 'danger',
+                                        'canceled' => 'secondary',
+                                        default => 'warning',
+                                    } ?>"><?= h($attempt->status) ?></span>
+                                </td>
+                                <td><?= $attempt->created?->format('d/m/Y H:i') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Linha do tempo de integrações</h5>
             <?php if (!empty($adhesion->integration_logs)): ?>

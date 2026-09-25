@@ -116,6 +116,7 @@ class AdhesionsController extends AppController
             'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
             'IntegrationLogs' => ['sort' => ['IntegrationLogs.created' => 'DESC']],
             'AdhesionAudits' => ['sort' => ['AdhesionAudits.created' => 'DESC']],
+            'ClicksignDatas' => ['sort' => ['ClicksignDatas.attempt' => 'DESC']],
         ]);
 
         $this->set([
@@ -526,6 +527,54 @@ class AdhesionsController extends AppController
         $this->Flash->success('Link revogado.');
 
         return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+    }
+
+    /**
+     * Regera os documentos e manda para assinatura de novo.
+     *
+     * Nunca automático depois de uma edição: um erro de digitação no
+     * formulário do admin dispararia envelope novo e e-mail ao proponente
+     * pedindo que assine outra vez. Quem decide incomodar o cliente é o admin.
+     *
+     * O envelope anterior é cancelado e nasce outro: a Clicksign só apaga
+     * documento de envelope em `draft`, então trocar os PDFs do que já saiu
+     * para assinatura não é possível.
+     */
+    public function regenerateDocuments($id)
+    {
+        $this->request->allowMethod(['post']);
+
+        $adhesion = $this->AdhesionInitialDatas->get($id, contain: AdhesionAuditor::CONTAINS);
+
+        if ($adhesion->adhesion_payment_detail === null) {
+            $this->Flash->error('Esta adesão ainda não foi finalizada: não há documentos a regerar.');
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'integrationLogs']]);
+        }
+
+        try {
+            \App\Services\ClicksignEnvelopeSender::fromConfigure($this->fetchTable('ClicksignDatas'))
+                ->send($adhesion, [
+                    [
+                        'file' => base64_encode($this->PdfGenerator->generatePdfApplicationForm($id, true)),
+                        'name' => 'proposta_adesao.pdf',
+                    ],
+                    [
+                        'file' => base64_encode($this->PdfGenerator->generateRegistrationFormPdf($id, true)),
+                        'name' => 'formulario_inscricao.pdf',
+                    ],
+                ]);
+
+            $this->auditor->record((int)$id, $this->currentUser(), AdhesionAudit::ACTION_UPDATED, [
+                'documentos' => ['', 'regerados e reenviados para assinatura'],
+            ]);
+
+            $this->Flash->success('Documentos regerados e enviados para assinatura. O envelope anterior foi cancelado.');
+        } catch (\Exception $e) {
+            $this->Flash->error('Falha ao regerar os documentos: ' . $e->getMessage());
+        }
+
+        return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'integrationLogs']]);
     }
 
     public function generatePdf($id, $returnContent = false)

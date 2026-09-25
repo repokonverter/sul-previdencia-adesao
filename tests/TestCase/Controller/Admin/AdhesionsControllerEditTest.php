@@ -292,6 +292,70 @@ class AdhesionsControllerEditTest extends TestCase
         $this->assertResponseContains('Adesão paga');
     }
 
+    /**
+     * O que o proponente tem para assinar é anterior ao que está gravado: a
+     * tela precisa dizer isso, porque nada reenvia sozinho — quem decide
+     * incomodar o cliente é o admin.
+     */
+    public function testTheScreenWarnsWhenTheDocumentsPredateTheChange(): void
+    {
+        [$adhesionId, $planId] = $this->createAdhesion();
+
+        $clicksign = $this->table('ClicksignDatas');
+        $clicksign->saveOrFail($clicksign->newEntity([
+            'adhesion_initial_data_id' => $adhesionId,
+            'envelope_id' => 'env-antigo',
+            'attempt' => 1,
+            'status' => 'sent',
+            'created' => new \Cake\I18n\DateTime('-1 day'),
+        ]));
+
+        $this->post("/admin/adhesions/edit/$adhesionId", [
+            'adhesion_plan' => ['id' => $planId, 'monthly_survivors_pension_contribution' => '110.00'],
+        ]);
+
+        $this->get("/admin/adhesions/view/$adhesionId?tab=integrationLogs");
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Documentos desatualizados');
+        $this->assertResponseContains('Regerar documentos');
+        $this->assertResponseContains('env-antigo');
+    }
+
+    public function testNoWarningWhenTheDocumentsCameAfterTheChange(): void
+    {
+        [$adhesionId, $planId] = $this->createAdhesion();
+
+        $this->post("/admin/adhesions/edit/$adhesionId", [
+            'adhesion_plan' => ['id' => $planId, 'monthly_survivors_pension_contribution' => '110.00'],
+        ]);
+
+        $clicksign = $this->table('ClicksignDatas');
+        $clicksign->saveOrFail($clicksign->newEntity([
+            'adhesion_initial_data_id' => $adhesionId,
+            'envelope_id' => 'env-novo',
+            'attempt' => 1,
+            'status' => 'sent',
+            'created' => new \Cake\I18n\DateTime('+1 minute'),
+        ]));
+
+        $this->get("/admin/adhesions/view/$adhesionId?tab=integrationLogs");
+
+        $this->assertResponseOk();
+        $this->assertResponseNotContains('Documentos desatualizados');
+    }
+
+    public function testRegeneratingIsRefusedBeforeTheAdhesionIsFinalised(): void
+    {
+        [$adhesionId] = $this->createAdhesion();
+
+        $this->post("/admin/adhesions/regenerate-documents/$adhesionId");
+
+        $this->assertRedirect();
+        $this->assertSame(0, $this->table('ClicksignDatas')->find()
+            ->where(['adhesion_initial_data_id' => $adhesionId])->count());
+    }
+
     public function testSnapshotContainsEverythingTheEditFormCanTouch(): void
     {
         [$adhesionId] = $this->createAdhesion();
