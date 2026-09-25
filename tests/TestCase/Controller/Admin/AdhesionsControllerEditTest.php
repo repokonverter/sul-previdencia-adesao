@@ -52,6 +52,18 @@ class AdhesionsControllerEditTest extends TestCase
         ]);
         $adhesions->saveOrFail($adhesion);
 
+        // O formulário do admin desreferencia as associações sem guarda (ex.:
+        // adhesion_personal_data->birth_date), então a adesão de teste precisa
+        // tê-las para a tela renderizar sem aviso.
+        foreach ([
+            'AdhesionPersonalDatas' => ['plan_for' => 'Titular', 'name' => 'Fulano de Tal', 'cpf' => '123.456.789-09', 'birth_date' => '1985-03-10', 'nacionality' => 'Brasileira'],
+            'AdhesionDocuments' => ['type' => 'RG', 'document_number' => '1234567', 'issue_date' => '2010-01-01', 'issuer' => 'SSP'],
+        ] as $table => $data) {
+            $this->table($table)->saveOrFail(
+                $this->table($table)->newEntity($data + ['adhesion_initial_data_id' => $adhesion->id])
+            );
+        }
+
         $plans = $this->table('AdhesionPlans');
         $plan = $plans->newEntity([
             'adhesion_initial_data_id' => $adhesion->id,
@@ -165,6 +177,69 @@ class AdhesionsControllerEditTest extends TestCase
         $this->assertResponseContains('Histórico de alterações');
         $this->assertResponseContains('Plano › Monthly survivors pension contribution');
         $this->assertResponseContains('ajustados manualmente');
+    }
+
+    public function testTheFormOffersRiskSwitchesAndABrokerSelect(): void
+    {
+        [$adhesionId] = $this->createAdhesion();
+
+        $this->get("/admin/adhesions/edit/$adhesionId");
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Riscos contratados');
+        $this->assertResponseContains('Corretor');
+
+        // O checkbox precisa vir acompanhado do campo oculto: sem ele,
+        // desmarcar não posta nada, a chave some do payload e o patch deixa o
+        // risco exatamente como estava -- desmarcar não faria nada.
+        $this->assertResponseContains('name="adhesion_plan[has_survivors_pension]" value="0"');
+    }
+
+    public function testUncheckingARiskSwitchRemovesIt(): void
+    {
+        [$adhesionId, $planId] = $this->createAdhesion();
+
+        $this->post("/admin/adhesions/edit/$adhesionId", [
+            'adhesion_plan' => [
+                'id' => $planId,
+                // O que o navegador posta quando a chave está desmarcada.
+                'has_survivors_pension' => '0',
+                'has_disability_retirement' => '1',
+                'monthly_survivors_pension_contribution' => '0.00',
+            ],
+        ]);
+
+        $this->assertRedirect(['action' => 'view', $adhesionId]);
+
+        $plan = $this->table('AdhesionPlans')->get($planId);
+
+        $this->assertFalse($plan->has_survivors_pension);
+        $this->assertTrue($plan->has_disability_retirement);
+
+        $changes = $this->auditsFor($adhesionId)[0]->changeList();
+        $this->assertArrayHasKey('adhesion_plan.has_survivors_pension', $changes);
+    }
+
+    public function testLoweringAContributionBelowTheFloorIsRefusedWithoutSaving(): void
+    {
+        [$adhesionId, $planId] = $this->createAdhesion();
+
+        $this->post("/admin/adhesions/edit/$adhesionId", [
+            'adhesion_plan' => [
+                'id' => $planId,
+                'has_survivors_pension' => '1',
+                'has_disability_retirement' => '1',
+                'monthly_survivors_pension_contribution' => '5.00',
+            ],
+        ]);
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('R$ 16,00');
+
+        $plan = $this->table('AdhesionPlans')->get($planId);
+
+        $this->assertEqualsWithDelta(160.0, (float)$plan->monthly_survivors_pension_contribution, 0.01);
+        $this->assertFalse($plan->admin_overridden);
     }
 
     public function testSnapshotContainsEverythingTheEditFormCanTouch(): void

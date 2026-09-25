@@ -154,6 +154,24 @@ class AdhesionsController extends AppController
         return $this->redirect(['action' => 'view', $id, '?' => array_filter(['tab' => $tab])]);
     }
 
+    /**
+     * Opções do select de corretor, só com os ativos mais o que a adesão já
+     * tem: um corretor desativado depois não some da adesão que ele trouxe.
+     */
+    private function brokerOptions(?int $current = null): array
+    {
+        $conditions = $current === null
+            ? ['Brokers.active' => true]
+            : ['OR' => ['Brokers.active' => true, 'Brokers.id' => $current]];
+
+        return $this->fetchTable('Brokers')->find()
+            ->where($conditions)
+            ->orderBy(['Brokers.name' => 'ASC'])
+            ->all()
+            ->combine('id', fn($broker) => $broker->name . ' (' . $broker->code . ')')
+            ->toArray();
+    }
+
     public function add()
     {
         $adhesion = $this->AdhesionInitialDatas->newEmptyEntity();
@@ -188,7 +206,10 @@ class AdhesionsController extends AppController
             }
             $this->Flash->error(__('A adesão não pôde ser salva. Por favor, tente novamente.'));
         }
-        $this->set(compact('adhesion'));
+
+        $brokers = $this->brokerOptions();
+
+        $this->set(compact('adhesion', 'brokers'));
     }
 
     private function savePensionSchemes($adhesionInitialDataId, array $data): void
@@ -245,7 +266,9 @@ class AdhesionsController extends AppController
             $this->Flash->error('Erro ao salvar, revise os dados.');
         }
 
-        $this->set(compact('adhesion'));
+        $brokers = $this->brokerOptions($adhesion->broker_id);
+
+        $this->set(compact('adhesion', 'brokers'));
     }
 
     /**

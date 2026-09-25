@@ -14,6 +14,7 @@ class AdhesionAuditorTest extends TestCase
 {
     protected array $fixtures = [
         'app.Users',
+        'app.PlanParameters',
     ];
 
     private AdhesionAuditor $auditor;

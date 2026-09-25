@@ -21,6 +21,7 @@ class RegistrationsControllerSaveTest extends TestCase
 
     protected array $fixtures = [
         'app.Brokers',
+        'app.PlanParameters',
     ];
 
     protected function setUp(): void
@@ -76,11 +77,12 @@ class RegistrationsControllerSaveTest extends TestCase
             'plans' => [
                 'benefitEntryAge' => 65,
                 'monthly_retirement_contribution' => '740,00',
-                'monthly_survivors_pension_contribution' => '0,00',
-                'survivors_pension_insured_capital' => '0,00',
+                'monthly_survivors_pension_contribution' => '160,00',
+                'survivors_pension_insured_capital' => '1000,00',
                 'monthly_disability_retirement_contribution' => '100,00',
                 'disability_retirement_insured_capital' => '1000,00',
                 'brokerCode' => 'joao2026',
+                // Ignorada: a flag não tem mais efeito nenhum aqui.
                 'removeSurvivorsPension' => '1',
             ],
         ]);
@@ -128,6 +130,10 @@ class RegistrationsControllerSaveTest extends TestCase
         ]);
 
         $this->assertResponseOk();
+        // save() devolve 200 com success:false quando algo falha, então o
+        // corpo é que diz se gravou -- sem isto, o teste passaria mesmo com a
+        // gravação recusada, já que as flags ficariam intocadas de qualquer jeito.
+        $this->assertTrue(json_decode((string)$this->_response->getBody(), true)['success']);
 
         $plan = TableRegistry::getTableLocator()->get('AdhesionPlans')
             ->find()->where(['adhesion_initial_data_id' => $initialDataId])->firstOrFail();

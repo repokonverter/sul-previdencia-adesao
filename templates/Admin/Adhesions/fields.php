@@ -25,6 +25,18 @@
                 <div class="col-md-6 mb-3">
                     <?= $this->Form->control('phone', ['label' => 'Celular*', 'class' => 'form-control phone', 'required' => true]) ?>
                 </div>
+                <div class="col-md-6 mb-3">
+                    <?= $this->Form->control('broker_id', [
+                        'label' => 'Corretor',
+                        'type' => 'select',
+                        'class' => 'form-select',
+                        'options' => $brokers,
+                        'empty' => 'Sem corretor',
+                    ]) ?>
+                    <div class="form-text">
+                        Atribuição da adesão. Não influencia valor nem risco.
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -170,6 +182,62 @@
     <!-- PLANO -->
     <div id="plan" class="tab-pane fade">
         <div class="card p-4 shadow-sm">
+            <?php if (!empty($adhesion->adhesion_plan?->admin_overridden)): ?>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Os valores deste plano já foram ajustados manualmente
+                    <?php if ($adhesion->adhesion_plan->admin_overridden_at): ?>
+                        em <?= $adhesion->adhesion_plan->admin_overridden_at->format('d/m/Y H:i') ?>
+                    <?php endif; ?>
+                    e não são mais o resultado da fórmula. O passo do Plano e a data
+                    de nascimento ficam bloqueados para o proponente.
+                </div>
+            <?php endif; ?>
+
+            <h6 class="fw-bold mb-2">Riscos contratados</h6>
+            <p class="text-muted small">
+                Desmarcar transfere a fatia do risco para a contribuição de
+                aposentadoria. Um risco só pode ser marcado de volta se a adesão
+                tiver Declaração Pessoal de Saúde preenchida &mdash; sem ela a
+                proposta sairia com as perguntas de saúde respondidas por ninguém.
+            </p>
+
+            <?php $hasStatement = !empty($adhesion->adhesion_proponent_statement); ?>
+
+            <div class="row mb-3">
+                <?php foreach ([
+                    'has_survivors_pension' => 'Pensão por morte',
+                    'has_disability_retirement' => 'Aposentadoria por invalidez',
+                ] as $field => $label): ?>
+                    <?php $contracted = $adhesion->adhesion_plan?->get($field) ?? true; ?>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <?= $this->Form->checkbox("adhesion_plan.$field", [
+                                'class' => 'form-check-input',
+                                'id' => $field,
+                                'checked' => $contracted,
+                                // Sem declaração de saúde, um risco já removido
+                                // não volta pela tela; o servidor recusa de todo
+                                // jeito (ver AdhesionPlansTable::buildRules).
+                                'disabled' => !$contracted && !$hasStatement,
+                            ]) ?>
+                            <label class="form-check-label" for="<?= $field ?>"><?= $label ?></label>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if (!$hasStatement): ?>
+                <div class="alert alert-info py-2 small">
+                    <i class="bi bi-info-circle"></i>
+                    Esta adesão não tem Declaração Pessoal de Saúde. Para incluir um
+                    risco removido, mande o link de retomada apontando para a etapa
+                    de declarações, ou preencha-a na aba "Declarações do Proponente".
+                </div>
+            <?php endif; ?>
+
+            <hr class="my-3">
+
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <?= $this->Form->control('adhesion_plan.benefit_entry_age', ['label' => 'Idade para entrada em benefício', 'class' => 'form-control', 'type' => 'number']) ?>
