@@ -8,6 +8,40 @@ use Cake\Routing\Router;
 
 class EmailTemplates
 {
+    /**
+     * O prazo vai escrito no corpo de propósito: sem ele, o suporte recebe
+     * "cliquei e não funcionou" de quem guardou o e-mail por duas semanas.
+     */
+    public static function resumeProposal(string $customerName, string $resumeUrl, string $stepLabel, int $days): string
+    {
+        $logoUrl = Router::url('/img/logo_sul_transparente.png', true);
+
+        return self::wrap($logoUrl, '
+            <h1 style="margin:0 0 16px;font-size:22px;color:#333333;">Sua proposta está guardada, ' . h($customerName) . '</h1>
+            <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#555555;">
+                Tudo o que você já preencheu continua salvo. Para continuar de onde parou,
+                em <strong>' . h($stepLabel) . '</strong>, é só clicar no botão abaixo.
+            </p>
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+                <tr>
+                    <td style="border-radius:8px;background-color:#FC7A29;">
+                        <a href="' . h($resumeUrl) . '" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">
+                            Continuar minha proposta
+                        </a>
+                    </td>
+                </tr>
+            </table>
+            <p style="margin:0 0 8px;font-size:13px;color:#888888;">
+                Ou copie e cole este link no navegador:<br>
+                <a href="' . h($resumeUrl) . '" style="color:#FC7A29;word-break:break-all;">' . h($resumeUrl) . '</a>
+            </p>
+            <p style="margin:24px 0 0;font-size:13px;color:#888888;">
+                Este link vale por ' . $days . ' dias. Depois disso, fale com seu atendente
+                que ele envia um novo — seus dados continuam guardados de qualquer forma.
+            </p>
+        ');
+    }
+
     public static function paymentLink(string $customerName, string $paymentUrl): string
     {
         $logoUrl = Router::url('/img/logo_sul_transparente.png', true);

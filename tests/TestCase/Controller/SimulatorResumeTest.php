@@ -149,12 +149,20 @@ class SimulatorResumeTest extends TestCase
             $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $token);
         }
 
-        // Adesões consecutivas: um token derivado do id compartilharia
-        // praticamente tudo com o vizinho.
-        $this->assertSame(
-            0,
-            strspn($first ^ $second, "\0"),
-            'os tokens de duas adesões seguidas não podem ter prefixo em comum'
+        // Duas adesões consecutivas: um token derivado do id seria vizinho do
+        // outro. Contar caracteres iguais na mesma posição é mais honesto que
+        // comparar prefixos -- dois hex aleatórios coincidem no primeiro
+        // caractere uma vez a cada dezesseis, e o teste piscaria.
+        $equal = count(array_filter(
+            str_split($first),
+            fn(string $char, int $i): bool => $char === $second[$i],
+            ARRAY_FILTER_USE_BOTH
+        ));
+
+        $this->assertLessThan(
+            24,
+            $equal,
+            'tokens de duas adesões seguidas coincidiram demais para serem aleatórios'
         );
     }
 }

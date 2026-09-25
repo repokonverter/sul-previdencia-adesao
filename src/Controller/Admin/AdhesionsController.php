@@ -8,8 +8,10 @@ use App\Controller\Admin\AppController;
 use App\Model\Table\AdhesionInitialDatasTable;
 use App\Model\Table\AdhesionPensionSchemesTable;
 use App\Model\Entity\AdhesionAudit;
+use Cake\Routing\Router;
 use App\Model\Table\PartnersTable;
 use App\Services\AdhesionAuditor;
+use App\Services\AdhesionSteps;
 use App\Services\ClicksignService;
 use App\Services\PixPaymentService;
 use App\Services\SicoobService;
@@ -116,7 +118,15 @@ class AdhesionsController extends AppController
             'AdhesionAudits' => ['sort' => ['AdhesionAudits.created' => 'DESC']],
         ]);
 
-        $this->set(compact('adhesion'));
+        $this->set([
+            'adhesion' => $adhesion,
+            'resumeSteps' => AdhesionSteps::forPicker($adhesion),
+            'suggestedStep' => AdhesionSteps::firstIncomplete($adhesion),
+            'resumeUrl' => $adhesion->resume_token === null ? null : Router::url(
+                ['controller' => 'Simulator', 'action' => 'resume', $adhesion->resume_token, 'prefix' => false],
+                true
+            ),
+        ]);
     }
 
     public function checkPixPayment($id)
@@ -403,6 +413,119 @@ class AdhesionsController extends AppController
         );
 
         $this->set(compact('deletions'));
+    }
+
+    /**
+     * Gera o link de retomada, invalidando o anterior.
+     *
+     * A etapa é conferida contra AdhesionSteps: aceitar qualquer string do
+     * POST deixaria o link apontar para uma etapa que não existe, e o
+     * formulário cairia calado na primeira.
+     */
+    public function issueResumeLink($id)
+    {
+        $this->request->allowMethod(['post']);
+
+        $adhesion = $this->AdhesionInitialDatas->get($id, contain: AdhesionAuditor::CONTAINS);
+        $step = $this->request->getData('step');
+
+        if (!AdhesionSteps::exists($step)) {
+            $this->Flash->error('Etapa inválida.');
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+        }
+
+        if (!AdhesionSteps::forPicker($adhesion)[$step]['selectable']) {
+            $this->Flash->error(
+                'Esta etapa depende de outra que ainda está em branco: o proponente a pularia sem preencher.'
+            );
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+        }
+
+        $days = $this->fetchTable('PlanParameters')->current()->resumeLinkDays();
+        $this->AdhesionInitialDatas->issueResumeToken($adhesion, $days, $step);
+
+        $this->auditor->record((int)$id, $this->currentUser(), AdhesionAudit::ACTION_UPDATED, [
+            'resume_link' => ['', 'gerado para a etapa "' . AdhesionSteps::ORDER[$step] . '", válido por ' . $days . ' dias'],
+        ]);
+
+        $this->Flash->success('Link gerado. O anterior, se havia, deixou de valer.');
+
+        return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+    }
+
+    /**
+     * Manda o link por e-mail. O endereço vem preenchido com o da adesão mas
+     * é editável — e-mail errado é justamente um dos motivos pelos quais a
+     * proposta empacou. Digitar outro não reescreve o cadastro: um envio
+     * pontual não é uma correção de dados.
+     */
+    public function sendResumeLink($id)
+    {
+        $this->request->allowMethod(['post']);
+
+        $adhesion = $this->AdhesionInitialDatas->get($id, contain: ['AdhesionPersonalDatas']);
+        $email = trim((string)$this->request->getData('email'));
+
+        if ($adhesion->resume_token === null || $adhesion->resumeTokenHasExpired()) {
+            $this->Flash->error('Não há link ativo para enviar. Gere um primeiro.');
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->Flash->error('Informe um e-mail válido.');
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+        }
+
+        $url = Router::url(
+            ['controller' => 'Simulator', 'action' => 'resume', $adhesion->resume_token, 'prefix' => false],
+            true
+        );
+
+        try {
+            \App\Services\ResendService::fromConfigure()->forAdhesion((int)$id)->send(
+                [$email],
+                'Continue sua proposta de adesão',
+                \App\Services\EmailTemplates::resumeProposal(
+                    $adhesion->adhesion_personal_data->name ?? $adhesion->name ?? 'Olá',
+                    $url,
+                    AdhesionSteps::ORDER[$adhesion->resume_step] ?? 'a primeira etapa',
+                    $this->fetchTable('PlanParameters')->current()->resumeLinkDays()
+                )
+            );
+
+            $this->auditor->record((int)$id, $this->currentUser(), AdhesionAudit::ACTION_UPDATED, [
+                'resume_link' => ['', 'enviado por e-mail para ' . $email],
+            ]);
+
+            $this->Flash->success('Link enviado para ' . $email . '.');
+        } catch (\Exception $e) {
+            \Cake\Log\Log::error('Falha ao enviar link de retomada da adesão #' . $id . ': ' . $e->getMessage());
+
+            $this->Flash->error('Não foi possível enviar o e-mail agora. O link continua válido para copiar.');
+        }
+
+        return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+    }
+
+    public function revokeResumeLink($id)
+    {
+        $this->request->allowMethod(['post']);
+
+        $adhesion = $this->AdhesionInitialDatas->get($id);
+
+        $this->AdhesionInitialDatas->revokeResumeToken($adhesion);
+
+        $this->auditor->record((int)$id, $this->currentUser(), AdhesionAudit::ACTION_UPDATED, [
+            'resume_link' => ['ativo', 'revogado'],
+        ]);
+
+        $this->Flash->success('Link revogado.');
+
+        return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
     }
 
     public function generatePdf($id, $returnContent = false)
