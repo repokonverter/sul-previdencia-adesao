@@ -158,6 +158,34 @@ class AdhesionsController extends AppController
      * Opções do select de corretor, só com os ativos mais o que a adesão já
      * tem: um corretor desativado depois não some da adesão que ele trouxe.
      */
+    /**
+     * Campos que carregam o conteúdo econômico do contrato. Dados cadastrais
+     * (endereço, telefone, nome da mãe) ficam de fora de propósito: corrigir
+     * um telefone continua possível em qualquer estado.
+     */
+    private const ECONOMIC_FIELDS = [
+        'adhesion_plan',
+        'adhesion_dependents',
+        'adhesion_payment_detail',
+    ];
+
+    /**
+     * Com o Pix pago, mudar valor, risco, beneficiário ou conta bancária
+     * deixa de ser edição de cadastro e vira evento contábil: o dinheiro já
+     * entrou sobre os números antigos.
+     *
+     * A adesão assinada deveria travar pelo mesmo motivo, e ainda não trava:
+     * clicksign_data.status só guarda pending/sent/failed, e "assinada" passa
+     * a existir junto com o acompanhamento de assinatura.
+     */
+    private function economicallyLocked($adhesion): bool
+    {
+        return $this->fetchTable('PixTransactions')->exists([
+            'adhesion_initial_data_id' => $adhesion->id,
+            'paid' => true,
+        ]);
+    }
+
     private function brokerOptions(?int $current = null): array
     {
         $conditions = $current === null
@@ -208,8 +236,9 @@ class AdhesionsController extends AppController
         }
 
         $brokers = $this->brokerOptions();
+        $economicallyLocked = false;
 
-        $this->set(compact('adhesion', 'brokers'));
+        $this->set(compact('adhesion', 'brokers', 'economicallyLocked'));
     }
 
     private function savePensionSchemes($adhesionInitialDataId, array $data): void
@@ -232,15 +261,31 @@ class AdhesionsController extends AppController
     public function edit($id)
     {
         $adhesion = $this->AdhesionInitialDatas->get($id, contain: AdhesionAuditor::CONTAINS);
+        $economicallyLocked = $this->economicallyLocked($adhesion);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             // O retrato tem que sair daqui: patchEntity() altera o mesmo
             // objeto, e depois dele não existe mais um "antes" para comparar.
             $before = AdhesionAuditor::snapshot($adhesion);
+            $data = $this->request->getData();
+
+            if ($economicallyLocked) {
+                $refused = array_intersect_key($data, array_flip(self::ECONOMIC_FIELDS));
+                $data = array_diff_key($data, array_flip(self::ECONOMIC_FIELDS));
+
+                // A tela já mostra esses campos bloqueados, mas o POST é
+                // forjável e quem recusa é o servidor.
+                if ($refused !== []) {
+                    $this->Flash->error(
+                        'Esta adesão já foi paga: valores, riscos, beneficiários e conta bancária '
+                        . 'não podem mais ser alterados por aqui. Os demais dados foram salvos.'
+                    );
+                }
+            }
 
             $adhesion = $this->AdhesionInitialDatas->patchEntity(
                 $adhesion,
-                $this->request->getData(),
+                $data,
                 [
                     'associated' => [
                         'AdhesionPersonalDatas',
@@ -268,7 +313,7 @@ class AdhesionsController extends AppController
 
         $brokers = $this->brokerOptions($adhesion->broker_id);
 
-        $this->set(compact('adhesion', 'brokers'));
+        $this->set(compact('adhesion', 'brokers', 'economicallyLocked'));
     }
 
     /**

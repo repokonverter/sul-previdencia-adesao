@@ -38,8 +38,11 @@ class SimulatorControllerTest extends TestCase
     /**
      * @return array{0: int, 1: string} [initialDataId, storageUuid]
      */
-    private function createAdhesion(bool $hasSurvivorsPension, bool $hasDisabilityRetirement): array
-    {
+    private function createAdhesion(
+        bool $hasSurvivorsPension,
+        bool $hasDisabilityRetirement,
+        bool $adminOverridden = false,
+    ): array {
         $adhesions = TableRegistry::getTableLocator()->get('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
             'storage_uuid' => Text::uuid(),
@@ -53,6 +56,7 @@ class SimulatorControllerTest extends TestCase
             'adhesion_initial_data_id' => $adhesion->id,
             'has_survivors_pension' => $hasSurvivorsPension,
             'has_disability_retirement' => $hasDisabilityRetirement,
+            'admin_overridden' => $adminOverridden,
         ]));
 
         return [(int)$adhesion->id, (string)$adhesion->storage_uuid];
@@ -123,6 +127,32 @@ class SimulatorControllerTest extends TestCase
             $this->assertTrue($result['hasSurvivorsPension']);
             $this->assertTrue($result['hasDisabilityRetirement']);
         }
+    }
+
+    /**
+     * A tela precisa saber que os valores foram negociados para travar o
+     * passo: sem isso, um clique em "Recalcular" rodaria a fórmula e apagaria
+     * o ajuste combinado por telefone.
+     */
+    public function testAnAdjustedPlanComesBackLocked(): void
+    {
+        [$id, $uuid] = $this->createAdhesion(true, true, adminOverridden: true);
+
+        $result = $this->recalculate([
+            'date' => '1990-01-01',
+            'value' => '1000',
+            'initialDataId' => $id,
+            'storageUuid' => $uuid,
+        ]);
+
+        $this->assertTrue($result['planLocked']);
+    }
+
+    public function testAFreshSimulationIsNeverLocked(): void
+    {
+        $result = $this->recalculate(['date' => '1990-01-01', 'value' => '1000']);
+
+        $this->assertFalse($result['planLocked']);
     }
 
     public function testMinorUnderSixteenNeverHasRisks(): void

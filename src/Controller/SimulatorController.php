@@ -69,7 +69,7 @@ class SimulatorController extends AppController
                 ]));
         }
 
-        [$hasSurvivorsPension, $hasDisabilityRetirement] = $this->storedRisks(
+        [$hasSurvivorsPension, $hasDisabilityRetirement, $planLocked] = $this->storedPlanState(
             $this->request->getQuery('initialDataId'),
             $this->request->getQuery('storageUuid')
         );
@@ -98,6 +98,10 @@ class SimulatorController extends AppController
                 // saúde deve aparecer.
                 'hasSurvivorsPension' => $includeSurvivorsPension,
                 'hasDisabilityRetirement' => $includeDisabilityRetirement,
+                // Valor ajustado à mão é valor negociado: a tela trava o passo
+                // para o cliente não desfazer, com um clique em "Recalcular",
+                // o que foi combinado por telefone.
+                'planLocked' => $planLocked,
             ]));
     }
 
@@ -110,19 +114,20 @@ class SimulatorController extends AppController
     }
 
     /**
-     * Quais riscos a adesão gravada tem.
+     * O estado do plano gravado: quais riscos tem, e se os valores foram
+     * ajustados à mão pelo admin.
      *
      * Lê do banco em vez de aceitar da URL, porque desde que a remoção de
      * risco virou ato do admin não existe mais motivo para o navegador opinar:
      * montar a URL à mão tiraria riscos de graça. Sem adesão identificada é
      * uma simulação nova, e toda simulação nova tem os dois.
      *
-     * @return array{0: bool, 1: bool} [morte, invalidez]
+     * @return array{0: bool, 1: bool, 2: bool} [morte, invalidez, ajustado]
      */
-    private function storedRisks($initialDataId, $storageUuid): array
+    private function storedPlanState($initialDataId, $storageUuid): array
     {
         if (empty($initialDataId) || empty($storageUuid)) {
-            return [true, true];
+            return [true, true, false];
         }
 
         $adhesion = $this->fetchTable('AdhesionInitialDatas')->find()
@@ -133,12 +138,13 @@ class SimulatorController extends AppController
         // Mesma checagem do save(): o id é sequencial e vem do navegador, o
         // storage_uuid é o que autoriza falar sobre esta adesão.
         if ($adhesion === null || !hash_equals((string)$adhesion->storage_uuid, (string)$storageUuid)) {
-            return [true, true];
+            return [true, true, false];
         }
 
         return [
             $adhesion->adhesion_plan->has_survivors_pension ?? true,
             $adhesion->adhesion_plan->has_disability_retirement ?? true,
+            (bool)($adhesion->adhesion_plan->admin_overridden ?? false),
         ];
     }
 }

@@ -894,6 +894,10 @@ function createSecureCard($data, $type)
                         </div>
 
                         <div id="plan" class="hidden">
+                            <div class="alert alert-info d-none" id="planLockedNotice">
+                                <strong>Valores ajustados pela Sul Previdência.</strong>
+                                Para alterá-los, fale com seu atendente.
+                            </div>
                             <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
@@ -1927,6 +1931,7 @@ function createSecureCard($data, $type)
                     // Uma proposta retomada pode chegar com risco já removido
                     // pelo admin: as linhas correspondentes não podem aparecer.
                     updateRiskVisibility();
+                    applyPlanLock();
                 },
             },
             {
@@ -2346,6 +2351,32 @@ function createSecureCard($data, $type)
          * ------------------------------------------------------------- */
         let hasSurvivorsPension = <?= $includeSurvivorsPension ? 'true' : 'false' ?>;
         let hasDisabilityRetirement = <?= $includeDisabilityRetirement ? 'true' : 'false' ?>;
+
+        /**
+         * Plano com valor ajustado à mão pelo admin.
+         *
+         * Nasce falso: uma proposta nova é sempre fórmula pura, e só uma
+         * proposta retomada chega ajustada. Enquanto vale, o investimento
+         * mensal e o "Recalcular" ficam bloqueados -- um clique rodaria a
+         * fórmula de novo e apagaria, em silêncio, o que foi negociado por
+         * telefone. A data de nascimento também trava: os valores foram
+         * calculados para aquela idade, e a procedure escolhe custo unitário e
+         * teto por ela, então mudá-la tornaria o capital atuarialmente
+         * impossível. O servidor recusa de todo jeito (ver
+         * RegistrationsController::save); isto é a tela contando o porquê.
+         */
+        let planLocked = false;
+
+        const applyPlanLock = () => {
+            document.getElementById('planLockedNotice').classList.toggle('d-none', !planLocked);
+            document.getElementById('planMonthlyInvestment').disabled = planLocked;
+            document.getElementById('btnRecalculatePlan').disabled = planLocked;
+
+            const birthDate = document.querySelector('#registerModal input[name="personalData[birthDate]"]');
+
+            if (birthDate)
+                birthDate.readOnly = planLocked;
+        };
 
         const updateRiskVisibility = () => {
             document.getElementById('survivorsPensionPlanRow').classList.toggle('d-none', !hasSurvivorsPension);
@@ -2810,6 +2841,11 @@ function createSecureCard($data, $type)
 
                     if (response.hasDisabilityRetirement !== undefined)
                         hasDisabilityRetirement = response.hasDisabilityRetirement;
+
+                    if (response.planLocked !== undefined) {
+                        planLocked = response.planLocked;
+                        applyPlanLock();
+                    }
 
                     updateRiskVisibility();
                 },

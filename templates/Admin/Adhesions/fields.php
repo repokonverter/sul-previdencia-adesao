@@ -182,6 +182,17 @@
     <!-- PLANO -->
     <div id="plan" class="tab-pane fade">
         <div class="card p-4 shadow-sm">
+            <?php if (!empty($economicallyLocked)): ?>
+                <div class="alert alert-danger">
+                    <i class="bi bi-lock"></i>
+                    <strong>Adesão paga.</strong>
+                    Valores, riscos, beneficiários e conta bancária não podem mais ser
+                    alterados: o dinheiro entrou sobre estes números, e mudá-los aqui
+                    seria evento contábil, não correção de cadastro. Dados cadastrais
+                    seguem editáveis nas demais abas.
+                </div>
+            <?php endif; ?>
+
             <?php if (!empty($adhesion->adhesion_plan?->admin_overridden)): ?>
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i>
@@ -216,10 +227,11 @@
                                 'class' => 'form-check-input',
                                 'id' => $field,
                                 'checked' => $contracted,
-                                // Sem declaração de saúde, um risco já removido
-                                // não volta pela tela; o servidor recusa de todo
-                                // jeito (ver AdhesionPlansTable::buildRules).
-                                'disabled' => !$contracted && !$hasStatement,
+                                'disabled' => !empty($economicallyLocked) ||
+                                    // Sem declaração de saúde, um risco já removido
+                                    // não volta pela tela; o servidor recusa de
+                                    // todo jeito (AdhesionPlansTable::buildRules).
+                                    (!$contracted && !$hasStatement),
                             ]) ?>
                             <label class="form-check-label" for="<?= $field ?>"><?= $label ?></label>
                         </div>

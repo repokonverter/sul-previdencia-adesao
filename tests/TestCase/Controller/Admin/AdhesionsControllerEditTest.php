@@ -242,6 +242,56 @@ class AdhesionsControllerEditTest extends TestCase
         $this->assertFalse($plan->admin_overridden);
     }
 
+    private function markPaid(int $adhesionId): void
+    {
+        $pix = $this->table('PixTransactions');
+        $pix->saveOrFail($pix->newEntity([
+            'adhesion_initial_data_id' => $adhesionId,
+            'txid' => 'tx' . $adhesionId,
+            'attempt' => 1,
+            'paid' => true,
+        ]));
+    }
+
+    /**
+     * Com o dinheiro já recebido sobre os números antigos, mudar valor ou
+     * risco deixa de ser edição de cadastro e vira evento contábil.
+     */
+    public function testAPaidAdhesionKeepsItsEconomicFields(): void
+    {
+        [$adhesionId, $planId] = $this->createAdhesion();
+        $this->markPaid($adhesionId);
+
+        $this->post("/admin/adhesions/edit/$adhesionId", [
+            'name' => 'Beltrano de Tal',
+            'adhesion_plan' => [
+                'id' => $planId,
+                'monthly_survivors_pension_contribution' => '110.00',
+                'has_survivors_pension' => '0',
+            ],
+        ]);
+
+        $plan = $this->table('AdhesionPlans')->get($planId);
+
+        $this->assertEqualsWithDelta(160.0, (float)$plan->monthly_survivors_pension_contribution, 0.01);
+        $this->assertTrue($plan->has_survivors_pension);
+
+        // O que é cadastral continua passando: travar tudo transformaria uma
+        // correção de telefone num impedimento.
+        $this->assertSame('Beltrano de Tal', $this->table('AdhesionInitialDatas')->get($adhesionId)->name);
+    }
+
+    public function testThePaidLockIsAnnouncedOnTheForm(): void
+    {
+        [$adhesionId] = $this->createAdhesion();
+        $this->markPaid($adhesionId);
+
+        $this->get("/admin/adhesions/edit/$adhesionId");
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Adesão paga');
+    }
+
     public function testSnapshotContainsEverythingTheEditFormCanTouch(): void
     {
         [$adhesionId] = $this->createAdhesion();
