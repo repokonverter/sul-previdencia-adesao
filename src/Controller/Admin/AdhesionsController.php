@@ -7,7 +7,9 @@ namespace App\Controller\Admin;
 use App\Controller\Admin\AppController;
 use App\Model\Table\AdhesionInitialDatasTable;
 use App\Model\Table\AdhesionPensionSchemesTable;
+use App\Model\Entity\AdhesionAudit;
 use App\Model\Table\PartnersTable;
+use App\Services\AdhesionAuditor;
 use App\Services\ClicksignService;
 use App\Services\PixPaymentService;
 use App\Services\SicoobService;
@@ -17,6 +19,7 @@ class AdhesionsController extends AppController
     protected AdhesionInitialDatasTable $AdhesionInitialDatas;
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected PartnersTable $Partners;
+    protected AdhesionAuditor $auditor;
 
     public function initialize(): void
     {
@@ -27,6 +30,7 @@ class AdhesionsController extends AppController
         $this->AdhesionInitialDatas = $this->fetchTable('AdhesionInitialDatas');
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->Partners = $this->fetchTable('Partners');
+        $this->auditor = new AdhesionAuditor($this->fetchTable('AdhesionAudits'));
 
         $this->paginate = [
             'order' => ['AdhesionInitialDatas.created' => 'DESC'],
@@ -102,20 +106,11 @@ class AdhesionsController extends AppController
 
     public function view($id)
     {
-        $adhesion = $this->AdhesionInitialDatas->get($id, [
-            'contain' => [
-                'AdhesionPersonalDatas',
-                'AdhesionAddresses',
-                'AdhesionDependents',
-                'AdhesionPlans',
-                'AdhesionDocuments',
-                'AdhesionOtherInformations',
-                'AdhesionPaymentDetails',
-                'AdhesionPensionSchemes',
-                'AdhesionProponentStatements',
-                'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
-                'IntegrationLogs' => ['sort' => ['IntegrationLogs.created' => 'DESC']],
-            ]
+        $adhesion = $this->AdhesionInitialDatas->get($id, contain: [
+            ...AdhesionAuditor::CONTAINS,
+            'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
+            'IntegrationLogs' => ['sort' => ['IntegrationLogs.created' => 'DESC']],
+            'AdhesionAudits' => ['sort' => ['AdhesionAudits.created' => 'DESC']],
         ]);
 
         $this->set(compact('adhesion'));
@@ -180,6 +175,11 @@ class AdhesionsController extends AppController
 
             if ($this->AdhesionInitialDatas->save($adhesion)) {
                 $this->savePensionSchemes($adhesion->id, $this->request->getData());
+
+                // Sem diff: numa criação todo campo "mudou", e listar os
+                // oitenta não diz nada que a própria adesão não diga.
+                $this->auditor->record($adhesion->id, $this->currentUser(), AdhesionAudit::ACTION_CREATED);
+
                 $this->Flash->success(__('A adesão foi salva com sucesso.'));
                 return $this->redirect(['action' => 'index']);
             }
@@ -207,21 +207,13 @@ class AdhesionsController extends AppController
 
     public function edit($id)
     {
-        $adhesion = $this->AdhesionInitialDatas->get($id, [
-            'contain' => [
-                'AdhesionPersonalDatas',
-                'AdhesionAddresses',
-                'AdhesionDependents',
-                'AdhesionPlans',
-                'AdhesionDocuments',
-                'AdhesionOtherInformations',
-                'AdhesionPaymentDetails',
-                'AdhesionPensionSchemes',
-                'AdhesionProponentStatements'
-            ]
-        ]);
+        $adhesion = $this->AdhesionInitialDatas->get($id, contain: AdhesionAuditor::CONTAINS);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
+            // O retrato tem que sair daqui: patchEntity() altera o mesmo
+            // objeto, e depois dele não existe mais um "antes" para comparar.
+            $before = AdhesionAuditor::snapshot($adhesion);
+
             $adhesion = $this->AdhesionInitialDatas->patchEntity(
                 $adhesion,
                 $this->request->getData(),
@@ -241,6 +233,8 @@ class AdhesionsController extends AppController
 
             if ($this->AdhesionInitialDatas->save($adhesion)) {
                 $this->savePensionSchemes($id, $this->request->getData());
+                $this->recordEdit((int)$id, $before);
+
                 $this->Flash->success('Cliente atualizado com sucesso.');
                 return $this->redirect(['action' => 'view', $id]);
             }
@@ -251,6 +245,60 @@ class AdhesionsController extends AppController
         $this->set(compact('adhesion'));
     }
 
+    /**
+     * Compara o retrato de antes com o estado recém-gravado, registra o que
+     * mudou, e marca o plano como ajustado à mão quando a mudança foi nele.
+     */
+    private function recordEdit(int $id, array $before): void
+    {
+        // Relê em vez de reaproveitar a entidade salva: savePensionSchemes()
+        // apaga e recria os regimes fora do grafo, então o que está em
+        // memória não conhece o estado final.
+        $saved = $this->AdhesionInitialDatas->get($id, contain: AdhesionAuditor::CONTAINS);
+        $changes = AdhesionAuditor::diff($before, AdhesionAuditor::snapshot($saved));
+
+        $this->auditor->record($id, $this->currentUser(), AdhesionAudit::ACTION_UPDATED, $changes);
+
+        $this->markPlanOverridden($saved, $changes);
+    }
+
+    /**
+     * Mexer no plano pelo admin é o que caracteriza valor negociado. A flag
+     * existe para o formulário público não desfazer isso depois: com ela
+     * ligada, o passo do Plano e a data de nascimento ficam somente-leitura
+     * para o cliente, já que os valores foram calculados para aquela idade.
+     */
+    private function markPlanOverridden(\Cake\Datasource\EntityInterface $adhesion, array $changes): void
+    {
+        $touchedPlan = array_filter(
+            array_keys($changes),
+            fn(string $field): bool => str_starts_with($field, 'adhesion_plan.')
+        );
+
+        if ($touchedPlan === [] || $adhesion->get('adhesion_plan') === null) {
+            return;
+        }
+
+        $plans = $this->fetchTable('AdhesionPlans');
+
+        $plans->save($plans->patchEntity($adhesion->get('adhesion_plan'), [
+            'admin_overridden' => true,
+            'admin_overridden_by_user_id' => $this->currentUser()?->get('id'),
+            'admin_overridden_at' => \Cake\I18n\DateTime::now(),
+        ]));
+    }
+
+    /**
+     * O usuário da sessão do admin, ou null quando a ação não veio de uma
+     * sessão autenticada.
+     */
+    private function currentUser(): ?\Cake\Datasource\EntityInterface
+    {
+        $identity = $this->Authentication->getIdentity();
+        $user = $identity?->getOriginalData();
+
+        return $user instanceof \Cake\Datasource\EntityInterface ? $user : null;
+    }
 
     public function delete($id)
     {

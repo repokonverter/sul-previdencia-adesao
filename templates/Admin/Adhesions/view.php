@@ -2,6 +2,7 @@
 $validTabs = [
     'initialData', 'personalData', 'documents', 'plan', 'dependents', 'addressData',
     'otherInformation', 'proponentStatement', 'pensionScheme', 'paymentDetail', 'integrationLogs',
+    'audits',
 ];
 $activeTab = $this->request->getQuery('tab');
 if (!in_array($activeTab, $validTabs, true))
@@ -15,6 +16,46 @@ function navLinkClass(string $tabId, string $activeTab): string
 function tabPaneClass(string $tabId, string $activeTab): string
 {
     return 'tab-pane fade' . ($tabId === $activeTab ? ' show active' : '');
+}
+
+/**
+ * Transforma o caminho pontuado do diff em algo legível:
+ * "adhesion_personal_data.cpf" vira "Dados pessoais › Cpf".
+ */
+function auditFieldLabel(string $path): string
+{
+    $sections = [
+        'adhesion_personal_data' => 'Dados pessoais',
+        'adhesion_document' => 'Documentos',
+        'adhesion_plan' => 'Plano',
+        'adhesion_dependents' => 'Beneficiários',
+        'adhesion_address' => 'Endereço',
+        'adhesion_other_information' => 'Outras informações',
+        'adhesion_proponent_statement' => 'Declarações do proponente',
+        'adhesion_pension_schemes' => 'Regime de previdência',
+        'adhesion_payment_detail' => 'Dados para pagamento',
+    ];
+
+    $parts = explode('.', $path);
+    $section = $sections[$parts[0]] ?? null;
+
+    if ($section === null)
+        return ucfirst(str_replace('_', ' ', $path));
+
+    array_shift($parts);
+
+    return $section . ' › ' . ucfirst(str_replace('_', ' ', implode(' ', $parts)));
+}
+
+function formatAuditValue($value): string
+{
+    if ($value === null || $value === '')
+        return '—';
+
+    if (is_bool($value))
+        return $value ? 'Sim' : 'Não';
+
+    return (string)$value;
 }
 
 function formatLogBody(?string $value): string
@@ -55,6 +96,7 @@ function formatLogBody(?string $value): string
     <li class="nav-item"><a class="<?= navLinkClass('pensionScheme', $activeTab) ?>" data-bs-toggle="tab" href="#pensionScheme">Regime de Previdência</a></li>
     <li class="nav-item"><a class="<?= navLinkClass('paymentDetail', $activeTab) ?>" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento</a></li>
     <li class="nav-item"><a class="<?= navLinkClass('integrationLogs', $activeTab) ?>" data-bs-toggle="tab" href="#integrationLogs">Integrações</a></li>
+    <li class="nav-item"><a class="<?= navLinkClass('audits', $activeTab) ?>" data-bs-toggle="tab" href="#audits">Histórico</a></li>
 </ul>
 
 <div class="tab-content" style="margin-bottom: 80px;">
@@ -404,6 +446,67 @@ function formatLogBody(?string $value): string
                 </div>
             <?php else: ?>
                 <p class="text-muted mb-0">Nenhuma chamada a integrações registrada ainda para esta adesão.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="audits" class="<?= tabPaneClass('audits', $activeTab) ?>">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">Histórico de alterações</h5>
+
+            <?php if (!empty($adhesion->adhesion_audits)): ?>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 160px;">Quando</th>
+                                <th style="width: 200px;">Quem</th>
+                                <th>O que</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($adhesion->adhesion_audits as $audit): ?>
+                                <tr>
+                                    <td><?= $audit->created->format('d/m/Y H:i:s') ?></td>
+                                    <td><?= h($audit->authorLabel()) ?></td>
+                                    <td>
+                                        <div class="fw-semibold mb-1"><?= h($audit->actionLabel()) ?></div>
+                                        <?php $changes = $audit->changeList(); ?>
+                                        <?php if ($changes !== []): ?>
+                                            <ul class="list-unstyled small mb-0">
+                                                <?php foreach ($changes as $field => [$was, $now]): ?>
+                                                    <li class="mb-1">
+                                                        <span class="text-muted"><?= h(auditFieldLabel($field)) ?>:</span>
+                                                        <span class="text-decoration-line-through text-danger-emphasis"><?= h(formatAuditValue($was)) ?></span>
+                                                        <i class="bi bi-arrow-right"></i>
+                                                        <span class="fw-semibold text-success-emphasis"><?= h(formatAuditValue($now)) ?></span>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <p class="text-muted mb-0">
+                    Nenhuma alteração feita pelo admin nesta adesão. O que o próprio
+                    proponente preencheu no formulário não entra aqui.
+                </p>
+            <?php endif; ?>
+
+            <?php if (!empty($adhesion->adhesion_plan?->admin_overridden)): ?>
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Os valores deste plano foram ajustados manualmente
+                    <?php if ($adhesion->adhesion_plan->admin_overridden_at): ?>
+                        em <?= $adhesion->adhesion_plan->admin_overridden_at->format('d/m/Y H:i') ?>
+                    <?php endif; ?>
+                    e não são mais o resultado da fórmula.
+                </div>
             <?php endif; ?>
         </div>
     </div>
