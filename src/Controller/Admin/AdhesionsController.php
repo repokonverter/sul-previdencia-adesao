@@ -30,7 +30,10 @@ class AdhesionsController extends AppController
         $this->AdhesionInitialDatas = $this->fetchTable('AdhesionInitialDatas');
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->Partners = $this->fetchTable('Partners');
-        $this->auditor = new AdhesionAuditor($this->fetchTable('AdhesionAudits'));
+        $this->auditor = new AdhesionAuditor(
+            $this->fetchTable('AdhesionAudits'),
+            $this->fetchTable('AdhesionDeletions')
+        );
 
         $this->paginate = [
             'order' => ['AdhesionInitialDatas.created' => 'DESC'],
@@ -303,15 +306,35 @@ class AdhesionsController extends AppController
     public function delete($id)
     {
         $this->request->allowMethod(['post', 'delete']);
-        $item = $this->AdhesionInitialDatas->get($id);
+        $item = $this->AdhesionInitialDatas->get($id, contain: ['AdhesionPersonalDatas']);
 
         if ($this->AdhesionInitialDatas->delete($item)) {
+            // Registrado depois de apagar, e não antes: assim não sobra
+            // registro de uma exclusão que não chegou a acontecer. A entidade
+            // continua em memória, com o nome e o CPF que identificam o que
+            // foi apagado.
+            $this->auditor->recordDeletion($item, $this->currentUser());
+
             $this->Flash->success('Registro removido.');
         } else {
             $this->Flash->error('Erro ao excluir o registro.');
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * Lista as adesões excluídas. Precisa de tela própria porque o registro
+     * sobrevive à adesão: não há mais onde exibi-lo dentro dela.
+     */
+    public function deletions()
+    {
+        $deletions = $this->paginate(
+            $this->fetchTable('AdhesionDeletions')->find()->orderBy(['AdhesionDeletions.created' => 'DESC']),
+            ['order' => ['AdhesionDeletions.created' => 'DESC']]
+        );
+
+        $this->set(compact('deletions'));
     }
 
     public function generatePdf($id, $returnContent = false)

@@ -22,7 +22,10 @@ class AdhesionAuditorTest extends TestCase
     {
         parent::setUp();
 
-        $this->auditor = new AdhesionAuditor(TableRegistry::getTableLocator()->get('AdhesionAudits'));
+        $this->auditor = new AdhesionAuditor(
+            TableRegistry::getTableLocator()->get('AdhesionAudits'),
+            TableRegistry::getTableLocator()->get('AdhesionDeletions')
+        );
     }
 
     private function adhesions(): \Cake\ORM\Table

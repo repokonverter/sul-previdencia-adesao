@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Model\Entity\AdhesionAudit;
 use App\Model\Table\AdhesionAuditsTable;
+use App\Model\Table\AdhesionDeletionsTable;
 use Cake\Datasource\EntityInterface;
 use Cake\Log\Log;
 use DateTimeInterface;
@@ -51,8 +52,36 @@ class AdhesionAuditor
         'admin_overridden_by_user_id',
     ];
 
-    public function __construct(private readonly AdhesionAuditsTable $audits)
+    public function __construct(
+        private readonly AdhesionAuditsTable $audits,
+        private readonly AdhesionDeletionsTable $deletions,
+    ) {
+    }
+
+    /**
+     * Registra que uma adesão foi excluída.
+     *
+     * Vai para tabela própria, sem chave estrangeira: a FK de adhesion_audits
+     * é CASCADE, então uma linha ali seria apagada pela própria exclusão que
+     * registra. Guarda o mínimo para identificar o que foi apagado e não a
+     * adesão inteira -- reter filiação, dados bancários e declaração de
+     * saúde depois de apagar esvaziaria o sentido de apagar.
+     */
+    public function recordDeletion(EntityInterface $adhesion, ?EntityInterface $user): void
     {
+        $personal = $adhesion->get('adhesion_personal_data');
+
+        $deletion = $this->deletions->newEntity([
+            'adhesion_initial_data_id' => $adhesion->get('id'),
+            'adhesion_name' => $personal?->get('name') ?: $adhesion->get('name'),
+            'adhesion_cpf' => $personal?->get('cpf'),
+            'user_id' => $user?->get('id'),
+            'user_name' => $user?->get('name'),
+        ]);
+
+        if (!$this->deletions->save($deletion)) {
+            Log::error('Falha ao registrar exclusão da adesão #' . $adhesion->get('id') . ': ' . json_encode($deletion->getErrors()));
+        }
     }
 
     /**

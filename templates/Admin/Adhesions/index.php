@@ -81,11 +81,18 @@ function getPixStatusBadge($adhesion)
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">Adesões</h2>
 
-    <?= $this->Html->link(
-        '<i class="bi bi-plus-circle me-1"></i> Nova Adesão',
-        ['action' => 'add'],
-        ['escape' => false, 'class' => 'btn btn-primary']
-    ) ?>
+    <div>
+        <?= $this->Html->link(
+            '<i class="bi bi-trash me-1"></i> Excluídas',
+            ['action' => 'deletions'],
+            ['escape' => false, 'class' => 'btn btn-outline-secondary me-2']
+        ) ?>
+        <?= $this->Html->link(
+            '<i class="bi bi-plus-circle me-1"></i> Nova Adesão',
+            ['action' => 'add'],
+            ['escape' => false, 'class' => 'btn btn-primary']
+        ) ?>
+    </div>
 </div>
 
 <div class="card mb-4 shadow-sm border-0">
