@@ -307,6 +307,32 @@ fato assinado, mesmo que o cadastro mude depois"*). Sem snapshot, trocar a
 corretora na tela faria o sistema emitir, sob demanda, versões divergentes de
 contratos já assinados. Nenhum dos quatro itens do cliente pediu isso.
 
+## Ajustes durante a implementação
+
+Registrados aqui para o documento continuar sendo a fonte da verdade.
+
+- **A DPS tem onze perguntas, não oito.** E "DECLARAÇÕES DO PROPONENTE" é
+  título de três seções diferentes da proposta: o questionário de saúde, o
+  aviso de "não se aplica" quando não há risco, e uma declaração jurídica
+  sobre estatuto e veracidade que existe sempre. Só a primeira é sobre saúde.
+- **O gating de adesão assinada saiu da entrega 4 para a 6.** "Assinada" ainda
+  não é um estado que o sistema conheça: `clicksign_data.status` só guarda
+  `pending`/`sent`/`failed`. A entrega 4 trava o que é conhecível hoje (Pix
+  pago); a condição de assinatura entra em `economicallyLocked()` junto com o
+  acompanhamento de assinatura. A ação "Reabrir proposta" vai com ela, já que
+  depende de cancelar envelope, que é maquinária da entrega 5.
+- **O prazo do `resume_token` não entrou em `plan_parameters` na entrega 2.** Um
+  parâmetro configurável que não controla nada por três entregas confunde quem
+  usar o admin nesse meio-tempo; ele entra na entrega 5, junto do token.
+- **A trilha de exclusão virou tabela própria** (`adhesion_deletions`), decidido
+  depois da entrega 3: a FK de `adhesion_audits` é CASCADE, então a linha que
+  registraria a exclusão seria apagada por ela.
+- **`updated` era NULL em toda tabela do projeto** — o behavior Timestamp grava
+  `modified`, que não existe aqui. Corrigido para o projeto inteiro com uma
+  classe base de tabela (`AppTable`), para que tabela nova acerte sozinha.
+- **`Migrator::run()` trunca as tabelas depois de migrar**, então dado semeado
+  em migration não chega ao banco de teste. Daí a fixture de `plan_parameters`.
+
 ## Testes
 
 Cobrir as falhas **silenciosas** — as que não dão erro, só produzem dado errado:
