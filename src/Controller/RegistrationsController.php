@@ -26,6 +26,7 @@ use Cake\Http\Client;
 use Cake\Core\Configure;
 use App\View\Helper\BankHelper;
 use Cake\Routing\Router;
+use App\Utility\Money;
 use Cake\Utility\Text;
 use Cake\View\View;
 
@@ -261,11 +262,11 @@ class RegistrationsController extends AppController
                 // mas a tela é conveniência e o POST é forjável.
                 if (!$plans->admin_overridden) {
                     $planPatch += [
-                        'monthly_retirement_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_retirement_contribution'])) ?? null,
-                        'monthly_survivors_pension_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_survivors_pension_contribution'])) ?? null,
-                        'survivors_pension_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['survivors_pension_insured_capital'])) ?? null,
-                        'monthly_disability_retirement_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_disability_retirement_contribution'])) ?? null,
-                        'disability_retirement_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['disability_retirement_insured_capital'])) ?? null,
+                        'monthly_retirement_contribution' => Money::parse($planData['monthly_retirement_contribution'] ?? null),
+                        'monthly_survivors_pension_contribution' => Money::parse($planData['monthly_survivors_pension_contribution'] ?? null),
+                        'survivors_pension_insured_capital' => Money::parse($planData['survivors_pension_insured_capital'] ?? null),
+                        'monthly_disability_retirement_contribution' => Money::parse($planData['monthly_disability_retirement_contribution'] ?? null),
+                        'disability_retirement_insured_capital' => Money::parse($planData['disability_retirement_insured_capital'] ?? null),
                     ];
                 }
 
@@ -336,7 +337,7 @@ class RegistrationsController extends AppController
                         'obligation_other_countries' => $otherInformationsData['obligationOtherCountries'] ?? false,
                         'obligation_other_countries_obs' => $otherInformationsData['obligationOtherCountriesObs'] ?? '',
                         'company' => $otherInformationsData['company'] ?? '',
-                        'monthly_income' => str_replace(',', '.', str_replace('.', '', $otherInformationsData['monthlyIncome'])) ?? null,
+                        'monthly_income' => Money::parse($otherInformationsData['monthlyIncome'] ?? null),
                     ],
                 );
 
@@ -412,7 +413,7 @@ class RegistrationsController extends AppController
                 if ($paymentDetailsData['payment_type'] === 'Débito em conta' && !isset($paymentDetailsData['bank_number']))
                     $paymentDetailsData['bank_number'] = '001';
 
-                $totalContribution = str_replace(',', '.', str_replace('.', '', $paymentDetailsData['total_contribution']));
+                $totalContribution = Money::parse($paymentDetailsData['total_contribution'] ?? null);
                 $paymentDetails = !$initialDataAll->adhesion_payment_detail ? $this->AdhesionPaymentDetails->newEmptyEntity() : $this->AdhesionPaymentDetails->get($initialDataAll->adhesion_payment_detail->id);
                 $paymentDetails = $this->AdhesionPaymentDetails->patchEntity(
                     $paymentDetails,
