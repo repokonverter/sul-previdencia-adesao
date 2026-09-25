@@ -31,24 +31,12 @@ class SimulatorController extends AppController
             return $this->redirect(['controller' => 'Pages', 'action' => 'display', 'home']);
         }
 
-        [$hasSurvivorsPension, $hasDisabilityRetirement] = $this->requestedRisks(
-            $data['brokerCode'] ?? null,
-            $data['removeSurvivorsPension'] ?? null,
-            $data['removeDisabilityRetirement'] ?? null
-        );
+        // Uma simulação nova nasce com os dois riscos: remover risco deixou de
+        // existir no fluxo público e passou a ser ato do admin sobre uma
+        // adesão que já existe.
+        [$includeSurvivorsPension, $includeDisabilityRetirement] = $simulator->effectiveRisks($data['date']);
 
-        [$includeSurvivorsPension, $includeDisabilityRetirement] = $simulator->effectiveRisks(
-            $data['date'],
-            $hasSurvivorsPension,
-            $hasDisabilityRetirement
-        );
-
-        $simulations = $simulator->simulate(
-            $data['date'],
-            (float)$data['value'],
-            $hasSurvivorsPension,
-            $hasDisabilityRetirement
-        );
+        $simulations = $simulator->simulate($data['date'], (float)$data['value']);
 
         $totalMonthlyContributionPlan = $data['value'];
         $age = PlanSimulator::ageOn($data['date']);
@@ -81,10 +69,9 @@ class SimulatorController extends AppController
                 ]));
         }
 
-        [$hasSurvivorsPension, $hasDisabilityRetirement] = $this->requestedRisks(
-            $this->request->getQuery('brokerCode'),
-            $this->request->getQuery('removeSurvivorsPension'),
-            $this->request->getQuery('removeDisabilityRetirement')
+        [$hasSurvivorsPension, $hasDisabilityRetirement] = $this->storedRisks(
+            $this->request->getQuery('initialDataId'),
+            $this->request->getQuery('storageUuid')
         );
 
         [$includeSurvivorsPension, $includeDisabilityRetirement] = $simulator->effectiveRisks(
@@ -105,11 +92,10 @@ class SimulatorController extends AppController
                 'monthlyDisabilityRetirementContribution' => (float)$simulations[1]['contribuicao_invalidez'],
                 'disabilityRetirementInsuredCapital' => (float)$simulations[1]['cobertura_invalidez'],
                 'totalMonthlyContribution' => $value,
-                // Ecoa de volta o que o servidor de fato aplicou: um corretor
-                // que ficou inválido/inativo entre a validação em tempo real
-                // e este recálculo faz os dois riscos voltarem, e o
-                // front-end precisa saber disso para reexibir a etapa da
-                // saúde e desmarcar os toggles.
+                // Ecoa de volta o que o servidor aplicou, para a tela se
+                // realinhar: é daqui que o formulário fica sabendo que um
+                // risco foi removido pelo admin, e com isso se a etapa da
+                // saúde deve aparecer.
                 'hasSurvivorsPension' => $includeSurvivorsPension,
                 'hasDisabilityRetirement' => $includeDisabilityRetirement,
             ]));
@@ -124,26 +110,35 @@ class SimulatorController extends AppController
     }
 
     /**
-     * Quais riscos o pedido está querendo, antes das regras que não dependem
-     * de escolha (idade mínima, aplicada por PlanSimulator::effectiveRisks).
+     * Quais riscos a adesão gravada tem.
      *
-     * As flags "removeX" só valem acompanhadas de um código de corretor que
-     * de fato existe e está ativo — nunca sozinhas, senão bastaria montar a
-     * URL à mão para tirar os riscos sem corretor nenhum.
+     * Lê do banco em vez de aceitar da URL, porque desde que a remoção de
+     * risco virou ato do admin não existe mais motivo para o navegador opinar:
+     * montar a URL à mão tiraria riscos de graça. Sem adesão identificada é
+     * uma simulação nova, e toda simulação nova tem os dois.
      *
      * @return array{0: bool, 1: bool} [morte, invalidez]
      */
-    private function requestedRisks(?string $brokerCode, $removeSurvivorsPension, $removeDisabilityRetirement): array
+    private function storedRisks($initialDataId, $storageUuid): array
     {
-        $broker = $this->fetchTable('Brokers')->findByCodeText($brokerCode);
+        if (empty($initialDataId) || empty($storageUuid)) {
+            return [true, true];
+        }
 
-        if ($broker === null || !$broker->isUsable()) {
+        $adhesion = $this->fetchTable('AdhesionInitialDatas')->find()
+            ->where(['AdhesionInitialDatas.id' => (int)$initialDataId])
+            ->contain(['AdhesionPlans'])
+            ->first();
+
+        // Mesma checagem do save(): o id é sequencial e vem do navegador, o
+        // storage_uuid é o que autoriza falar sobre esta adesão.
+        if ($adhesion === null || !hash_equals((string)$adhesion->storage_uuid, (string)$storageUuid)) {
             return [true, true];
         }
 
         return [
-            empty($removeSurvivorsPension),
-            empty($removeDisabilityRetirement),
+            $adhesion->adhesion_plan->has_survivors_pension ?? true,
+            $adhesion->adhesion_plan->has_disability_retirement ?? true,
         ];
     }
 }
