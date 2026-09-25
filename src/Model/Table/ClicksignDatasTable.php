@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
-class ClicksignDatasTable extends Table
+class ClicksignDatasTable extends AppTable
 {
     public function initialize(array $config): void
     {
         parent::initialize($config);
         $this->setTable('clicksign_data');
-        $this->addBehavior('Timestamp');
 
         $this->belongsTo('AdhesionInitialDatas', [
             'foreignKey' => 'adhesion_initial_data_id',

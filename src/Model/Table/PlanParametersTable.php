@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use App\Model\Entity\PlanParameter;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 use RuntimeException;
 
-class PlanParametersTable extends Table
+class PlanParametersTable extends AppTable
 {
     public function initialize(array $config): void
     {
@@ -17,21 +16,6 @@ class PlanParametersTable extends Table
 
         $this->setTable('plan_parameters');
         $this->setPrimaryKey('id');
-
-        // O projeto inteiro usa created/updated (padrão do addTimestamps() do
-        // Phinx), mas o behavior grava 'modified' por padrão -- coluna que não
-        // existe em tabela nenhuma daqui, e por isso 'updated' está NULL em
-        // todas elas. Apontar explicitamente faz a coluna valer alguma coisa,
-        // que é o mínimo para uma tabela cujo valor alguém vai querer saber
-        // quando mudou.
-        $this->addBehavior('Timestamp', [
-            'events' => [
-                'Model.beforeSave' => [
-                    'created' => 'new',
-                    'updated' => 'always',
-                ],
-            ],
-        ]);
     }
 
     /**

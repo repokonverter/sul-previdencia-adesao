@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
-class PixWebhooksTable extends Table
+class PixWebhooksTable extends AppTable
 {
     public function initialize(array $config): void
     {
         parent::initialize($config);
 
         $this->setTable('pix_webhooks');
-        $this->addBehavior('Timestamp');
     }
 
     public function validationDefault(Validator $validator): Validator
