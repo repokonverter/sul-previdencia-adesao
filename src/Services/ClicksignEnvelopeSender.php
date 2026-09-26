@@ -81,17 +81,25 @@ class ClicksignEnvelopeSender
 
             if ($envelopeId) {
                 $documentIds = [];
+                $documentManifest = [];
 
                 foreach ($documents as $document) {
                     $documentResponse = $this->clicksign->createDocument($envelopeId, [
                         'filename' => $document['name'],
                         'content_base64' => "data:application/pdf;base64," . $document['file'],
+                        // Ecoado de volta em toda leitura do documento e --
+                        // segundo a documentação da Clicksign -- nos webhooks.
+                        // É assim que o aviso de "documento fechado" chega
+                        // sabendo de qual adesão se trata, sem depender de casar
+                        // envelope_id.
+                        'metadata' => ['adhesion_initial_data_id' => (string)$adhesionId],
                     ]);
 
                     if (!$documentResponse['success'])
                         throw new \Exception('Falha ao criar o documento no clicksign: ' . json_encode($documentResponse['data']));
 
                     $documentIds[] = $documentResponse['data']['id'];
+                    $documentManifest[] = ['id' => $documentResponse['data']['id'], 'name' => $document['name']];
                 }
 
                 $clicksignSignerResponse = $this->clicksign->createSigner($envelopeId, [
@@ -168,9 +176,10 @@ class ClicksignEnvelopeSender
             }
 
             $clicksignData = $this->clicksignDatas->patchEntity($clicksignData, [
-                'status' => 'sent',
+                'status' => ClicksignData::STATUS_SENT,
                 'attempts' => ($clicksignData->attempts ?? 0) + 1,
                 'last_error' => null,
+                'documents' => json_encode($documentManifest ?? [], JSON_UNESCAPED_UNICODE),
             ]);
             $this->clicksignDatas->save($clicksignData);
 
@@ -182,7 +191,7 @@ class ClicksignEnvelopeSender
             // admin não teria como saber que houve uma, nem por quê.
             if ($clicksignData !== null) {
                 $clicksignData = $this->clicksignDatas->patchEntity($clicksignData, [
-                    'status' => 'failed',
+                    'status' => ClicksignData::STATUS_FAILED,
                     'attempts' => ($clicksignData->attempts ?? 0) + 1,
                     'last_error' => $e->getMessage(),
                 ]);

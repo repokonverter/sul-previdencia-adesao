@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @var \App\View\AppView $this
+ * @var iterable<\App\Model\Entity\ClicksignWebhook> $webhooks
+ */
+?>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-primary">Webhook Clicksign</h2>
+
+    <?= $this->Html->link(
+        '<i class="bi bi-plus-circle me-1"></i> Cadastrar Webhook',
+        ['action' => 'add'],
+        ['escape' => false, 'class' => 'btn btn-primary']
+    ) ?>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>URL cadastrada</th>
+                    <th>Cadastrado em</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($webhooks as $webhook): ?>
+                    <tr>
+                        <td class="text-break"><?= h($webhook->url) ?></td>
+                        <td><?= h($webhook->created) ?></td>
+                        <td class="text-end">
+                            <?= $this->Form->postLink(
+                                '<i class="bi bi-trash"></i> Remover',
+                                ['action' => 'delete', $webhook->id],
+                                [
+                                    'escape' => false,
+                                    'class' => 'btn btn-sm btn-outline-danger',
+                                    'confirm' => 'Remover este webhook na Clicksign e localmente? O status de assinatura só poderá ser atualizado manualmente depois.'
+                                ]
+                            ) ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (!count($webhooks)): ?>
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            Nenhum webhook cadastrado. Sem ele, o status de assinatura só é
+                            atualizado quando alguém clicar em "Atualizar status" na adesão.
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>

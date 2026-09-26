@@ -185,11 +185,28 @@
             <?php if (!empty($economicallyLocked)): ?>
                 <div class="alert alert-danger">
                     <i class="bi bi-lock"></i>
-                    <strong>Adesão paga.</strong>
-                    Valores, riscos, beneficiários e conta bancária não podem mais ser
-                    alterados: o dinheiro entrou sobre estes números, e mudá-los aqui
-                    seria evento contábil, não correção de cadastro. Dados cadastrais
-                    seguem editáveis nas demais abas.
+                    <?php if (!empty($lockReason['paid'])): ?>
+                        <strong>Adesão paga.</strong>
+                        Valores, riscos, beneficiários e conta bancária não podem mais ser
+                        alterados: o dinheiro entrou sobre estes números, e mudá-los aqui
+                        seria evento contábil, não correção de cadastro.
+                    <?php else: ?>
+                        <strong>Adesão assinada.</strong>
+                        Valores, riscos, beneficiários e conta bancária não podem mais ser
+                        alterados: editar agora faria o registro divergir do documento que
+                        a pessoa de fato assinou.
+                        <?= $this->Form->postLink(
+                            'Reabrir proposta',
+                            ['action' => 'reopenProposal', $adhesion->id],
+                            [
+                                'class' => 'btn btn-sm btn-outline-light ms-2',
+                                'confirm' => 'O contrato já assinado continua preservado como está. '
+                                    . 'Reabrir só permite editar de novo -- se a edição exigir nova '
+                                    . 'assinatura, um envelope novo será criado ao regerar os documentos. Continuar?',
+                            ]
+                        ) ?>
+                    <?php endif; ?>
+                    Dados cadastrais seguem editáveis nas demais abas.
                 </div>
             <?php endif; ?>
 

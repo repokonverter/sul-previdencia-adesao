@@ -60,7 +60,7 @@ class ClicksignDatasTable extends AppTable
 
             $this->save($this->patchEntity($attempt, [
                 'canceled_at' => DateTime::now(),
-                'status' => 'canceled',
+                'status' => ClicksignData::STATUS_CANCELED,
             ]));
         } catch (\Exception $e) {
             Log::warning(

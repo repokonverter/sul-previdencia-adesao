@@ -428,7 +428,19 @@ $formatLogBody = function (?string $value): string
 
         <?php if (!empty($adhesion->clicksign_datas)): ?>
             <div class="card p-4 shadow-sm mb-3">
-                <h5 class="fw-bold mb-3 text-primary">Envelopes de assinatura</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-primary mb-0">Envelopes de assinatura</h5>
+                    <?= $this->Form->postLink(
+                        '<i class="bi bi-arrow-clockwise"></i> Atualizar status',
+                        ['action' => 'checkClicksignStatus', $adhesion->id],
+                        [
+                            'escape' => false,
+                            'class' => 'btn btn-outline-primary btn-sm',
+                            'data-bs-toggle' => 'tooltip',
+                            'title' => 'Consulta a Clicksign agora; não depende do webhook estar cadastrado.',
+                        ]
+                    ) ?>
+                </div>
                 <table class="table table-sm align-middle mb-0">
                     <thead>
                         <tr>
@@ -436,6 +448,8 @@ $formatLogBody = function (?string $value): string
                             <th>Envelope</th>
                             <th style="width: 120px;">Situação</th>
                             <th style="width: 160px;">Criado</th>
+                            <th style="width: 160px;">Assinado</th>
+                            <th>Documentos</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -445,13 +459,27 @@ $formatLogBody = function (?string $value): string
                                 <td><code class="small"><?= h($attempt->envelope_id) ?></code></td>
                                 <td>
                                     <span class="badge bg-<?= match ($attempt->status) {
-                                        'sent' => 'success',
+                                        'signed' => 'success',
+                                        'sent' => 'warning text-dark',
                                         'failed' => 'danger',
                                         'canceled' => 'secondary',
-                                        default => 'warning',
+                                        default => 'secondary',
                                     } ?>"><?= h($attempt->status) ?></span>
                                 </td>
                                 <td><?= $attempt->created?->format('d/m/Y H:i') ?></td>
+                                <td><?= $attempt->signed_at?->format('d/m/Y H:i') ?? '—' ?></td>
+                                <td>
+                                    <?php foreach ($attempt->documentList() as $document): ?>
+                                        <?= $this->Html->link(
+                                            '<i class="bi bi-download"></i> ' . h($document['name']),
+                                            ['action' => 'downloadSignedDocument', $adhesion->id, $document['id']],
+                                            ['escape' => false, 'class' => 'btn btn-outline-secondary btn-sm mb-1']
+                                        ) ?>
+                                    <?php endforeach; ?>
+                                    <?php if ($attempt->documentList() === []): ?>
+                                        <span class="text-muted small">—</span>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

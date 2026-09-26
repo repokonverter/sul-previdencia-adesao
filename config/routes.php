@@ -86,6 +86,12 @@ return function (RouteBuilder $routes): void {
             ['pass' => ['token']]
         );
 
+        $builder->connect(
+            '/clicksign/webhook/{token}',
+            ['controller' => 'Webhooks', 'action' => 'clicksign'],
+            ['pass' => ['token']]
+        );
+
         /*
          * Connect catchall routes for all controllers.
          *

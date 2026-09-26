@@ -58,6 +58,7 @@ class AdhesionsController extends AppController
                 'AdhesionPensionSchemes',
                 'AdhesionProponentStatements',
                 'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
+                'ClicksignDatas' => ['sort' => ['ClicksignDatas.attempt' => 'DESC']],
                 'PromotionalCodes.Partners',
             ]);
 
@@ -185,16 +186,96 @@ class AdhesionsController extends AppController
      * deixa de ser edição de cadastro e vira evento contábil: o dinheiro já
      * entrou sobre os números antigos.
      *
-     * A adesão assinada deveria travar pelo mesmo motivo, e ainda não trava:
-     * clicksign_data.status só guarda pending/sent/failed, e "assinada" passa
-     * a existir junto com o acompanhamento de assinatura.
+     * Adesão assinada trava pelo mesmo motivo: editar valor depois da
+     * assinatura faria o registro divergir do documento que a pessoa de fato
+     * assinou. "Reabrir proposta" é a única saída, e só existe para o lado da
+     * assinatura -- dinheiro já recebido não tem botão equivalente.
      */
     private function economicallyLocked($adhesion): bool
     {
-        return $this->fetchTable('PixTransactions')->exists([
+        $reason = $this->lockReason($adhesion);
+
+        return $reason['paid'] || $reason['signed'];
+    }
+
+    /**
+     * Lê a tentativa mais recente por consulta própria, e não pelo `contain`
+     * da adesão: essa entidade também alimenta o retrato de
+     * AdhesionAuditor::snapshot(), e clicksign_datas não é conteúdo que
+     * edit() edite -- incluí-lo no contain principal faria a mera presença da
+     * associação (carregada aqui, ausente na releitura de recordEdit(), que
+     * usa AdhesionAuditor::CONTAINS) aparecer como uma "alteração" toda vez.
+     *
+     * @return array{paid: bool, signed: bool}
+     */
+    private function lockReason($adhesion): array
+    {
+        $paid = $this->fetchTable('PixTransactions')->exists([
             'adhesion_initial_data_id' => $adhesion->id,
             'paid' => true,
         ]);
+
+        $latest = $this->fetchTable('ClicksignDatas')->latestFor((int)$adhesion->id);
+        $signed = $latest !== null && $latest->isSigned() && !$latest->isReopened();
+
+        return ['paid' => $paid, 'signed' => $signed];
+    }
+
+    /**
+     * Destrava a edição de uma adesão travada por assinatura.
+     *
+     * Nunca mexe no envelope nem no que está gravado como assinado: o
+     * contrato que a pessoa assinou continua sendo exatamente aquele,
+     * preservado como prova histórica. O que muda é só a permissão de editar
+     * a partir de agora -- se a edição pedir nova assinatura, é o botão
+     * "Regerar documentos" que cria um envelope novo (ClicksignEnvelopeSender
+     * já cancela o anterior quando possível; um envelope fechado não pode ser
+     * cancelado e permanece como está, o que é o comportamento certo).
+     *
+     * Recusa se a adesão também estiver paga: dinheiro já recebido não é
+     * destravado por um clique administrativo sem processo de conciliação, e
+     * esta ação deliberadamente não tenta.
+     */
+    public function reopenProposal($id)
+    {
+        $this->request->allowMethod(['post']);
+
+        $paid = $this->fetchTable('PixTransactions')->exists(['adhesion_initial_data_id' => $id, 'paid' => true]);
+
+        if ($paid) {
+            $this->Flash->error(
+                'Esta adesão tem pagamento confirmado: dinheiro já recebido não é destravado por aqui. '
+                . 'Trate a devolução ou ajuste diretamente com o Sicoob, se for o caso.'
+            );
+
+            return $this->redirect(['action' => 'view', $id]);
+        }
+
+        $clicksignDatas = $this->fetchTable('ClicksignDatas');
+        $latest = $clicksignDatas->latestFor((int)$id);
+
+        if ($latest === null || !$latest->isSigned()) {
+            $this->Flash->error('Esta adesão não está travada por assinatura.');
+
+            return $this->redirect(['action' => 'view', $id]);
+        }
+
+        $clicksignDatas = $this->fetchTable('ClicksignDatas');
+        $clicksignDatas->saveOrFail($clicksignDatas->patchEntity($latest, [
+            'reopened_at' => \Cake\I18n\DateTime::now(),
+            'reopened_by_user_id' => $this->currentUser()?->get('id'),
+        ]));
+
+        $this->auditor->record((int)$id, $this->currentUser(), AdhesionAudit::ACTION_UPDATED, [
+            'proposta' => ['travada por assinatura', 'reaberta para edição'],
+        ]);
+
+        $this->Flash->success(
+            'Proposta reaberta. O contrato já assinado continua preservado; uma edição que exigir nova '
+            . 'assinatura gera um envelope novo ao regerar os documentos.'
+        );
+
+        return $this->redirect(['action' => 'view', $id]);
     }
 
     private function brokerOptions(?int $current = null): array
@@ -248,8 +329,9 @@ class AdhesionsController extends AppController
 
         $brokers = $this->brokerOptions();
         $economicallyLocked = false;
+        $lockReason = ['paid' => false, 'signed' => false];
 
-        $this->set(compact('adhesion', 'brokers', 'economicallyLocked'));
+        $this->set(compact('adhesion', 'brokers', 'economicallyLocked', 'lockReason'));
     }
 
     private function savePensionSchemes($adhesionInitialDataId, array $data): void
@@ -272,7 +354,8 @@ class AdhesionsController extends AppController
     public function edit($id)
     {
         $adhesion = $this->AdhesionInitialDatas->get($id, contain: AdhesionAuditor::CONTAINS);
-        $economicallyLocked = $this->economicallyLocked($adhesion);
+        $lockReason = $this->lockReason($adhesion);
+        $economicallyLocked = $lockReason['paid'] || $lockReason['signed'];
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             // O retrato tem que sair daqui: patchEntity() altera o mesmo
@@ -324,7 +407,7 @@ class AdhesionsController extends AppController
 
         $brokers = $this->brokerOptions($adhesion->broker_id);
 
-        $this->set(compact('adhesion', 'brokers', 'economicallyLocked'));
+        $this->set(compact('adhesion', 'brokers', 'economicallyLocked', 'lockReason'));
     }
 
     /**
@@ -423,6 +506,95 @@ class AdhesionsController extends AppController
      * POST deixaria o link apontar para uma etapa que não existe, e o
      * formulário cairia calado na primeira.
      */
+    /**
+     * Pergunta à Clicksign diretamente se a tentativa corrente foi
+     * assinada -- mesmo botão manual de checkPixPayment(), mesmo motivo de
+     * existir: o webhook é gatilho de melhor esforço, e este é o caminho que
+     * não depende dele estar cadastrado nem de adivinhar o payload.
+     */
+    public function checkClicksignStatus($id)
+    {
+        $this->request->allowMethod(['post']);
+
+        $tab = $this->request->getData('tab');
+        $clicksignDatas = $this->fetchTable('ClicksignDatas');
+        $latest = $clicksignDatas->latestFor((int)$id);
+
+        if (!$latest) {
+            $this->Flash->error('Nenhum envelope foi enviado para esta adesão ainda.');
+
+            return $this->redirect(['action' => 'view', $id, '?' => array_filter(['tab' => $tab])]);
+        }
+
+        try {
+            $result = \App\Services\ClicksignSignatureChecker::fromConfigure($clicksignDatas)->refresh($latest);
+
+            if (!$result['found'])
+                $this->Flash->error('Envelope não encontrado na Clicksign.');
+            elseif ($result['signed'] ?? false)
+                $this->Flash->success('Assinatura confirmada na Clicksign.');
+            else
+                $this->Flash->info('Ainda não há confirmação de assinatura na Clicksign (status: ' . ($result['status'] ?? 'desconhecido') . ').');
+        } catch (\Exception $e) {
+            $this->Flash->error('Falha ao consultar a Clicksign: ' . $e->getMessage());
+        }
+
+        return $this->redirect(['action' => 'view', $id, '?' => array_filter(['tab' => $tab])]);
+    }
+
+    /**
+     * Baixa um documento assinado, sempre por proxy: o link da Clicksign é
+     * uma URL pré-assinada do S3, sem autenticação própria, válida por ~5
+     * minutos. Em redirect ela entraria no histórico do navegador e em logs
+     * de proxy; assim o único portão continua sendo a sessão do admin.
+     */
+    public function downloadSignedDocument($id, $documentId)
+    {
+        $adhesion = $this->AdhesionInitialDatas->get($id, contain: ['ClicksignDatas']);
+        $latest = $this->fetchTable('ClicksignDatas')->latestFor((int)$id);
+
+        if ($latest === null || $latest->envelope_id === null) {
+            $this->Flash->error('Esta adesão não tem envelope de assinatura.');
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'integrationLogs']]);
+        }
+
+        try {
+            $clicksign = new \App\Services\ClicksignService(
+                \Cake\Core\Configure::read('Clicksign.baseUrl'),
+                \Cake\Core\Configure::read('Clicksign.accessToken')
+            );
+            $clicksign->forAdhesion((int)$id);
+
+            $document = $clicksign->getDocument($latest->envelope_id, $documentId);
+            $links = $document['data']['links']['files'] ?? [];
+            // "signed" só existe depois do documento fechado; sem ele, cai no
+            // original -- útil para conferir o que foi enviado antes de
+            // assinado, mas nunca é o que se quer entregar como comprovante.
+            $fileUrl = $links['signed'] ?? $links['original'] ?? null;
+            $filename = $document['data']['attributes']['filename'] ?? 'documento.pdf';
+
+            if ($fileUrl === null) {
+                $this->Flash->error('Não foi possível obter o documento agora. Tente novamente.');
+
+                return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'integrationLogs']]);
+            }
+
+            $bytes = (new \Cake\Http\Client())->get($fileUrl)->getBody();
+
+            $this->autoRender = false;
+
+            return $this->response
+                ->withType('application/pdf')
+                ->withHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->withStringBody((string)$bytes);
+        } catch (\Exception $e) {
+            $this->Flash->error('Não foi possível obter o documento assinado agora: ' . $e->getMessage());
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'integrationLogs']]);
+        }
+    }
+
     public function issueResumeLink($id)
     {
         $this->request->allowMethod(['post']);
