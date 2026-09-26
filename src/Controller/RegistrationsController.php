@@ -26,6 +26,7 @@ use Cake\Http\Client;
 use Cake\Core\Configure;
 use App\View\Helper\BankHelper;
 use Cake\Routing\Router;
+use Cake\Utility\Text;
 use Cake\View\View;
 
 class RegistrationsController extends AppController
@@ -83,6 +84,7 @@ class RegistrationsController extends AppController
 
         try {
             $initialDataId = isset($data['initialDataId']) ? $data['initialDataId'] : null;
+            $storageUuid = null;
 
             if ($initialDataId !== null) {
                 $initialDataAll = $this->AdhesionInitialDatas->get(
@@ -101,6 +103,17 @@ class RegistrationsController extends AppController
                         'PixTransactions',
                     ]
                 );
+
+                // O id da adesão é sequencial e chega pelo POST; sozinho, ele
+                // deixaria qualquer visitante reescrever a adesão de outra
+                // pessoa trocando o número. Quem autoriza a escrita é o
+                // storage_uuid, e ele é conferido contra o que está gravado —
+                // antes era apenas regravado por cima, o que não conferia nada.
+                if (!hash_equals((string)$initialDataAll->storage_uuid, (string)($data['storageUuid'] ?? ''))) {
+                    throw new NotFoundException();
+                }
+
+                $storageUuid = $initialDataAll->storage_uuid;
             }
 
             if (isset($data['initialData'])) {
@@ -108,11 +121,19 @@ class RegistrationsController extends AppController
                 $initial = $initialDataId === null ? $this->AdhesionInitialDatas->newEmptyEntity() : $this->AdhesionInitialDatas->get($initialDataId);
 
                 $patchData = [
-                    'storage_uuid' => $data['storageUuid'],
                     'name' => $initialData['name'] ?? '',
                     'email' => $initialData['email'] ?? null,
                     'phone' => $initialData['phone'] ?? null,
                 ];
+
+                // O storage_uuid autoriza toda escrita seguinte nesta adesão e
+                // é a chave pública do link de pagamento, então nasce aqui e
+                // nunca é aceito do navegador — que antes o gerava, caindo em
+                // Math.random() + Date.now() quando crypto.randomUUID não
+                // existia, e reaproveitava o mesmo valor entre adesões.
+                if ($initial->isNew()) {
+                    $patchData['storage_uuid'] = Text::uuid();
+                }
 
                 // Uma vez atribuído, o código promocional permanece mesmo que
                 // ele seja desativado depois (parceiro incluído) ou que um
@@ -148,6 +169,7 @@ class RegistrationsController extends AppController
                 $this->AdhesionInitialDatas->save($initial);
 
                 $initialDataId = $initial->id;
+                $storageUuid = $initial->storage_uuid;
             }
 
             if (isset($data['personalData'])) {
@@ -600,6 +622,7 @@ class RegistrationsController extends AppController
                         'success' => true,
                         'message' => 'Adesão salva com sucesso!',
                         'initialDataId' => intval($initialDataId),
+                        'storageUuid' => $storageUuid,
                         'redirectUrl' => $paymentUrl,
                     ]));
             }
@@ -611,6 +634,7 @@ class RegistrationsController extends AppController
                     'success' => true,
                     'message' => 'Adesão salva com sucesso!',
                     'initialDataId' => intval($initialDataId),
+                    'storageUuid' => $storageUuid,
                 ]));
         } catch (\Exception $e) {
             if (!$adhesionCommitted)
