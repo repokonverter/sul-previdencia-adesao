@@ -13,7 +13,9 @@ $this->assign('title', 'Sul Previdência - Simulador');
 $csrfToken = $this->request->getAttribute('csrfToken');
 $logoAssetPath = 'logo_sul_transparente.png';
 
-function createScenario($data, $type)
+// Closures, e não declarações: esta tela passou a ser renderizada também pelo
+// link de retomada, e dois render no mesmo processo redeclarariam a função.
+$createScenario = function ($data, $type)
 {
     $annualProfitabilityRate = floor($data['taxa_rentabilidade_anual'] * 100);
 
@@ -39,9 +41,9 @@ function createScenario($data, $type)
             <div class="cenario-renda">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
         </div>
     ';
-}
+};
 
-function createSecureCard($data, $type)
+$createSecureCard = function ($data, $type)
 {
     switch ($type) {
         case 'death':
@@ -60,7 +62,7 @@ function createSecureCard($data, $type)
             <div style="font-size: 1rem; color: #6c757d;">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
         </div>
     ';
-}
+};
 ?>
 <!DOCTYPE html>
 <html>
@@ -520,11 +522,11 @@ function createSecureCard($data, $type)
             <form class="simulador-form" id="simulador-form">
                 <div class="simulador-form-group">
                     <label for="data-nascimento">Data de nascimento</label>
-                    <input type="date" max="9999-12-31" class="form-control" name="dateBirth" placeholder="XX/XX/XXXX" value="<?= $_GET['date']; ?>" required>
+                    <input type="date" max="9999-12-31" class="form-control" name="dateBirth" placeholder="XX/XX/XXXX" value="<?= h($simulationDate) ?>" required>
                 </div>
                 <div class="simulador-form-group">
                     <label for="valor-investimento">Investimento mensal <small class="text-muted">(mínimo R$ 100,00)</small></label>
-                    <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal" value="<?= $_GET['value']; ?>" required>
+                    <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal" value="<?= h($simulationValue) ?>" required>
                 </div>
             </form>
             <div id="simulador-form-error" class="text-danger mb-2" style="display: none;"></div>
@@ -542,7 +544,7 @@ function createSecureCard($data, $type)
                             <div class="cenarios-container" id="patrimonio-cenarios">
                                 <?php
                                 foreach ($simulations as $simulation) {
-                                    echo createScenario($simulation, 'property');
+                                    echo $createScenario($simulation, 'property');
                                 }
                                 ?>
                             </div>
@@ -557,7 +559,7 @@ function createSecureCard($data, $type)
                             Pensão por Morte
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="seguro-morte-cenarios"><?= createSecureCard($simulations[1], 'death'); ?></div>
+                            <div class="cenarios-container" id="seguro-morte-cenarios"><?= $createSecureCard($simulations[1], 'death'); ?></div>
                             <div class="descricao-secundaria" id="seguro-morte-contribuicao">
                                 Contribuição Mensal<br>
                                 <?= Number::currency($simulations[1]['contribuicao_morte']); ?>
@@ -569,7 +571,7 @@ function createSecureCard($data, $type)
                             Aposentadoria por Invalidez
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= createSecureCard($simulations[1], 'disability'); ?></div>
+                            <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= $createSecureCard($simulations[1], 'disability'); ?></div>
                             <div class="descricao-secundaria" id="seguro-invalidez-contribuicao">
                                 Contribuição Mensal<br>
                                 <?= Number::currency($simulations[1]['contribuicao_invalidez']); ?>
@@ -719,7 +721,7 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="birthDate" class="form-label">Data de nasc.*</label>
-                                        <input type="date" max="9999-12-31" class="form-control" name="personalData[birthDate]" placeholder="Data de nascimento" value="<?= $_GET['date']; ?>" required>
+                                        <input type="date" max="9999-12-31" class="form-control" name="personalData[birthDate]" placeholder="Data de nascimento" value="<?= h($simulationDate) ?>" required>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -915,6 +917,7 @@ function createSecureCard($data, $type)
                                             <span class="input-group-text">R$</span>
                                             <input type="text" class="form-control money" id="planMonthlyInvestment" value="<?= number_format($totalMonthlyContributionPlan, 2, '.', ''); ?>">
                                             <button type="button" class="btn btn-outline-primary" id="btnRecalculatePlan" onclick="recalculatePlan();">Recalcular</button>
+                                            <button type="button" class="btn btn-outline-secondary d-none" id="btnRefreshPlan" onclick="refreshPlanFromServer();" title="Traz os valores que a Sul Previdência gravou">Atualizar</button>
                                         </div>
                                         <div id="planRecalculateError" class="text-danger mt-1" style="display: none;"></div>
                                     </div>
@@ -1810,6 +1813,13 @@ function createSecureCard($data, $type)
     </div>
     <script>
         const isDebug = <?= Configure::read('debug') ? 'true' : 'false' ?>;
+        /**
+         * Proposta retomada: a adesão inteira no formato do formulário, mais
+         * a etapa em que o admin quer que ela recomece. Null numa visita
+         * comum, em que o formulário nasce vazio como sempre.
+         */
+        const resumed = <?= json_encode($resumed ?? null, JSON_UNESCAPED_UNICODE) ?>;
+
         let initialDataId = null;
         // Devolvido pelo servidor quando a adesão nasce, e reenviado a cada
         // gravação seguinte: é ele que autoriza escrever *nesta* adesão. Era
@@ -1932,6 +1942,16 @@ function createSecureCard($data, $type)
                     // pelo admin: as linhas correspondentes não podem aparecer.
                     updateRiskVisibility();
                     applyPlanLock();
+
+                    // Só faz sentido oferecer "Atualizar" quando existe uma
+                    // adesão gravada de onde puxar.
+                    document.getElementById('btnRefreshPlan')
+                        .classList.toggle('d-none', initialDataId === null);
+
+                    // Busca automática ao abrir o passo: o caso comum é o
+                    // proponente ao telefone enquanto o admin mexe, e ele não
+                    // tem por que saber que existe um botão.
+                    refreshPlanFromServer();
                 },
             },
             {
@@ -1976,9 +1996,100 @@ function createSecureCard($data, $type)
 
             initPromotionalCode();
             initBrokerCode();
+            initResumedProposal();
 
             simulationChart();
         });
+
+        /**
+         * Preenche um campo pelo atributo name, disparando os mesmos eventos
+         * que uma pessoa dispararia.
+         *
+         * Disparar é obrigatório, não cosmético: metade destes campos tem
+         * handler que mostra ou esconde a seção dependente (showHide,
+         * planForHandle, pensionSchema). Preencher sem disparar deixaria
+         * valores certos dentro de blocos escondidos, e blocos abertos vazios.
+         */
+        const fillField = (name, value) => {
+            const $nodes = $(`#registerModal [name="${name}"]`);
+
+            if ($nodes.length === 0 || value === null || value === undefined) return;
+
+            const first = $nodes[0];
+
+            if (first.type === 'radio' || first.type === 'checkbox') {
+                const wanted = (Array.isArray(value) ? value : [value]).map(String);
+
+                $nodes.each(function() {
+                    const shouldCheck = wanted.includes(this.value);
+
+                    $(this).prop('checked', shouldCheck);
+
+                    // Só o que ficou marcado dispara: um 'click' no que ficou
+                    // desmarcado reabriria a seção que o handler acabou de
+                    // fechar.
+                    if (shouldCheck) $(this).trigger('click').trigger('change');
+                });
+
+                return;
+            }
+
+            $nodes.val(value);
+
+            // 'change' só em select. Em campo de texto ele dispara busca
+            // remota -- o CEP chama getCEP(), cuja resposta reescreve
+            // endereço, bairro e cidade, apagando o que acabou de ser
+            // preenchido. Quem precisa do evento para mostrar ou esconder
+            // seção é rádio e checkbox, tratados acima.
+            if (first.tagName === 'SELECT') $nodes.trigger('change');
+        };
+
+        const fillSection = (section, values) => {
+            if (!values) return;
+
+            Object.entries(values).forEach(([field, value]) => fillField(`${section}[${field}]`, value));
+        };
+
+        /**
+         * Reabre a proposta preenchida, na etapa que o admin escolheu.
+         */
+        const initResumedProposal = () => {
+            if (!resumed) return;
+
+            initialDataId = resumed.initialDataId;
+            storageUuid = resumed.storageUuid;
+            planLocked = resumed.planLocked;
+
+            Object.entries(resumed.form).forEach(([section, values]) => {
+                if (section === 'dependents') {
+                    // Beneficiário não existe no HTML até alguém criar: a
+                    // linha precisa ser acrescentada antes de ter o que
+                    // preencher.
+                    (values || []).forEach((dependent, index) => {
+                        addDependent();
+                        fillSection(`dependents[${index}]`, dependent);
+                    });
+
+                    return;
+                }
+
+                fillSection(section, values);
+            });
+
+            // A ocupação tem um campo visível de busca além dos dois ocultos
+            // que de fato viajam; sem ele a pessoa vê o campo em branco.
+            const occupation = resumed.form.otherInformations || {};
+
+            if (occupation.mainOccupationDescription)
+                $('#mainOccupationSearch').val(occupation.mainOccupationDescription);
+
+            const target = registerPages.find((step) => step.id === resumed.step);
+
+            currentStepId = target && (!target.visible || target.visible()) ? target.id : registerPages[0].id;
+
+            updatePage();
+            registerModal.show();
+        };
 
         const planForHandle = (planFor) => {
             if (planFor.value === 'Dependente') {
@@ -2790,6 +2901,71 @@ function createSecureCard($data, $type)
             })
         }
 
+        /**
+         * Traz o plano como a Sul Previdência gravou, sem recalcular.
+         *
+         * Serve ao caso do proponente ao telefone com o atendimento: o admin
+         * mexe na adesão e o valor novo aparece na tela aberta, sem precisar
+         * de link nem de recarregar a página. "Recalcular" faria o oposto --
+         * rodaria a fórmula e apagaria o que acabou de ser combinado.
+         */
+        const refreshPlanFromServer = () => {
+            if (initialDataId === null || storageUuid === null) return;
+
+            const button = document.getElementById('btnRefreshPlan');
+
+            button.disabled = true;
+
+            $.ajax({
+                type: 'GET',
+                url: `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'planState']) ?>`,
+                data: { initialDataId, storageUuid },
+                dataType: 'json',
+                success: (response) => {
+                    if (!response.success) return;
+
+                    applyPlanResponse(response);
+                },
+                complete: () => {
+                    button.disabled = false;
+                },
+            });
+        };
+
+        /**
+         * Aplica na tela um plano vindo do servidor, seja do recálculo, seja
+         * do que está gravado. Os dois respondem no mesmo formato de
+         * propósito: a tela não precisa saber qual dos dois falou.
+         */
+        const applyPlanResponse = (response) => {
+            const formatMoney = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            $('#registerModal input[name="plans[benefitEntryAge]"]').val(response.benefitEntryAge);
+            $('#registerModal input[name="plans[monthly_retirement_contribution]"]').val(formatMoney(response.monthlyRetirementContribution));
+            $('#registerModal input[name="plans[monthly_survivors_pension_contribution]"]').val(formatMoney(response.monthlySurvivorsPensionContribution));
+            $('#registerModal input[name="plans[survivors_pension_insured_capital]"]').val(formatMoney(response.survivorsPensionInsuredCapital));
+            $('#registerModal input[name="plans[monthly_disability_retirement_contribution]"]').val(formatMoney(response.monthlyDisabilityRetirementContribution));
+            $('#registerModal input[name="plans[disability_retirement_insured_capital]"]').val(formatMoney(response.disabilityRetirementInsuredCapital));
+            $('#paymentTotalContribution').val(formatMoney(response.totalMonthlyContribution));
+            document.getElementById('planTotalMonthlyContribution').textContent = response.totalMonthlyContribution.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+
+            if (response.hasSurvivorsPension !== undefined)
+                hasSurvivorsPension = response.hasSurvivorsPension;
+
+            if (response.hasDisabilityRetirement !== undefined)
+                hasDisabilityRetirement = response.hasDisabilityRetirement;
+
+            if (response.planLocked !== undefined) {
+                planLocked = response.planLocked;
+                applyPlanLock();
+            }
+
+            updateRiskVisibility();
+        };
+
         const recalculatePlan = () => {
             const birthDate = $('#registerModal input[name="personalData[birthDate]"]').val();
             const investmentInput = document.getElementById('planMonthlyInvestment');
@@ -2819,35 +2995,10 @@ function createSecureCard($data, $type)
                         return;
                     }
 
-                    const formatMoney = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(response.benefitEntryAge);
-                    $('#registerModal input[name="plans[monthly_retirement_contribution]"]').val(formatMoney(response.monthlyRetirementContribution));
-                    $('#registerModal input[name="plans[monthly_survivors_pension_contribution]"]').val(formatMoney(response.monthlySurvivorsPensionContribution));
-                    $('#registerModal input[name="plans[survivors_pension_insured_capital]"]').val(formatMoney(response.survivorsPensionInsuredCapital));
-                    $('#registerModal input[name="plans[monthly_disability_retirement_contribution]"]').val(formatMoney(response.monthlyDisabilityRetirementContribution));
-                    $('#registerModal input[name="plans[disability_retirement_insured_capital]"]').val(formatMoney(response.disabilityRetirementInsuredCapital));
-                    $('#paymentTotalContribution').val(formatMoney(response.totalMonthlyContribution));
-                    document.getElementById('planTotalMonthlyContribution').textContent = response.totalMonthlyContribution.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                    });
-
-                    // O servidor é quem decide quais riscos a adesão tem: a
-                    // tela se realinha ao que veio na resposta, que é como
-                    // ela fica sabendo de uma remoção feita no admin.
-                    if (response.hasSurvivorsPension !== undefined)
-                        hasSurvivorsPension = response.hasSurvivorsPension;
-
-                    if (response.hasDisabilityRetirement !== undefined)
-                        hasDisabilityRetirement = response.hasDisabilityRetirement;
-
-                    if (response.planLocked !== undefined) {
-                        planLocked = response.planLocked;
-                        applyPlanLock();
-                    }
-
-                    updateRiskVisibility();
+                    // O servidor é quem decide quais riscos a adesão tem e se o
+                    // plano está travado: a tela se realinha ao que veio, que é
+                    // como ela fica sabendo de uma mudança feita no admin.
+                    applyPlanResponse(response);
                 },
                 error: () => {
                     errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';
@@ -3160,7 +3311,7 @@ function createSecureCard($data, $type)
             const RETIREMENT_AGE = 65;
             const RETIREMENT_ALLOCATION = 0.74;
             const dateBirth = $('.simulador-form-group input[name="dateBirth"]').val();
-            const contribution = parseFloat(<?= $_GET['value']; ?>);
+            const contribution = parseFloat(<?= h($simulationValue) ?>);
 
             if (!dateBirth || contribution <= 0) {
                 alert('Por favor, insira uma data de nascimento e uma contribuição mensal válidas.');

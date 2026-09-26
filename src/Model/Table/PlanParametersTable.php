@@ -78,6 +78,10 @@ class PlanParametersTable extends AppTable
             ]);
         }
 
+        $validator
+            ->integer('resume_link_days')
+            ->greaterThan('resume_link_days', 0, 'A validade do link de retomada precisa ser de ao menos um dia.');
+
         return $validator;
     }
 }

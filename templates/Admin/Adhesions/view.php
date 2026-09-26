@@ -2,27 +2,27 @@
 $validTabs = [
     'initialData', 'personalData', 'documents', 'plan', 'dependents', 'addressData',
     'otherInformation', 'proponentStatement', 'pensionScheme', 'paymentDetail', 'integrationLogs',
-    'audits',
+    'audits', 'resume',
 ];
 $activeTab = $this->request->getQuery('tab');
 if (!in_array($activeTab, $validTabs, true))
     $activeTab = 'initialData';
 
-function navLinkClass(string $tabId, string $activeTab): string
+$navLinkClass = function (string $tabId, string $activeTab): string
 {
     return 'nav-link' . ($tabId === $activeTab ? ' active' : '');
-}
+};
 
-function tabPaneClass(string $tabId, string $activeTab): string
+$tabPaneClass = function (string $tabId, string $activeTab): string
 {
     return 'tab-pane fade' . ($tabId === $activeTab ? ' show active' : '');
-}
+};
 
 /**
  * Transforma o caminho pontuado do diff em algo legível:
  * "adhesion_personal_data.cpf" vira "Dados pessoais › Cpf".
  */
-function auditFieldLabel(string $path): string
+$auditFieldLabel = function (string $path): string
 {
     $sections = [
         'adhesion_personal_data' => 'Dados pessoais',
@@ -45,9 +45,9 @@ function auditFieldLabel(string $path): string
     array_shift($parts);
 
     return $section . ' › ' . ucfirst(str_replace('_', ' ', implode(' ', $parts)));
-}
+};
 
-function formatAuditValue($value): string
+$formatAuditValue = function ($value): string
 {
     if ($value === null || $value === '')
         return '—';
@@ -56,9 +56,9 @@ function formatAuditValue($value): string
         return $value ? 'Sim' : 'Não';
 
     return (string)$value;
-}
+};
 
-function formatLogBody(?string $value): string
+$formatLogBody = function (?string $value): string
 {
     if ($value === null || $value === '')
         return '';
@@ -69,7 +69,7 @@ function formatLogBody(?string $value): string
         return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     return $value;
-}
+};
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">
@@ -85,23 +85,24 @@ function formatLogBody(?string $value): string
 </div>
 
 <ul class="nav nav-tabs mb-4" role="tablist">
-    <li class="nav-item"><a class="<?= navLinkClass('initialData', $activeTab) ?>" data-bs-toggle="tab" href="#initialData">Dados Iniciais</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('personalData', $activeTab) ?>" data-bs-toggle="tab" href="#personalData">Dados Pessoais</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('documents', $activeTab) ?>" data-bs-toggle="tab" href="#documents">Documentos</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('plan', $activeTab) ?>" data-bs-toggle="tab" href="#plan">Plano</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('dependents', $activeTab) ?>" data-bs-toggle="tab" href="#dependents">Beneficiários</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('addressData', $activeTab) ?>" data-bs-toggle="tab" href="#addressData">Endereço</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('otherInformation', $activeTab) ?>" data-bs-toggle="tab" href="#otherInformation">Outras Informações</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('proponentStatement', $activeTab) ?>" data-bs-toggle="tab" href="#proponentStatement">Declarações do Proponente</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('pensionScheme', $activeTab) ?>" data-bs-toggle="tab" href="#pensionScheme">Regime de Previdência</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('paymentDetail', $activeTab) ?>" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('integrationLogs', $activeTab) ?>" data-bs-toggle="tab" href="#integrationLogs">Integrações</a></li>
-    <li class="nav-item"><a class="<?= navLinkClass('audits', $activeTab) ?>" data-bs-toggle="tab" href="#audits">Histórico</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('initialData', $activeTab) ?>" data-bs-toggle="tab" href="#initialData">Dados Iniciais</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('personalData', $activeTab) ?>" data-bs-toggle="tab" href="#personalData">Dados Pessoais</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('documents', $activeTab) ?>" data-bs-toggle="tab" href="#documents">Documentos</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('plan', $activeTab) ?>" data-bs-toggle="tab" href="#plan">Plano</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('dependents', $activeTab) ?>" data-bs-toggle="tab" href="#dependents">Beneficiários</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('addressData', $activeTab) ?>" data-bs-toggle="tab" href="#addressData">Endereço</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('otherInformation', $activeTab) ?>" data-bs-toggle="tab" href="#otherInformation">Outras Informações</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('proponentStatement', $activeTab) ?>" data-bs-toggle="tab" href="#proponentStatement">Declarações do Proponente</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('pensionScheme', $activeTab) ?>" data-bs-toggle="tab" href="#pensionScheme">Regime de Previdência</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('paymentDetail', $activeTab) ?>" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('integrationLogs', $activeTab) ?>" data-bs-toggle="tab" href="#integrationLogs">Integrações</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('audits', $activeTab) ?>" data-bs-toggle="tab" href="#audits">Histórico</a></li>
+    <li class="nav-item"><a class="<?= $navLinkClass('resume', $activeTab) ?>" data-bs-toggle="tab" href="#resume">Retomada</a></li>
 </ul>
 
 <div class="tab-content" style="margin-bottom: 80px;">
     <!-- DADOS INICIAIS -->
-    <div id="initialData" class="<?= tabPaneClass('initialData', $activeTab) ?>">
+    <div id="initialData" class="<?= $tabPaneClass('initialData', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Dados Iniciais</h5>
             <div class="row">
@@ -122,7 +123,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- DADOS PESSOAIS -->
-    <div id="personalData" class="<?= tabPaneClass('personalData', $activeTab) ?>">
+    <div id="personalData" class="<?= $tabPaneClass('personalData', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Dados Pessoais</h5>
             <?php $p = $adhesion->adhesion_personal_data; ?>
@@ -172,7 +173,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- DOCUMENTOS -->
-    <div id="documents" class="<?= tabPaneClass('documents', $activeTab) ?>">
+    <div id="documents" class="<?= $tabPaneClass('documents', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Documentos</h5>
             <?php if (!empty($adhesion->adhesion_document)): ?>
@@ -190,7 +191,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- PLANO -->
-    <div id="plan" class="<?= tabPaneClass('plan', $activeTab) ?>">
+    <div id="plan" class="<?= $tabPaneClass('plan', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Plano</h5>
             <?php $pl = $adhesion->adhesion_plan; // Pode vir como collection ou single dependendo do contain
@@ -209,7 +210,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- BENEFICIÁRIOS -->
-    <div id="dependents" class="<?= tabPaneClass('dependents', $activeTab) ?>">
+    <div id="dependents" class="<?= $tabPaneClass('dependents', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Beneficiários</h5>
             <?php if (!empty($adhesion->adhesion_dependents)): ?>
@@ -230,7 +231,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- ENDEREÇO -->
-    <div id="addressData" class="<?= tabPaneClass('addressData', $activeTab) ?>">
+    <div id="addressData" class="<?= $tabPaneClass('addressData', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Endereço</h5>
             <?php $a = $adhesion->adhesion_address; ?>
@@ -252,7 +253,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- OUTRAS INFORMAÇÕES -->
-    <div id="otherInformation" class="<?= tabPaneClass('otherInformation', $activeTab) ?>">
+    <div id="otherInformation" class="<?= $tabPaneClass('otherInformation', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Outras Informações</h5>
             <?php $o = $adhesion->adhesion_other_information; ?>
@@ -270,7 +271,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- DECLARAÇÕES -->
-    <div id="proponentStatement" class="<?= tabPaneClass('proponentStatement', $activeTab) ?>">
+    <div id="proponentStatement" class="<?= $tabPaneClass('proponentStatement', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Declarações do Proponente</h5>
             <?php $s = $adhesion->adhesion_proponent_statement; ?>
@@ -303,7 +304,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- REGIME PREVIDÊNCIA -->
-    <div id="pensionScheme" class="<?= tabPaneClass('pensionScheme', $activeTab) ?>">
+    <div id="pensionScheme" class="<?= $tabPaneClass('pensionScheme', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Regime de Previdência</h5>
             <?php $pensionSchemes = $adhesion->adhesion_pension_schemes ?? []; ?>
@@ -329,7 +330,7 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- PAGAMENTO -->
-    <div id="paymentDetail" class="<?= tabPaneClass('paymentDetail', $activeTab) ?>">
+    <div id="paymentDetail" class="<?= $tabPaneClass('paymentDetail', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Dados para Pagamento</h5>
             <?php $pd = $adhesion->adhesion_payment_detail; ?>
@@ -389,7 +390,103 @@ function formatLogBody(?string $value): string
     </div>
 
     <!-- INTEGRAÇÕES -->
-    <div id="integrationLogs" class="<?= tabPaneClass('integrationLogs', $activeTab) ?>">
+    <div id="integrationLogs" class="<?= $tabPaneClass('integrationLogs', $activeTab) ?>">
+        <?php
+        $envelope = $adhesion->clicksign_datas[0] ?? null;
+        $changedAt = $adhesion->adhesion_plan?->admin_overridden_at;
+        // Documento gerado antes da última alteração está desatualizado. A
+        // comparação é de datas em vez de uma flag porque a pergunta é
+        // exatamente essa: o que o proponente tem em mãos é anterior ao que
+        // está gravado?
+        $documentsAreStale = $envelope !== null
+            && $changedAt !== null
+            && $envelope->created !== null
+            && $changedAt->greaterThan($envelope->created);
+        ?>
+
+        <?php if ($documentsAreStale): ?>
+            <div class="alert alert-warning">
+                <h6 class="fw-bold"><i class="bi bi-exclamation-triangle"></i> Documentos desatualizados</h6>
+                <p class="mb-2">
+                    O plano foi alterado em <strong><?= $changedAt->format('d/m/Y H:i') ?></strong>,
+                    depois de os documentos terem sido gerados em
+                    <strong><?= $envelope->created->format('d/m/Y H:i') ?></strong>.
+                    O que o proponente tem para assinar não reflete o que está gravado.
+                </p>
+                <?= $this->Form->postLink(
+                    '<i class="bi bi-arrow-repeat"></i> Regerar documentos e reenviar para assinatura',
+                    ['action' => 'regenerateDocuments', $adhesion->id],
+                    [
+                        'escape' => false,
+                        'class' => 'btn btn-warning btn-sm',
+                        'confirm' => 'O envelope atual será cancelado e o proponente receberá um e-mail '
+                            . 'pedindo que assine os documentos novos. Continuar?',
+                    ]
+                ) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($adhesion->clicksign_datas)): ?>
+            <div class="card p-4 shadow-sm mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-primary mb-0">Envelopes de assinatura</h5>
+                    <?= $this->Form->postLink(
+                        '<i class="bi bi-arrow-clockwise"></i> Atualizar status',
+                        ['action' => 'checkClicksignStatus', $adhesion->id],
+                        [
+                            'escape' => false,
+                            'class' => 'btn btn-outline-primary btn-sm',
+                            'data-bs-toggle' => 'tooltip',
+                            'title' => 'Consulta a Clicksign agora; não depende do webhook estar cadastrado.',
+                        ]
+                    ) ?>
+                </div>
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 90px;">Tentativa</th>
+                            <th>Envelope</th>
+                            <th style="width: 120px;">Situação</th>
+                            <th style="width: 160px;">Criado</th>
+                            <th style="width: 160px;">Assinado</th>
+                            <th>Documentos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($adhesion->clicksign_datas as $attempt): ?>
+                            <tr>
+                                <td>#<?= h($attempt->attempt) ?></td>
+                                <td><code class="small"><?= h($attempt->envelope_id) ?></code></td>
+                                <td>
+                                    <span class="badge bg-<?= match ($attempt->status) {
+                                        'signed' => 'success',
+                                        'sent' => 'warning text-dark',
+                                        'failed' => 'danger',
+                                        'canceled' => 'secondary',
+                                        default => 'secondary',
+                                    } ?>"><?= h($attempt->status) ?></span>
+                                </td>
+                                <td><?= $attempt->created?->format('d/m/Y H:i') ?></td>
+                                <td><?= $attempt->signed_at?->format('d/m/Y H:i') ?? '—' ?></td>
+                                <td>
+                                    <?php foreach ($attempt->documentList() as $document): ?>
+                                        <?= $this->Html->link(
+                                            '<i class="bi bi-download"></i> ' . h($document['name']),
+                                            ['action' => 'downloadSignedDocument', $adhesion->id, $document['id']],
+                                            ['escape' => false, 'class' => 'btn btn-outline-secondary btn-sm mb-1']
+                                        ) ?>
+                                    <?php endforeach; ?>
+                                    <?php if ($attempt->documentList() === []): ?>
+                                        <span class="text-muted small">—</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Linha do tempo de integrações</h5>
             <?php if (!empty($adhesion->integration_logs)): ?>
@@ -433,7 +530,7 @@ function formatLogBody(?string $value): string
                                                 <?php if ($value): ?>
                                                     <details class="mb-2">
                                                         <summary class="small fw-semibold text-primary" style="cursor: pointer;"><?= h($label) ?></summary>
-                                                        <pre class="small bg-white border rounded p-2 mt-1 mb-0" style="max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-all;"><?= h(formatLogBody($value)) ?></pre>
+                                                        <pre class="small bg-white border rounded p-2 mt-1 mb-0" style="max-height: 280px; overflow: auto; white-space: pre-wrap; word-break: break-all;"><?= h($formatLogBody($value)) ?></pre>
                                                     </details>
                                                 <?php endif; ?>
                                             <?php endforeach; ?>
@@ -450,8 +547,120 @@ function formatLogBody(?string $value): string
         </div>
     </div>
 
+    <!-- RETOMADA -->
+    <div id="resume" class="<?= $tabPaneClass('resume', $activeTab) ?>">
+        <div class="card p-4 shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary">Link de retomada</h5>
+
+            <?php if ($resumeUrl !== null): ?>
+                <div class="alert <?= $adhesion->resumeTokenHasExpired() ? 'alert-warning' : 'alert-success' ?>">
+                    <?php if ($adhesion->resumeTokenHasExpired()): ?>
+                        <i class="bi bi-clock-history"></i> Este link <strong>expirou</strong>
+                        em <?= $adhesion->resume_token_expires_at->format('d/m/Y H:i') ?>.
+                        Gere outro abaixo.
+                    <?php else: ?>
+                        <i class="bi bi-check-circle"></i> Link ativo, válido até
+                        <strong><?= $adhesion->resume_token_expires_at->format('d/m/Y H:i') ?></strong>,
+                        apontando para
+                        <strong><?= h(\App\Services\AdhesionSteps::ORDER[$adhesion->resume_step] ?? 'a primeira etapa') ?></strong>.
+                    <?php endif; ?>
+                </div>
+
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="resumeUrl" value="<?= h($resumeUrl) ?>" readonly>
+                    <button class="btn btn-outline-secondary" type="button" id="copyResumeUrl">
+                        <i class="bi bi-clipboard"></i> Copiar
+                    </button>
+                    <?php
+                    $phone = preg_replace('/\D/', '', (string)$adhesion->phone);
+                    $message = 'Olá! Continue sua proposta de adesão por aqui: ' . $resumeUrl;
+                    ?>
+                    <?php if ($phone !== ''): ?>
+                        <a class="btn btn-outline-success"
+                           target="_blank"
+                           rel="noopener"
+                           href="https://wa.me/55<?= h($phone) ?>?text=<?= rawurlencode($message) ?>">
+                            <i class="bi bi-whatsapp"></i> WhatsApp
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <?= $this->Form->create(null, [
+                    'url' => ['action' => 'sendResumeLink', $adhesion->id],
+                    'class' => 'row g-2 align-items-end mb-3',
+                ]) ?>
+                <div class="col-md-6">
+                    <label for="resumeEmail" class="form-label">Enviar por e-mail para</label>
+                    <input type="email" name="email" id="resumeEmail" class="form-control"
+                           value="<?= h($adhesion->email) ?>" required>
+                    <div class="form-text">
+                        Vem preenchido com o e-mail da adesão. Digitar outro envia para ele
+                        sem alterar o cadastro.
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <?= $this->Form->button('<i class="bi bi-envelope"></i> Enviar', [
+                        'escape' => false,
+                        'class' => 'btn btn-outline-primary w-100',
+                    ]) ?>
+                </div>
+                <?= $this->Form->end() ?>
+
+                <?= $this->Form->postLink(
+                    '<i class="bi bi-x-circle"></i> Revogar link',
+                    ['action' => 'revokeResumeLink', $adhesion->id],
+                    [
+                        'escape' => false,
+                        'class' => 'btn btn-outline-danger btn-sm',
+                        'confirm' => 'Revogar o link? Quem o tiver deixa de conseguir abrir a proposta.',
+                    ]
+                ) ?>
+            <?php else: ?>
+                <p class="text-muted">
+                    Nenhum link ativo. Gere um para o proponente continuar de onde parou.
+                </p>
+            <?php endif; ?>
+
+            <hr class="my-4">
+
+            <h6 class="fw-bold mb-2"><?= $resumeUrl === null ? 'Gerar link' : 'Gerar um link novo' ?></h6>
+            <p class="text-muted small">
+                Gerar invalida o link anterior. O mesmo link pode ser distribuído por
+                quantos canais quiser.
+            </p>
+
+            <?= $this->Form->create(null, ['url' => ['action' => 'issueResumeLink', $adhesion->id]]) ?>
+            <div class="row align-items-end">
+                <div class="col-md-6">
+                    <label for="resumeStep" class="form-label">O proponente recomeça em</label>
+                    <select name="step" id="resumeStep" class="form-select">
+                        <?php foreach ($resumeSteps as $id => $step): ?>
+                            <option value="<?= h($id) ?>"
+                                <?= $step['selectable'] ? '' : 'disabled' ?>
+                                <?= $id === $suggestedStep ? 'selected' : '' ?>>
+                                <?= h($step['label']) ?><?= $step['complete'] ? '' : ' — em branco' ?><?= $step['reason'] ? ' (' . h($step['reason']) . ')' : '' ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-text">
+                        Etapas que dependem de outra ainda em branco ficam indisponíveis: o
+                        proponente as pularia sem preencher, e a adesão seria finalizada
+                        incompleta.
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <?= $this->Form->button('<i class="bi bi-link-45deg"></i> Gerar link', [
+                        'escape' => false,
+                        'class' => 'btn btn-primary w-100',
+                    ]) ?>
+                </div>
+            </div>
+            <?= $this->Form->end() ?>
+        </div>
+    </div>
+
     <!-- HISTÓRICO -->
-    <div id="audits" class="<?= tabPaneClass('audits', $activeTab) ?>">
+    <div id="audits" class="<?= $tabPaneClass('audits', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
             <h5 class="fw-bold mb-3 text-primary">Histórico de alterações</h5>
 
@@ -477,10 +686,10 @@ function formatLogBody(?string $value): string
                                             <ul class="list-unstyled small mb-0">
                                                 <?php foreach ($changes as $field => [$was, $now]): ?>
                                                     <li class="mb-1">
-                                                        <span class="text-muted"><?= h(auditFieldLabel($field)) ?>:</span>
-                                                        <span class="text-decoration-line-through text-danger-emphasis"><?= h(formatAuditValue($was)) ?></span>
+                                                        <span class="text-muted"><?= h($auditFieldLabel($field)) ?>:</span>
+                                                        <span class="text-decoration-line-through text-danger-emphasis"><?= h($formatAuditValue($was)) ?></span>
                                                         <i class="bi bi-arrow-right"></i>
-                                                        <span class="fw-semibold text-success-emphasis"><?= h(formatAuditValue($now)) ?></span>
+                                                        <span class="fw-semibold text-success-emphasis"><?= h($formatAuditValue($now)) ?></span>
                                                     </li>
                                                 <?php endforeach; ?>
                                             </ul>
@@ -514,6 +723,22 @@ function formatLogBody(?string $value): string
 
 <script>
     $(document).ready(function() {
+        const copyButton = document.getElementById('copyResumeUrl');
+
+        if (copyButton) {
+            copyButton.addEventListener('click', function() {
+                const field = document.getElementById('resumeUrl');
+
+                field.select();
+                navigator.clipboard.writeText(field.value);
+
+                copyButton.innerHTML = '<i class="bi bi-check2"></i> Copiado';
+                setTimeout(function() {
+                    copyButton.innerHTML = '<i class="bi bi-clipboard"></i> Copiar';
+                }, 2000);
+            });
+        }
+
         document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(trigger) {
             trigger.addEventListener('shown.bs.tab', function(e) {
                 const tabId = e.target.getAttribute('href').substring(1);

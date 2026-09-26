@@ -21,6 +21,9 @@ class AdhesionInitialData extends Entity
         'broker_id' => true,
         'broker_name' => true,
         'broker_code' => true,
+        'resume_token' => true,
+        'resume_token_expires_at' => true,
+        'resume_step' => true,
         'created' => true,
         'modified' => true,
         'adhesion_personal_data' => true,
@@ -32,7 +35,7 @@ class AdhesionInitialData extends Entity
         'adhesion_pension_schemes' => true,
         'adhesion_payment_details' => true,
         'adhesion_proponent_statements' => true,
-        'clicksign_data' => true,
+        'clicksign_datas' => true,
         'pix_transaction' => true,
         'promotional_code_entity' => true,
         'association_partner' => true,
@@ -56,6 +59,17 @@ class AdhesionInitialData extends Entity
         $decoded = json_decode((string)$this->association_snapshot, true);
 
         return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * O link de retomada vale? Expirado e revogado são estados diferentes
+     * para quem abre a página: um explica que o prazo acabou, o outro é um
+     * link que nunca existiu.
+     */
+    public function resumeTokenHasExpired(): bool
+    {
+        return $this->resume_token_expires_at !== null
+            && $this->resume_token_expires_at->isPast();
     }
 }
 

@@ -84,6 +84,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/plan-parameters/edit') ?>">Parâmetros do Plano</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= $this->Url->build('/admin/clicksign-webhooks') ?>">Webhook Clicksign</a>
+                </li>
                 <!-- <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/integration-logs') ?>">Logs de Integração</a>
                 </li> -->

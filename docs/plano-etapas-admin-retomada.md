@@ -332,6 +332,26 @@ Registrados aqui para o documento continuar sendo a fonte da verdade.
   classe base de tabela (`AppTable`), para que tabela nova acerte sozinha.
 - **`Migrator::run()` trunca as tabelas depois de migrar**, então dado semeado
   em migration não chega ao banco de teste. Daí a fixture de `plan_parameters`.
+- **"Reabrir proposta" nunca destrava adesão paga**, embora a resposta original
+  da pergunta 10 tenha dito "adesão assinada ou paga" com a mesma ação para as
+  duas. Na hora de implementar, tratar as duas igual significaria "invalidar a
+  cobrança" sem nenhum processo de conciliação por trás -- dinheiro já
+  recebido não é destravado por um clique. A ação só existe para o lado da
+  assinatura; adesão paga fica bloqueada sem saída pela tela, remetendo a um
+  processo manual com o Sicoob.
+- **`ClicksignService` tinha um bug real de produção**: qualquer `DELETE`
+  bem-sucedido responde 204 sem corpo, e o spread de `null` na resposta
+  quebrava com `TypeError` -- toda chamada de exclusão estava crashando do
+  lado do cliente mesmo quando funcionava do lado da Clicksign. Achado ao
+  validar o CRUD de webhook contra o sandbox real; corrigido, e um envelope
+  órfão deixado pelo crash foi limpo manualmente.
+- **Terceira ocorrência do mesmo bug de templates com função de topo**
+  (`Admin/Adhesions/index.php`), depois de `Simulator/index.php` e
+  `Admin/Adhesions/view.php`. Convertido preventivamente para closures. Achado
+  mais dois casos do mesmo padrão (`Admin/IntegrationLogs/index.php`,
+  `Admin/Partners/view.php`) que ficaram sem mexer, por nada nesta entrega os
+  renderizar duas vezes no mesmo processo -- registrado aqui para quem for
+  mexer neles depois.
 
 ## Testes
 
@@ -354,18 +374,43 @@ Fora de escopo: testes de integração de Clicksign e Sicoob (exigiriam mocking
 de `Cake\Http\Client`, que não existe na suíte) e testes de navegação em JS
 (não há runner de JS no projeto).
 
-## Não confirmado
+## Confirmado contra o sandbox na entrega 6
 
-A doc pública da Clicksign mostra `links.files.original` para documento em
-`running` (`GET /api/v3/envelopes/{id}/documents`), mas **não mostra o exemplo
-de documento `closed`**. Presume-se que apareça a chave do arquivo assinado,
-mas isso não foi validado. **Primeira tarefa da entrega 6: testar contra o
-sandbox antes de prometer o download ao cliente.** Se a chave não existir, o
-item 3 muda de forma.
+A dúvida ficou resolvida com uma sonda real (não só leitura de doc): um
+envelope fechado real no sandbox tem, em `links.files`, as três chaves
+`original`, **`signed`** e `ziped` -- todas URLs pré-assinadas do S3 com
+`X-Amz-Expires=299` (~5 min), como a doc de `running` já sugeria. O download
+usa `signed`. Confirmado também que `getEnvelope()` devolve `status: "closed"`
+para um envelope assim, e que `metadata` passada em `createDocument()`
+sobrevive exatamente igual numa releitura (`createDocument` → `getDocuments`),
+o que sustenta metadata como o mecanismo de resolver a adesão a partir do
+documento.
 
-Outros fatos da API confirmados na doc: status do envelope é
-`draft → running → closed | canceled`; `closed` é quando os assinados ficam
-disponíveis; `auto_close: true` (já usado em `createEnvelope()`, linha 127)
-fecha o envelope quando o último assinante conclui; evento
-`document_closed` = "documento finalizado e pronto para download"; rate limit
-de 50 req/10s por conta em produção, 20 em sandbox.
+**O que continua sem confirmar:** o formato exato do corpo que a Clicksign
+entrega nos eventos `close` e `document_closed` em si. A doc só mostra um
+esqueleto de dois campos (`account`, `document`) sem o conteúdo completo, e
+confirmar exigiria uma URL pública recebendo o evento de verdade, que este
+ambiente não tem como oferecer. `ClicksignWebhookPayload::resolveAdhesionId()`
+tenta os caminhos mais plausíveis dado o padrão JSON:API do resto da API; se
+nenhum bater, o webhook simplesmente não resolve sozinho -- o botão
+"Atualizar status" no admin continua funcionando porque parte do
+`envelope_id` já gravado, sem depender de adivinhar esse JSON.
+
+Outros fatos da API confirmados: status do envelope é
+`draft → running → closed | canceled`; `auto_close: true` (já usado em
+`createEnvelope()`) fecha o envelope quando o último assinante conclui;
+`POST /webhooks` aceita `endpoint`, `events` (array) e `status`, devolvendo um
+`secret` gerado pela Clicksign (não usado aqui -- ver decisão abaixo); `close`
+e `document_closed` foram aceitos como eventos válidos pela API real; rate
+limit de 50 req/10s por conta em produção, 20 em sandbox.
+
+**Decisão tomada durante a implementação, não antecipada na entrevista:** o
+webhook não verifica o HMAC que a Clicksign oferece (campo `secret` na
+criação). O motivo é que a arquitetura já decidida -- payload nunca é fonte de
+verdade, só gatilho para uma consulta GET própria -- já torna o pior caso de um
+POST forjado inofensivo: na pior hipótese, alguém que descobrisse a URL
+dispararia uma reconferência (GET autenticado com nossas próprias
+credenciais) de uma adesão que ela mesma escolhesse, sem conseguir alterar
+nada que a consulta não confirme de verdade. Adicionar HMAC teria custo
+real (guardar o segredo, implementar a verificação) para fechar um risco que
+a própria arquitetura já neutraliza.

@@ -71,10 +71,24 @@ return function (RouteBuilder $routes): void {
             ['pass' => ['storageUuid']]
         );
 
+        // Link de retomada da proposta. Mesmo padrão de /pagamento: o segredo
+        // vive no path, e é um token aleatório sem relação com o id.
+        $builder->connect(
+            '/proposta/{resumeToken}',
+            ['controller' => 'Simulator', 'action' => 'resume'],
+            ['pass' => ['resumeToken']]
+        );
+
         // O Sicoob acrescenta "/pix" ao final da URL de webhook cadastrada.
         $builder->connect(
             '/sicoob/webhook/{token}/pix',
             ['controller' => 'Webhooks', 'action' => 'pix'],
+            ['pass' => ['token']]
+        );
+
+        $builder->connect(
+            '/clicksign/webhook/{token}',
+            ['controller' => 'Webhooks', 'action' => 'clicksign'],
             ['pass' => ['token']]
         );
 

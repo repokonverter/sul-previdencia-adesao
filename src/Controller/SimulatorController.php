@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Controller\AppController;
+use App\Services\AdhesionFormMap;
 use App\Services\PlanSimulator;
 use Cake\Datasource\ConnectionManager;
 
@@ -16,14 +17,7 @@ class SimulatorController extends AppController
         $simulator = $this->planSimulator();
         $minimum = $simulator->parameters()->minimumMonthlyContribution();
 
-        // Só oferece a pergunta "Possuí vínculo associativo?" quando há ao
-        // menos um vínculo ativo cadastrado — sem isso, o formulário
-        // permanece exatamente como era antes desta funcionalidade existir.
-        $associations = $this->fetchTable('Partners')->find()
-            ->find('byAssociationScope', isAssociation: true)
-            ->where(['Partners.active' => true])
-            ->orderBy(['Partners.name' => 'ASC'])
-            ->all();
+        $associations = $this->activeAssociations();
 
         if ((float)str_replace(',', '.', (string)($data['value'] ?? 0)) < $minimum) {
             $this->Flash->error('O investimento mensal mínimo é de R$ ' . number_format($minimum, 2, ',', '.') . '.');
@@ -49,6 +43,83 @@ class SimulatorController extends AppController
             'includeSurvivorsPension',
             'includeDisabilityRetirement'
         ));
+
+        // A tela lia $_GET direto em quatro pontos, o que a amarrava à home:
+        // a retomada não passa por lá e quebrava o script inteiro.
+        $this->set([
+            'simulationDate' => $data['date'],
+            'simulationValue' => $data['value'],
+        ]);
+    }
+
+    /**
+     * Devolve a proposta ao proponente, preenchida, na etapa que o admin
+     * escolheu.
+     *
+     * Renderiza a mesma tela do simulador: é o mesmo formulário, e duplicá-lo
+     * significaria manter duas cópias de um modal de mil linhas em dia. O que
+     * muda é que `date` e `value` vêm da adesão, e não da query -- quem abre o
+     * link não passou pela home.
+     */
+    function resume(string $resumeToken)
+    {
+        $adhesions = $this->fetchTable('AdhesionInitialDatas');
+        $adhesion = $adhesions->findByResumeToken($resumeToken);
+
+        // Link inexistente e link vencido dizem coisas diferentes a quem
+        // abre: um nunca existiu, o outro existiu e o prazo acabou. Nenhum dos
+        // dois é um 404 seco, que faria a pessoa achar que o sistema perdeu
+        // os dados dela.
+        if ($adhesion === null || $adhesion->resumeTokenHasExpired()) {
+            $this->set('expired', $adhesion !== null);
+
+            return $this->render('resume_unavailable');
+        }
+
+        $simulator = $this->planSimulator();
+        $birthDate = $adhesion->adhesion_personal_data?->birth_date?->format('Y-m-d');
+        $value = (float)(
+            $adhesion->adhesion_payment_detail?->total_contribution
+                ?? $adhesion->adhesion_plan?->monthly_retirement_contribution
+                ?? $simulator->parameters()->minimumMonthlyContribution()
+        );
+
+        // Sem data de nascimento não há o que simular: a proposta parou antes
+        // dos dados pessoais, e retomar equivale a começar.
+        if ($birthDate === null) {
+            return $this->redirect(['controller' => 'Pages', 'action' => 'display', 'home']);
+        }
+
+        [$includeSurvivorsPension, $includeDisabilityRetirement] = $simulator->effectiveRisks(
+            $birthDate,
+            $adhesion->adhesion_plan->has_survivors_pension ?? true,
+            $adhesion->adhesion_plan->has_disability_retirement ?? true
+        );
+
+        $this->set([
+            'simulations' => $simulator->simulate(
+                $birthDate,
+                $value,
+                $includeSurvivorsPension,
+                $includeDisabilityRetirement
+            ),
+            'totalMonthlyContributionPlan' => $value,
+            'age' => PlanSimulator::ageOn($birthDate),
+            'associations' => $this->activeAssociations(),
+            'includeSurvivorsPension' => $includeSurvivorsPension,
+            'includeDisabilityRetirement' => $includeDisabilityRetirement,
+            'simulationDate' => $birthDate,
+            'simulationValue' => $value,
+            'resumed' => [
+                'initialDataId' => $adhesion->id,
+                'storageUuid' => $adhesion->storage_uuid,
+                'step' => $adhesion->resume_step,
+                'planLocked' => (bool)($adhesion->adhesion_plan->admin_overridden ?? false),
+                'form' => AdhesionFormMap::toFormPayload($adhesion),
+            ],
+        ]);
+
+        return $this->render('index');
     }
 
     function recalculate()
@@ -105,6 +176,88 @@ class SimulatorController extends AppController
             ]));
     }
 
+    /**
+     * Só oferece a pergunta "Possuí vínculo associativo?" quando há ao menos
+     * um vínculo ativo cadastrado — sem isso, o formulário permanece
+     * exatamente como era antes desta funcionalidade existir.
+     */
+    private function activeAssociations(): iterable
+    {
+        return $this->fetchTable('Partners')->find()
+            ->find('byAssociationScope', isAssociation: true)
+            ->where(['Partners.active' => true])
+            ->orderBy(['Partners.name' => 'ASC'])
+            ->all();
+    }
+
+    /**
+     * O plano como está gravado, sem recalcular nada.
+     *
+     * É a diferença entre os dois botões do passo: "Recalcular" roda a
+     * fórmula a partir do investimento digitado, e "Atualizar" traz o que o
+     * admin gravou. Se o segundo recalculasse, um clique apagaria o valor
+     * negociado por telefone -- que é exatamente o que ele existe para
+     * preservar.
+     */
+    function planState()
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+        $this->autoRender = false;
+
+        $adhesion = $this->identifiedAdhesion(
+            $this->request->getQuery('initialDataId'),
+            $this->request->getQuery('storageUuid')
+        );
+
+        if ($adhesion === null || $adhesion->adhesion_plan === null) {
+            return $this->response->withType('application/json')
+                ->withStringBody(json_encode(['success' => false]));
+        }
+
+        $plan = $adhesion->adhesion_plan;
+
+        return $this->response->withType('application/json')
+            ->withStringBody(json_encode([
+                'success' => true,
+                'benefitEntryAge' => $plan->benefit_entry_age,
+                'monthlyRetirementContribution' => (float)$plan->monthly_retirement_contribution,
+                'monthlySurvivorsPensionContribution' => (float)$plan->monthly_survivors_pension_contribution,
+                'survivorsPensionInsuredCapital' => (float)$plan->survivors_pension_insured_capital,
+                'monthlyDisabilityRetirementContribution' => (float)$plan->monthly_disability_retirement_contribution,
+                'disabilityRetirementInsuredCapital' => (float)$plan->disability_retirement_insured_capital,
+                'totalMonthlyContribution' => (float)$plan->monthly_retirement_contribution
+                    + (float)$plan->monthly_survivors_pension_contribution
+                    + (float)$plan->monthly_disability_retirement_contribution,
+                'hasSurvivorsPension' => (bool)$plan->has_survivors_pension,
+                'hasDisabilityRetirement' => (bool)$plan->has_disability_retirement,
+                'planLocked' => (bool)$plan->admin_overridden,
+            ]));
+    }
+
+    /**
+     * A adesão que o navegador diz ser, só quando ele prova. O id é
+     * sequencial e viaja no POST; quem autoriza falar sobre a adesão é o
+     * storage_uuid, conferido como em save().
+     */
+    private function identifiedAdhesion($initialDataId, $storageUuid): ?\App\Model\Entity\AdhesionInitialData
+    {
+        if (empty($initialDataId) || empty($storageUuid)) {
+            return null;
+        }
+
+        /** @var \App\Model\Entity\AdhesionInitialData|null $adhesion */
+        $adhesion = $this->fetchTable('AdhesionInitialDatas')->find()
+            ->where(['AdhesionInitialDatas.id' => (int)$initialDataId])
+            ->contain(['AdhesionPlans'])
+            ->first();
+
+        if ($adhesion === null || !hash_equals((string)$adhesion->storage_uuid, (string)$storageUuid)) {
+            return null;
+        }
+
+        return $adhesion;
+    }
+
     private function planSimulator(): PlanSimulator
     {
         return new PlanSimulator(
@@ -126,18 +279,9 @@ class SimulatorController extends AppController
      */
     private function storedPlanState($initialDataId, $storageUuid): array
     {
-        if (empty($initialDataId) || empty($storageUuid)) {
-            return [true, true, false];
-        }
+        $adhesion = $this->identifiedAdhesion($initialDataId, $storageUuid);
 
-        $adhesion = $this->fetchTable('AdhesionInitialDatas')->find()
-            ->where(['AdhesionInitialDatas.id' => (int)$initialDataId])
-            ->contain(['AdhesionPlans'])
-            ->first();
-
-        // Mesma checagem do save(): o id é sequencial e vem do navegador, o
-        // storage_uuid é o que autoriza falar sobre esta adesão.
-        if ($adhesion === null || !hash_equals((string)$adhesion->storage_uuid, (string)$storageUuid)) {
+        if ($adhesion === null) {
             return [true, true, false];
         }
 
