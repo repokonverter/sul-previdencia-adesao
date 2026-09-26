@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
-class AdhesionInitialDatasTable extends Table
+class AdhesionInitialDatasTable extends AppTable
 {
     public function initialize(array $config): void
     {
@@ -16,8 +15,6 @@ class AdhesionInitialDatasTable extends Table
         $this->setTable('adhesion_initial_data');
         $this->setDisplayField('name');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
 
         // propertyName explícito: o nome convencional ('promotional_code') colidiria
         // com a coluna de snapshot do texto do código.
@@ -74,6 +71,9 @@ class AdhesionInitialDatasTable extends Table
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
         $this->hasMany('IntegrationLogs', [
+            'foreignKey' => 'adhesion_initial_data_id',
+        ]);
+        $this->hasMany('AdhesionAudits', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
     }

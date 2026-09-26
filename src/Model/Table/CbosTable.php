@@ -6,7 +6,6 @@ namespace App\Model\Table;
 
 use Cake\ORM\Query;
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 /**
@@ -28,7 +27,7 @@ use Cake\Validation\Validator;
  *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
-class CbosTable extends Table
+class CbosTable extends AppTable
 {
     /**
      * Initialize method
@@ -43,8 +42,6 @@ class CbosTable extends Table
         $this->setTable('cbos');
         $this->setDisplayField('description');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
     }
 
     /**

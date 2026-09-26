@@ -9,10 +9,9 @@ use ArrayObject;
 use Cake\Event\EventInterface;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
-class BrokersTable extends Table
+class BrokersTable extends AppTable
 {
     public function initialize(array $config): void
     {
@@ -21,8 +20,6 @@ class BrokersTable extends Table
         $this->setTable('brokers');
         $this->setDisplayField('name');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
 
         $this->hasMany('AdhesionInitialDatas', [
             'foreignKey' => 'broker_id',
