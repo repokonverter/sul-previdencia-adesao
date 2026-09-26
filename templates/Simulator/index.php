@@ -894,6 +894,10 @@ function createSecureCard($data, $type)
                         </div>
 
                         <div id="plan" class="hidden">
+                            <div class="alert alert-info d-none" id="planLockedNotice">
+                                <strong>Valores ajustados pela Sul Previdência.</strong>
+                                Para alterá-los, fale com seu atendente.
+                            </div>
                             <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
@@ -916,45 +920,16 @@ function createSecureCard($data, $type)
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3" id="brokerCodeGroup">
-                                        <label for="brokerCode" class="form-label">
-                                            Corretor <span class="text-muted fw-normal">(opcional)</span>
-                                        </label>
-                                        <div class="input-group">
-                                            <input type="text"
-                                                class="form-control text-uppercase"
-                                                id="brokerCode"
-                                                name="plans[brokerCode]"
-                                                placeholder="Código do corretor, se você tiver um"
-                                                maxlength="30"
-                                                autocomplete="off"
-                                                spellcheck="false">
-                                            <span class="input-group-text d-none" id="brokerCodeSpinner">
-                                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                            </span>
-                                            <button type="button" class="btn btn-outline-secondary d-none" id="brokerCodeRemove">
-                                                Remover
-                                            </button>
-                                        </div>
-                                        <div id="brokerCodeFeedback" class="small mt-1"></div>
-                                    </div>
-                                </div>
+                            <!--
+                                O código do corretor deixou de ser campo da
+                                etapa: remover risco é ato do admin sobre uma
+                                adesão, não escolha de quem preenche. O campo
+                                oculto mantém o link de divulgação
+                                (?broker=CODIGO) atribuindo a adesão ao
+                                corretor, que é o que ele de fato faz.
+                            -->
+                            <input type="hidden" id="brokerCode" name="plans[brokerCode]" value="">
 
-                                <div class="col-md-6 d-none" id="riskRemovalGroup">
-                                    <label class="form-label d-block">Riscos incluídos no plano</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="removeSurvivorsPension" name="plans[removeSurvivorsPension]" value="1" onchange="recalculatePlan();">
-                                        <label class="form-check-label" for="removeSurvivorsPension">Remover pensão por morte</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="removeDisabilityRetirement" name="plans[removeDisabilityRetirement]" value="1" onchange="recalculatePlan();">
-                                        <label class="form-check-label" for="removeDisabilityRetirement">Remover aposentadoria por invalidez</label>
-                                    </div>
-                                    <div class="form-text">O valor do risco removido passa a compor a contribuição de previdência.</div>
-                                </div>
-                            </div>
                             <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
@@ -1952,6 +1927,11 @@ function createSecureCard($data, $type)
                     const benefitEntry = age <= 55 ? 65 : age + 10;
 
                     $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
+
+                    // Uma proposta retomada pode chegar com risco já removido
+                    // pelo admin: as linhas correspondentes não podem aparecer.
+                    updateRiskVisibility();
+                    applyPlanLock();
                 },
             },
             {
@@ -2362,180 +2342,66 @@ function createSecureCard($data, $type)
         };
 
         /* ---------------------------------------------------------------
-         * Corretor e remoção de riscos
+         * Riscos contratados
          *
-         * Um corretor validado libera os toggles de remoção de risco. O
-         * servidor revalida o código a cada chamada de recálculo e na
-         * gravação final — os valores aqui são só conveniência de UI.
+         * Quem decide é o servidor, e só o admin muda: o formulário público
+         * não tem mais como remover risco. Estas variáveis nascem do que a
+         * página recebeu e se realinham a cada recálculo, que devolve o que o
+         * servidor de fato aplicou.
          * ------------------------------------------------------------- */
-        const brokerValidateUrl = '<?= $this->Url->build(['controller' => 'Brokers', 'action' => 'validate', 'prefix' => false]) ?>';
-
-        let brokerState = { status: 'empty' };
-        let brokerDebounceTimer = null;
-        let brokerAbortController = null;
-
-        const brokerEls = () => ({
-            input: document.getElementById('brokerCode'),
-            spinner: document.getElementById('brokerCodeSpinner'),
-            remove: document.getElementById('brokerCodeRemove'),
-            feedback: document.getElementById('brokerCodeFeedback'),
-            riskGroup: document.getElementById('riskRemovalGroup'),
-        });
+        let hasSurvivorsPension = <?= $includeSurvivorsPension ? 'true' : 'false' ?>;
+        let hasDisabilityRetirement = <?= $includeDisabilityRetirement ? 'true' : 'false' ?>;
 
         /**
-         * Mostra/esconde as linhas de contribuição de cada risco removido no
-         * próprio passo "Plano", e recalcula se a etapa de saúde deve
-         * aparecer na navegação (ver shouldSkipHealthStep()).
+         * Plano com valor ajustado à mão pelo admin.
+         *
+         * Nasce falso: uma proposta nova é sempre fórmula pura, e só uma
+         * proposta retomada chega ajustada. Enquanto vale, o investimento
+         * mensal e o "Recalcular" ficam bloqueados -- um clique rodaria a
+         * fórmula de novo e apagaria, em silêncio, o que foi negociado por
+         * telefone. A data de nascimento também trava: os valores foram
+         * calculados para aquela idade, e a procedure escolhe custo unitário e
+         * teto por ela, então mudá-la tornaria o capital atuarialmente
+         * impossível. O servidor recusa de todo jeito (ver
+         * RegistrationsController::save); isto é a tela contando o porquê.
          */
+        let planLocked = false;
+
+        const applyPlanLock = () => {
+            document.getElementById('planLockedNotice').classList.toggle('d-none', !planLocked);
+            document.getElementById('planMonthlyInvestment').disabled = planLocked;
+            document.getElementById('btnRecalculatePlan').disabled = planLocked;
+
+            const birthDate = document.querySelector('#registerModal input[name="personalData[birthDate]"]');
+
+            if (birthDate)
+                birthDate.readOnly = planLocked;
+        };
+
         const updateRiskVisibility = () => {
-            const survivorsRemoved = document.getElementById('removeSurvivorsPension').checked;
-            const disabilityRemoved = document.getElementById('removeDisabilityRetirement').checked;
-
-            document.getElementById('survivorsPensionPlanRow').classList.toggle('d-none', survivorsRemoved);
-            document.getElementById('disabilityRetirementPlanRow').classList.toggle('d-none', disabilityRemoved);
+            document.getElementById('survivorsPensionPlanRow').classList.toggle('d-none', !hasSurvivorsPension);
+            document.getElementById('disabilityRetirementPlanRow').classList.toggle('d-none', !hasDisabilityRetirement);
         };
 
-        const shouldSkipHealthStep = () => {
-            if (brokerState.status !== 'valid') return false;
+        /**
+         * Sem nenhum risco contratado, a Declaração Pessoal de Saúde não tem o
+         * que subscrever. Só com os dois removidos: as perguntas subscrevem
+         * morte e invalidez, e esconder a declaração com um risco vivo
+         * deixaria exposição não subscrita num contrato assinado.
+         */
+        const shouldSkipHealthStep = () => !hasSurvivorsPension && !hasDisabilityRetirement;
 
-            return document.getElementById('removeSurvivorsPension').checked
-                && document.getElementById('removeDisabilityRetirement').checked;
-        };
-
-        const setBrokerState = (status, data = {}) => {
-            brokerState = { status };
-
-            const { input, spinner, remove, feedback, riskGroup } = brokerEls();
-
-            input.classList.remove('is-valid', 'is-invalid', 'border-warning');
-            spinner.classList.add('d-none');
-            remove.classList.add('d-none');
-            feedback.className = 'small mt-1';
-            feedback.textContent = '';
-
-            if (status === 'checking') {
-                spinner.classList.remove('d-none');
-            } else if (status === 'valid') {
-                input.classList.add('is-valid');
-                remove.classList.remove('d-none');
-                feedback.classList.add('text-success');
-                feedback.textContent = '✓ ' + data.name;
-                riskGroup.classList.remove('d-none');
-            } else if (status === 'invalid') {
-                input.classList.add('is-invalid');
-                feedback.classList.add('text-danger');
-                feedback.textContent = '✗ ' + (data.message || 'Código de corretor não encontrado.');
-            } else if (status === 'error') {
-                input.classList.add('border-warning');
-                feedback.classList.add('text-warning-emphasis');
-                feedback.innerHTML =
-                    'Não foi possível validar o código agora. ' +
-                    '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="brokerCodeRetry">Tentar novamente</button>.';
-
-                document.getElementById('brokerCodeRetry')
-                    .addEventListener('click', () => lookupBrokerCode(promoNormalize(input.value)));
-            }
-
-            // Sem corretor válido, os dois riscos sempre existem: some o
-            // grupo de toggles, desmarca ambos e recalcula para restaurá-los.
-            if (status !== 'valid') {
-                riskGroup.classList.add('d-none');
-
-                const survivors = document.getElementById('removeSurvivorsPension');
-                const disability = document.getElementById('removeDisabilityRetirement');
-                const hadRemoval = survivors.checked || disability.checked;
-
-                survivors.checked = false;
-                disability.checked = false;
-                updateRiskVisibility();
-
-                if (hadRemoval) recalculatePlan();
-            }
-        };
-
-        const clearBrokerCode = () => {
-            const { input } = brokerEls();
-
-            if (brokerAbortController) brokerAbortController.abort();
-            clearTimeout(brokerDebounceTimer);
-
-            input.value = '';
-            setBrokerState('empty');
-            input.focus();
-        };
-
-        const lookupBrokerCode = async (code) => {
-            if (!code || code.length < promoMinLength) {
-                setBrokerState(code ? 'invalid' : 'empty', {
-                    message: 'O código deve ter ao menos ' + promoMinLength + ' caracteres.'
-                });
-
-                return;
-            }
-
-            if (brokerAbortController) brokerAbortController.abort();
-            brokerAbortController = new AbortController();
-
-            setBrokerState('checking');
-
-            try {
-                const response = await fetch(brokerValidateUrl + '?code=' + encodeURIComponent(code), {
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    signal: brokerAbortController.signal,
-                });
-
-                const result = await response.json();
-
-                setBrokerState(result.valid ? 'valid' : 'invalid', result);
-            } catch (error) {
-                if (error.name === 'AbortError') return;
-
-                setBrokerState('error');
-            }
-        };
-
+        /**
+         * Link de divulgação do corretor: ?broker=CODIGO segue atribuindo a
+         * adesão, agora sem campo visível e sem validação em tempo real -- o
+         * servidor revalida o código ao gravar, que sempre foi a única
+         * garantia de verdade.
+         */
         const initBrokerCode = () => {
-            const { input, remove } = brokerEls();
-
-            input.addEventListener('input', () => {
-                const normalized = promoNormalize(input.value);
-
-                if (input.value !== normalized) {
-                    const position = input.selectionStart;
-                    input.value = normalized;
-                    input.setSelectionRange(position, position);
-                }
-
-                clearTimeout(brokerDebounceTimer);
-
-                if (normalized === '') {
-                    if (brokerAbortController) brokerAbortController.abort();
-                    setBrokerState('empty');
-
-                    return;
-                }
-
-                brokerDebounceTimer = setTimeout(() => lookupBrokerCode(normalized), promoDebounceMs);
-            });
-
-            input.addEventListener('blur', () => {
-                const normalized = promoNormalize(input.value);
-
-                if (normalized === '' || brokerState.status === 'valid' || brokerState.status === 'checking') return;
-
-                clearTimeout(brokerDebounceTimer);
-                lookupBrokerCode(normalized);
-            });
-
-            remove.addEventListener('click', clearBrokerCode);
-
-            // Link de divulgação do corretor: ?broker=CODIGO chega preenchido e validado.
             const fromUrl = promoNormalize(new URLSearchParams(window.location.search).get('broker'));
 
-            if (fromUrl) {
-                input.value = fromUrl;
-                lookupBrokerCode(fromUrl);
-            }
+            if (fromUrl)
+                document.getElementById('brokerCode').value = fromUrl;
         };
 
         /**
@@ -2940,9 +2806,10 @@ function createSecureCard($data, $type)
                 data: {
                     date: birthDate,
                     value: value,
-                    brokerCode: document.getElementById('brokerCode').value,
-                    removeSurvivorsPension: document.getElementById('removeSurvivorsPension').checked ? '1' : '',
-                    removeDisabilityRetirement: document.getElementById('removeDisabilityRetirement').checked ? '1' : '',
+                    // Identifica a adesão para o servidor saber quais riscos
+                    // ela tem; sem isso é simulação nova, com os dois.
+                    initialDataId: initialDataId ?? '',
+                    storageUuid: storageUuid ?? '',
                 },
                 dataType: 'json',
                 success: (response) => {
@@ -2966,17 +2833,18 @@ function createSecureCard($data, $type)
                         currency: 'BRL'
                     });
 
-                    // O servidor é quem decide, de fato, se cada risco entra
-                    // no cálculo (corretor revalidado a cada chamada). Se ele
-                    // discordar do que os checkboxes mostravam — por exemplo,
-                    // o corretor foi desativado entre uma chamada e outra —
-                    // a UI se realinha ao que veio na resposta.
-                    if (response.hasSurvivorsPension !== undefined) {
-                        document.getElementById('removeSurvivorsPension').checked = !response.hasSurvivorsPension;
-                    }
+                    // O servidor é quem decide quais riscos a adesão tem: a
+                    // tela se realinha ao que veio na resposta, que é como
+                    // ela fica sabendo de uma remoção feita no admin.
+                    if (response.hasSurvivorsPension !== undefined)
+                        hasSurvivorsPension = response.hasSurvivorsPension;
 
-                    if (response.hasDisabilityRetirement !== undefined) {
-                        document.getElementById('removeDisabilityRetirement').checked = !response.hasDisabilityRetirement;
+                    if (response.hasDisabilityRetirement !== undefined)
+                        hasDisabilityRetirement = response.hasDisabilityRetirement;
+
+                    if (response.planLocked !== undefined) {
+                        planLocked = response.planLocked;
+                        applyPlanLock();
                     }
 
                     updateRiskVisibility();

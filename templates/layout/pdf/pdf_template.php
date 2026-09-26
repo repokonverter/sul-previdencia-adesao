@@ -491,6 +491,27 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
                 // formulário — ver RegistrationsController::save()), então
                 // $adhesion->adhesion_proponent_statement pode ser null aqui.
                 $statement = $adhesion->adhesion_proponent_statement;
+
+                /**
+                 * Distinguir "declarou que não" de "não declarou".
+                 *
+                 * Sem isso, uma adesão sem Declaração Pessoal de Saúde cujo
+                 * risco seja religado no admin sai com "Não" nas onze
+                 * perguntas, e o proponente assina negando cardiopatia,
+                 * câncer, HIV e cirurgias que nunca lhe foram perguntadas.
+                 * O título desta seção avisa que ela nunca deve ser assinada
+                 * em branco; preenchê-la sozinho seria pior que em branco,
+                 * porque parece legítima.
+                 */
+                $healthAnswer = function (?string $observation, $answered) use ($statement): string {
+                    if ($statement === null)
+                        return 'NÃO DECLARADO';
+
+                    if (!$answered)
+                        return 'Não';
+
+                    return trim('Sim, ' . (string)$observation, ', ');
+                };
             ?>
             <div class="section-title">DECLARAÇÕES DO PROPONENTE <span style="font-size: 8pt; font-weight: normal;">Declaração Pessoal de Saúde (nunca deve ser assinada em branco.)</span></div>
             <table style="font-size: 8pt;">
@@ -500,47 +521,47 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
                 </tr>
                 <tr>
                     <td>1. Encontra-se com algum problema de saúde ou faz uso de algum medicamento?</td>
-                    <td><?= $statement && $statement->health_problem ? 'Sim, ' . $statement->health_problem_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->health_problem_obs, $statement?->health_problem) ?></td>
                 </tr>
                 <tr>
                     <td>2. Sofre ou já sofreu de doenças do coração, hipertensão,circulatórias, do sangue, diabetes, pulmão, fígado, rins, infarto, acidente vascular cerebral, articulações, qualquer tipo de câncer ou HIV?</td>
-                    <td><?= $statement && $statement->heart_disease ? 'Sim, ' . $statement->heart_disease_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->heart_disease_obs, $statement?->heart_disease) ?></td>
                 </tr>
                 <tr>
                     <td>3. Sofre ou sofreu de deficiências de órgãos, membros ou sentidos, incluindo doenças ortopédicas relacionadas a esforço repetitivo (LER e DORT)?</td>
-                    <td><?= $statement && $statement->suffered_organ_defects ? 'Sim, ' . $statement->suffered_organ_defects_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->suffered_organ_defects_obs, $statement?->suffered_organ_defects) ?></td>
                 </tr>
                 <tr>
                     <td>4. Fez alguma cirurgia, biópsia ou esteve internado nos últimos 5 anos?</td>
-                    <td><?= $statement && $statement->surgery ? 'Sim, ' . $statement->surgery_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->surgery_obs, $statement?->surgery) ?></td>
                 </tr>
                 <tr>
                     <td>5. Está afastado(a) do trabalho ou aposentado por invalidez?</td>
-                    <td><?= $statement && $statement->away ? 'Sim, ' . $statement->away_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->away_obs, $statement?->away) ?></td>
                 </tr>
                 <tr>
                     <td>6. Pratica paraquedismo, motociclismo, boxe, asa delta, rodeio, alpinismo, voo livre, automobilismo, mergulho ou exerce atividade, em caráter profissional ou amador, a bordo de aeronaves, que não sejam de linhas regulares?</td>
-                    <td><?= $statement && $statement->practices_parachuting ? 'Sim, ' . $statement->practices_parachuting_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->practices_parachuting_obs, $statement?->practices_parachuting) ?></td>
                 </tr>
                 <tr>
                     <td>7. Fumante?</td>
-                    <td><?= $statement && $statement->smoker ? 'Sim, ' . $statement->smoker_type . ', ' . $statement->smoker_type_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer(trim(($statement?->smoker_type ?? '') . ', ' . ($statement?->smoker_type_obs ?? ''), ', '), $statement?->smoker) ?></td>
                 </tr>
                 <tr>
                     <td>8. Peso e Altura</td>
-                    <td><?= $statement->weight ?? '' ?> Kg e <?= number_format($statement->height ?? 0, 2, ',', '.') ?> m</td>
+                    <td><?= $statement === null ? 'NÃO DECLARADO' : h($statement->weight ?? '') . ' Kg e ' . number_format((float)($statement->height ?? 0), 2, ',', '.') . ' m' ?></td>
                 </tr>
                 <tr>
                     <td>9. Apresenta, no momento, sintomas de gripe, febre, cansaço, tosse, coriza, dores pelo corpo, dor de cabeça, dor de garganta, falta de ar, perda de olfato, perda de paladar ou está aguardando resultado do teste da COVID-19?</td>
-                    <td><?= $statement && $statement->gripe ? 'Sim, ' . $statement->gripe_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->gripe_obs, $statement?->gripe) ?></td>
                 </tr>
                 <tr>
                     <td>10. Foi diagnosticado(a) com infecção pelo novo CORONA VÍRUS ou COVID-19?</td>
-                    <td><?= $statement && $statement->covid ? 'Sim, ' . $statement->covid_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->covid_obs, $statement?->covid) ?></td>
                 </tr>
                 <tr>
                     <td>11. Apresenta, no momento, sequelas do COVID-19 diferente de perda de olfato e/ou paladar?</td>
-                    <td><?= $statement && $statement->covid_sequelae ? 'Sim, ' . $statement->covid_sequelae_obs : 'Não' ?></td>
+                    <td><?= $healthAnswer($statement?->covid_sequelae_obs, $statement?->covid_sequelae) ?></td>
                 </tr>
             </table>
         <?php else: ?>

@@ -241,33 +241,35 @@ class RegistrationsController extends AppController
                     }
                 }
 
-                // Quais riscos a adesão tem é recalculado aqui a partir do
-                // corretor gravado, nunca aceito das flags que o front-end
-                // mandou: sem corretor válido travado, os dois riscos
-                // sempre existem, como sempre foi antes desta funcionalidade.
-                $hasSurvivorsPension = true;
-                $hasDisabilityRetirement = true;
-
-                if (!empty($initialDataAll->broker_id)) {
-                    $hasSurvivorsPension = empty($planData['removeSurvivorsPension']);
-                    $hasDisabilityRetirement = empty($planData['removeDisabilityRetirement']);
-                }
-
                 $plans = !$initialDataAll->adhesion_plan ? $this->AdhesionPlans->newEmptyEntity() : $this->AdhesionPlans->get($initialDataAll->adhesion_plan->id);
-                $plans = $this->AdhesionPlans->patchEntity(
-                    $plans,
-                    [
-                        'adhesion_initial_data_id' => $initialDataId,
-                        'benefit_entry_age' => $planData['benefitEntryAge'] ?? null,
+
+                // has_survivors_pension e has_disability_retirement NÃO entram
+                // aqui. Quais riscos a adesão tem é propriedade exclusiva do
+                // admin: o formulário público não tem mais como remover risco,
+                // e reescrever as flags a cada passo do Plano ressuscitaria,
+                // em silêncio, o risco que o admin acabou de tirar -- o
+                // payload simplesmente não traz mais as flags, e tudo voltaria
+                // a true. Sem as chaves, o valor gravado permanece; numa
+                // adesão nova, o default da coluna dá os dois riscos.
+                $planPatch = [
+                    'adhesion_initial_data_id' => $initialDataId,
+                    'benefit_entry_age' => $planData['benefitEntryAge'] ?? null,
+                ];
+
+                // Valor ajustado à mão pelo admin é valor negociado, e o
+                // formulário não o desfaz. A tela já mostra o passo travado,
+                // mas a tela é conveniência e o POST é forjável.
+                if (!$plans->admin_overridden) {
+                    $planPatch += [
                         'monthly_retirement_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_retirement_contribution'])) ?? null,
                         'monthly_survivors_pension_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_survivors_pension_contribution'])) ?? null,
                         'survivors_pension_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['survivors_pension_insured_capital'])) ?? null,
                         'monthly_disability_retirement_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_disability_retirement_contribution'])) ?? null,
                         'disability_retirement_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['disability_retirement_insured_capital'])) ?? null,
-                        'has_survivors_pension' => $hasSurvivorsPension,
-                        'has_disability_retirement' => $hasDisabilityRetirement,
-                    ],
-                );
+                    ];
+                }
+
+                $plans = $this->AdhesionPlans->patchEntity($plans, $planPatch);
 
                 if (!$this->AdhesionPlans->save($plans))
                     throw new \Exception('Falha ao salvar os planos: ' . json_encode($plans->getErrors()));
