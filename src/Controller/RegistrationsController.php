@@ -15,7 +15,9 @@ use App\Model\Table\AdhesionPensionSchemesTable;
 use App\Model\Table\AdhesionPersonalDatasTable;
 use App\Model\Table\AdhesionPlansTable;
 use App\Model\Table\AdhesionProponentStatementsTable;
+use App\Model\Table\BrokersTable;
 use App\Model\Table\ClicksignDatasTable;
+use App\Model\Table\PromotionalCodesTable;
 use App\Services\IntegrationLogger;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Exception\NotFoundException;
@@ -39,6 +41,8 @@ class RegistrationsController extends AppController
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected AdhesionPaymentDetailsTable $AdhesionPaymentDetails;
     protected ClicksignDatasTable $ClicksignDatas;
+    protected PromotionalCodesTable $PromotionalCodes;
+    protected BrokersTable $Brokers;
     protected BankHelper $Bank;
 
     public function initialize(): void
@@ -56,6 +60,8 @@ class RegistrationsController extends AppController
         $this->AdhesionPensionSchemes = $this->fetchTable('AdhesionPensionSchemes');
         $this->AdhesionPaymentDetails = $this->fetchTable('AdhesionPaymentDetails');
         $this->ClicksignDatas = $this->fetchTable('ClicksignDatas');
+        $this->PromotionalCodes = $this->fetchTable('PromotionalCodes');
+        $this->Brokers = $this->fetchTable('Brokers');
 
         $this->loadComponent('PdfGenerator');
 
@@ -100,15 +106,44 @@ class RegistrationsController extends AppController
             if (isset($data['initialData'])) {
                 $initialData = $data['initialData'];
                 $initial = $initialDataId === null ? $this->AdhesionInitialDatas->newEmptyEntity() : $this->AdhesionInitialDatas->get($initialDataId);
-                $initial = $this->AdhesionInitialDatas->patchEntity(
-                    $initial,
-                    [
-                        'storage_uuid' => $data['storageUuid'],
-                        'name' => $initialData['name'] ?? '',
-                        'email' => $initialData['email'] ?? null,
-                        'phone' => $initialData['phone'] ?? null,
-                    ],
-                );
+
+                $patchData = [
+                    'storage_uuid' => $data['storageUuid'],
+                    'name' => $initialData['name'] ?? '',
+                    'email' => $initialData['email'] ?? null,
+                    'phone' => $initialData['phone'] ?? null,
+                ];
+
+                // Uma vez atribuído, o código promocional permanece mesmo que
+                // ele seja desativado depois (parceiro incluído) ou que um
+                // passo seguinte reenvie initialData sem o campo.
+                if (empty($initial->promotional_code_id)) {
+                    // O código enviado pelo formulário é revalidado aqui: a
+                    // checagem no navegador é conveniência, não garantia.
+                    $promotionalCode = $this->PromotionalCodes->findByCodeText($initialData['promotionalCode'] ?? null);
+
+                    if ($promotionalCode !== null && $promotionalCode->isUsable()) {
+                        $patchData['promotional_code_id'] = $promotionalCode->id;
+                        $patchData['promotional_code'] = $promotionalCode->code;
+
+                        // O vínculo associativo trava junto com o código, na
+                        // mesma chamada: nunca é aceito isoladamente a partir
+                        // do que o front-end alega, só quando acompanhado de
+                        // um código válido do próprio vínculo (parceiro com
+                        // is_association = true). Os textos da Declaração são
+                        // congelados agora, para que o PDF gerado depois
+                        // reproduza sempre o que foi de fato assinado, mesmo
+                        // que o cadastro do vínculo mude no futuro.
+                        $codePartner = $promotionalCode->partner;
+
+                        if ($codePartner !== null && $codePartner->is_association) {
+                            $patchData['association_partner_id'] = $codePartner->id;
+                            $patchData['association_snapshot'] = json_encode($codePartner->declarationTexts());
+                        }
+                    }
+                }
+
+                $initial = $this->AdhesionInitialDatas->patchEntity($initial, $patchData);
 
                 $this->AdhesionInitialDatas->save($initial);
 
@@ -164,6 +199,38 @@ class RegistrationsController extends AppController
 
             if (isset($data['plans'])) {
                 $planData = $data['plans'];
+
+                // Corretor: trava na primeira validação bem-sucedida, do
+                // mesmo jeito que o código promocional e o vínculo
+                // associativo — e pelo mesmo motivo: o front-end é
+                // conveniência, não garantia. A etapa de idade e valores
+                // (aqui) é onde o campo existe no formulário.
+                if (empty($initialDataAll->broker_id)) {
+                    $broker = $this->Brokers->findByCodeText($planData['brokerCode'] ?? null);
+
+                    if ($broker !== null && $broker->isUsable()) {
+                        $initialDataAll = $this->AdhesionInitialDatas->patchEntity($initialDataAll, [
+                            'broker_id' => $broker->id,
+                            'broker_name' => $broker->name,
+                            'broker_code' => $broker->code,
+                        ]);
+
+                        $this->AdhesionInitialDatas->save($initialDataAll);
+                    }
+                }
+
+                // Quais riscos a adesão tem é recalculado aqui a partir do
+                // corretor gravado, nunca aceito das flags que o front-end
+                // mandou: sem corretor válido travado, os dois riscos
+                // sempre existem, como sempre foi antes desta funcionalidade.
+                $hasSurvivorsPension = true;
+                $hasDisabilityRetirement = true;
+
+                if (!empty($initialDataAll->broker_id)) {
+                    $hasSurvivorsPension = empty($planData['removeSurvivorsPension']);
+                    $hasDisabilityRetirement = empty($planData['removeDisabilityRetirement']);
+                }
+
                 $plans = !$initialDataAll->adhesion_plan ? $this->AdhesionPlans->newEmptyEntity() : $this->AdhesionPlans->get($initialDataAll->adhesion_plan->id);
                 $plans = $this->AdhesionPlans->patchEntity(
                     $plans,
@@ -175,6 +242,8 @@ class RegistrationsController extends AppController
                         'survivors_pension_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['survivors_pension_insured_capital'])) ?? null,
                         'monthly_disability_retirement_contribution' => str_replace(',', '.', str_replace('.', '', $planData['monthly_disability_retirement_contribution'])) ?? null,
                         'disability_retirement_insured_capital' => str_replace(',', '.', str_replace('.', '', $planData['disability_retirement_insured_capital'])) ?? null,
+                        'has_survivors_pension' => $hasSurvivorsPension,
+                        'has_disability_retirement' => $hasDisabilityRetirement,
                     ],
                 );
 

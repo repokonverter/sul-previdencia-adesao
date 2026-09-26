@@ -90,6 +90,13 @@ function createSecureCard($data, $type)
             overflow-x: hidden;
         }
 
+        /* Border própria, não a utilitária ".border" do Bootstrap: ela vem
+           com "!important", e sempre vence a cor do parceiro que o JS seta
+           via style.borderColor. */
+        .partner-badge {
+            border: 1px solid #dee2e6;
+        }
+
         .simulador-popup {
             max-width: 950px;
             margin: 48px auto;
@@ -590,6 +597,11 @@ function createSecureCard($data, $type)
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
+                    <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 partner-badge rounded-pill px-3 py-1">
+                        <span class="text-muted small me-2 d-none d-sm-inline">em parceria com</span>
+                        <img id="registerModalPartnerLogo" src="" alt="" class="d-none" style="max-height:34px;max-width:130px;object-fit:contain;">
+                        <span id="registerModalPartnerLabel" class="fw-semibold small"></span>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
@@ -615,6 +627,52 @@ function createSecureCard($data, $type)
                                     Preenchimento obrigatório.
                                 </div>
                             </div>
+                            <?php if (!empty($associations)): ?>
+                                <div class="mb-3" id="associationQuestionGroup">
+                                    <label class="form-label d-block">Possuí vínculo associativo?</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="associationAnswer" id="associationAnswerNo" value="no" checked>
+                                        <label class="form-check-label" for="associationAnswerNo">Não</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="associationAnswer" id="associationAnswerYes" value="yes">
+                                        <label class="form-check-label" for="associationAnswerYes">Sim</label>
+                                    </div>
+
+                                    <div class="mt-2 d-none" id="associationSelectGroup">
+                                        <select class="form-select" id="associationPartnerId" name="initialData[associationPartnerId]">
+                                            <option value="">Selecione seu vínculo</option>
+                                            <?php foreach ($associations as $association): ?>
+                                                <option value="<?= h($association->id) ?>"><?= h($association->name) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <div class="invalid-feedback">Selecione seu vínculo.</div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            <div class="mb-3" id="promotionalCodeGroup">
+                                <label for="promotionalCode" class="form-label" id="promotionalCodeLabel">
+                                    Código promocional <span class="text-muted fw-normal" id="promotionalCodeOptionalHint">(opcional)</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="text"
+                                        class="form-control text-uppercase"
+                                        id="promotionalCode"
+                                        name="initialData[promotionalCode]"
+                                        placeholder="Digite o código, se você tiver um"
+                                        maxlength="30"
+                                        autocomplete="off"
+                                        spellcheck="false">
+                                    <span class="input-group-text d-none" id="promotionalCodeSpinner">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    </span>
+                                    <button type="button" class="btn btn-outline-secondary d-none" id="promotionalCodeRemove">
+                                        Remover
+                                    </button>
+                                </div>
+                                <div id="promotionalCodeFeedback" class="small mt-1"></div>
+                            </div>
+
                             <p class="form-text">
                                 Em conformidade com a Lei Geral de Proteção de Dados (LGPD), informamos que os dados fornecidos serão
                                 armazenados em nosso sistema e utilizados exclusivamente para fins de pesquisa de satisfação e suporte ao longo do processo.
@@ -859,6 +917,45 @@ function createSecureCard($data, $type)
                                 </div>
                             </div>
                             <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3" id="brokerCodeGroup">
+                                        <label for="brokerCode" class="form-label">
+                                            Corretor <span class="text-muted fw-normal">(opcional)</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="text"
+                                                class="form-control text-uppercase"
+                                                id="brokerCode"
+                                                name="plans[brokerCode]"
+                                                placeholder="Código do corretor, se você tiver um"
+                                                maxlength="30"
+                                                autocomplete="off"
+                                                spellcheck="false">
+                                            <span class="input-group-text d-none" id="brokerCodeSpinner">
+                                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            </span>
+                                            <button type="button" class="btn btn-outline-secondary d-none" id="brokerCodeRemove">
+                                                Remover
+                                            </button>
+                                        </div>
+                                        <div id="brokerCodeFeedback" class="small mt-1"></div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 d-none" id="riskRemovalGroup">
+                                    <label class="form-label d-block">Riscos incluídos no plano</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="removeSurvivorsPension" name="plans[removeSurvivorsPension]" value="1" onchange="recalculatePlan();">
+                                        <label class="form-check-label" for="removeSurvivorsPension">Remover pensão por morte</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="removeDisabilityRetirement" name="plans[removeDisabilityRetirement]" value="1" onchange="recalculatePlan();">
+                                        <label class="form-check-label" for="removeDisabilityRetirement">Remover aposentadoria por invalidez</label>
+                                    </div>
+                                    <div class="form-text">O valor do risco removido passa a compor a contribuição de previdência.</div>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="monthly_retirement_contribution" class="form-label">Contribuição mensal aposentadoria</label>
@@ -872,7 +969,7 @@ function createSecureCard($data, $type)
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" id="survivorsPensionPlanRow">
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="monthly_survivors_pension_contribution" class="form-label">Contribuição mensal pensão por morte</label>
@@ -898,7 +995,7 @@ function createSecureCard($data, $type)
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" id="disabilityRetirementPlanRow">
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="monthly_disability_retirement_contribution" class="form-label">Contribuição mensal aposentadoria por invalidez</label>
@@ -1808,6 +1905,9 @@ function createSecureCard($data, $type)
                 registerModal.show();
             });
 
+            initPromotionalCode();
+            initBrokerCode();
+
             simulationChart();
         });
 
@@ -1935,6 +2035,488 @@ function createSecureCard($data, $type)
             updateButtonPreviousNext(registerPageIndex);
         }
 
+        /* ---------------------------------------------------------------
+         * Código promocional
+         *
+         * Estados: empty | checking | valid | invalid | error
+         * Apenas 'empty' e 'valid' permitem avançar da etapa 1.
+         * ------------------------------------------------------------- */
+        const promoValidateUrl = '<?= $this->Url->build(['controller' => 'PromotionalCodes', 'action' => 'validate', 'prefix' => false]) ?>';
+        const promoDebounceMs = 500;
+        const promoMinLength = 3;
+
+        let promoState = { status: 'empty', code: null, partnerName: null, logoUrl: null, color: null };
+        let promoDebounceTimer = null;
+        let promoAbortController = null;
+
+        const promoNormalize = (value) => (value || '')
+            .normalize('NFD')
+            .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+            .toUpperCase()
+            .replace(/[^A-Z0-9-]/g, '');
+
+        const promoEls = () => ({
+            input: document.getElementById('promotionalCode'),
+            spinner: document.getElementById('promotionalCodeSpinner'),
+            remove: document.getElementById('promotionalCodeRemove'),
+            feedback: document.getElementById('promotionalCodeFeedback'),
+        });
+
+        /* ---------------------------------------------------------------
+         * Vínculo associativo
+         *
+         * Só existe no DOM quando há ao menos um vínculo ativo cadastrado
+         * (ver SimulatorController::index()). O código promocional vira
+         * obrigatório quando a resposta é "sim", e passa a restringir a
+         * validação ao parceiro do vínculo selecionado.
+         * ------------------------------------------------------------- */
+        const hasAssociationQuestion = document.getElementById('associationQuestionGroup') !== null;
+
+        const associationEls = () => ({
+            yesRadio: document.getElementById('associationAnswerYes'),
+            noRadio: document.getElementById('associationAnswerNo'),
+            selectGroup: document.getElementById('associationSelectGroup'),
+            select: document.getElementById('associationPartnerId'),
+        });
+
+        const isAssociationYes = () => hasAssociationQuestion && associationEls().yesRadio.checked;
+
+        const currentAssociationId = () => isAssociationYes() ? (associationEls().select.value || '') : '';
+
+        const updatePromotionalCodeRequirement = () => {
+            const hint = document.getElementById('promotionalCodeOptionalHint');
+
+            if (hint) hint.textContent = isAssociationYes() ? '(obrigatório)' : '(opcional)';
+        };
+
+        const setAssociationAnswer = (isYes, partnerId = '') => {
+            if (!hasAssociationQuestion) return;
+
+            const { yesRadio, noRadio, selectGroup, select } = associationEls();
+
+            yesRadio.checked = isYes;
+            noRadio.checked = !isYes;
+            selectGroup.classList.toggle('d-none', !isYes);
+            select.required = isYes;
+
+            if (isYes && partnerId) select.value = String(partnerId);
+            if (!isYes) select.value = '';
+
+            updatePromotionalCodeRequirement();
+        };
+
+        /**
+         * Mostrado junto do erro do código quando a pessoa afirmou ter
+         * vínculo, mas o código não resolve: o vínculo nunca impede uma
+         * adesão, então sempre há uma saída para seguir sem ele.
+         */
+        const appendAssociationEscapeHatch = (feedback) => {
+            if (!isAssociationYes()) return;
+
+            const { select } = associationEls();
+            const option = select.options[select.selectedIndex];
+            const partnerName = option && option.value ? option.textContent : 'seu vínculo';
+
+            const hatch = document.createElement('div');
+            hatch.className = 'mt-1';
+            hatch.innerHTML = 'Não tem um código válido? Entre em contato com ' + partnerName +
+                ', ou <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="associationSkip">continue sem vínculo</button>.';
+            feedback.appendChild(hatch);
+
+            document.getElementById('associationSkip').addEventListener('click', () => {
+                setAssociationAnswer(false);
+                clearPromoCode();
+            });
+        };
+
+        const initAssociationQuestion = () => {
+            if (!hasAssociationQuestion) return;
+
+            const { yesRadio, noRadio, select } = associationEls();
+
+            // Trocar a resposta ou o vínculo selecionado revalida o código já
+            // digitado: ele pode não pertencer ao vínculo escolhido agora.
+            [yesRadio, noRadio].forEach((radio) => radio.addEventListener('change', () => {
+                setAssociationAnswer(yesRadio.checked);
+
+                const { input } = promoEls();
+
+                if (input.value) lookupPromoCode(input.value);
+            }));
+
+            select.addEventListener('change', () => {
+                const { input } = promoEls();
+
+                if (input.value) lookupPromoCode(input.value);
+            });
+        };
+
+        const updatePartnerHeader = () => {
+            const wrapper = document.getElementById('registerModalPartner');
+            const logo = document.getElementById('registerModalPartnerLogo');
+            const label = document.getElementById('registerModalPartnerLabel');
+
+            if (promoState.status !== 'valid') {
+                wrapper.classList.add('d-none');
+                wrapper.classList.remove('d-flex');
+                wrapper.style.borderColor = '';
+                logo.classList.add('d-none');
+                logo.removeAttribute('src');
+                label.textContent = '';
+
+                return;
+            }
+
+            wrapper.classList.remove('d-none');
+            wrapper.classList.add('d-flex');
+            wrapper.style.borderColor = promoState.color || '';
+
+            if (promoState.logoUrl) {
+                logo.src = promoState.logoUrl;
+                logo.alt = promoState.partnerName;
+                logo.classList.remove('d-none');
+                // Se a imagem falhar, cai para o nome do parceiro em texto.
+                logo.onerror = () => {
+                    logo.classList.add('d-none');
+                    label.textContent = promoState.partnerName;
+                };
+                label.textContent = '';
+            } else {
+                logo.classList.add('d-none');
+                logo.removeAttribute('src');
+                label.textContent = promoState.partnerName;
+            }
+        };
+
+        const setPromoState = (status, data = {}) => {
+            promoState = {
+                status,
+                code: data.code ?? null,
+                partnerName: data.partnerName ?? null,
+                logoUrl: data.logoUrl ?? null,
+                color: data.color ?? null,
+            };
+
+            const { input, spinner, remove, feedback } = promoEls();
+
+            input.classList.remove('is-valid', 'is-invalid', 'border-warning');
+            spinner.classList.add('d-none');
+            remove.classList.add('d-none');
+            feedback.className = 'small mt-1';
+            feedback.textContent = '';
+
+            if (status === 'checking') {
+                spinner.classList.remove('d-none');
+            } else if (status === 'valid') {
+                input.classList.add('is-valid');
+                remove.classList.remove('d-none');
+                feedback.classList.add('text-success');
+                feedback.textContent = '✓ ' + data.partnerName;
+            } else if (status === 'invalid') {
+                input.classList.add('is-invalid');
+                feedback.classList.add('text-danger');
+                feedback.textContent = '✗ ' + (data.message || 'Código promocional não encontrado.');
+
+                appendAssociationEscapeHatch(feedback);
+            } else if (status === 'error') {
+                input.classList.add('border-warning');
+                feedback.classList.add('text-warning-emphasis');
+                feedback.innerHTML =
+                    'Não foi possível validar o código agora. ' +
+                    '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="promotionalCodeRetry">Tentar novamente</button>' +
+                    ' ou <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="promotionalCodeSkip">continuar sem o código</button>.';
+
+                document.getElementById('promotionalCodeRetry')
+                    .addEventListener('click', () => lookupPromoCode(promoNormalize(input.value)));
+                document.getElementById('promotionalCodeSkip')
+                    .addEventListener('click', clearPromoCode);
+
+                appendAssociationEscapeHatch(feedback);
+            }
+
+            updatePartnerHeader();
+        };
+
+        const clearPromoCode = () => {
+            const { input } = promoEls();
+
+            if (promoAbortController) promoAbortController.abort();
+            clearTimeout(promoDebounceTimer);
+
+            input.value = '';
+            setPromoState('empty');
+            input.focus();
+        };
+
+        const lookupPromoCode = async (code) => {
+            if (!code || code.length < promoMinLength) {
+                setPromoState(code ? 'invalid' : 'empty', {
+                    message: 'O código deve ter ao menos ' + promoMinLength + ' caracteres.'
+                });
+
+                return;
+            }
+
+            // Cancela a consulta anterior para que uma resposta atrasada não
+            // sobrescreva o resultado de uma consulta mais recente.
+            if (promoAbortController) promoAbortController.abort();
+            promoAbortController = new AbortController();
+
+            setPromoState('checking');
+
+            try {
+                const associationId = currentAssociationId();
+                const url = promoValidateUrl + '?code=' + encodeURIComponent(code) +
+                    (associationId ? '&associationId=' + encodeURIComponent(associationId) : '');
+
+                const response = await fetch(url, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: promoAbortController.signal,
+                });
+
+                const result = await response.json();
+
+                if (result.valid) {
+                    // Código de um vínculo associativo, mas a pergunta ainda
+                    // estava em "não": corrige a resposta em vez de bloquear.
+                    if (result.autoAssociation) {
+                        setAssociationAnswer(true, result.autoAssociation.id);
+                    }
+
+                    setPromoState('valid', result);
+                } else {
+                    setPromoState('invalid', result);
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+
+                setPromoState('error');
+            }
+        };
+
+        const initPromotionalCode = () => {
+            const { input, remove } = promoEls();
+
+            input.addEventListener('input', () => {
+                const normalized = promoNormalize(input.value);
+
+                if (input.value !== normalized) {
+                    const position = input.selectionStart;
+                    input.value = normalized;
+                    input.setSelectionRange(position, position);
+                }
+
+                clearTimeout(promoDebounceTimer);
+
+                if (normalized === '') {
+                    if (promoAbortController) promoAbortController.abort();
+                    setPromoState('empty');
+
+                    return;
+                }
+
+                promoDebounceTimer = setTimeout(() => lookupPromoCode(normalized), promoDebounceMs);
+            });
+
+            input.addEventListener('blur', () => {
+                const normalized = promoNormalize(input.value);
+
+                if (normalized === '' || promoState.status === 'valid' || promoState.status === 'checking') return;
+
+                clearTimeout(promoDebounceTimer);
+                lookupPromoCode(normalized);
+            });
+
+            remove.addEventListener('click', clearPromoCode);
+
+            // Link atribuído do parceiro: ?promo=CODIGO chega preenchido e validado.
+            const fromUrl = promoNormalize(new URLSearchParams(window.location.search).get('promo'));
+
+            if (fromUrl) {
+                input.value = fromUrl;
+                lookupPromoCode(fromUrl);
+            }
+
+            initAssociationQuestion();
+        };
+
+        /* ---------------------------------------------------------------
+         * Corretor e remoção de riscos
+         *
+         * Um corretor validado libera os toggles de remoção de risco. O
+         * servidor revalida o código a cada chamada de recálculo e na
+         * gravação final — os valores aqui são só conveniência de UI.
+         * ------------------------------------------------------------- */
+        const brokerValidateUrl = '<?= $this->Url->build(['controller' => 'Brokers', 'action' => 'validate', 'prefix' => false]) ?>';
+
+        let brokerState = { status: 'empty' };
+        let brokerDebounceTimer = null;
+        let brokerAbortController = null;
+
+        const brokerEls = () => ({
+            input: document.getElementById('brokerCode'),
+            spinner: document.getElementById('brokerCodeSpinner'),
+            remove: document.getElementById('brokerCodeRemove'),
+            feedback: document.getElementById('brokerCodeFeedback'),
+            riskGroup: document.getElementById('riskRemovalGroup'),
+        });
+
+        /**
+         * Mostra/esconde as linhas de contribuição de cada risco removido no
+         * próprio passo "Plano", e recalcula se a etapa de saúde deve
+         * aparecer na navegação (ver shouldSkipHealthStep()).
+         */
+        const updateRiskVisibility = () => {
+            const survivorsRemoved = document.getElementById('removeSurvivorsPension').checked;
+            const disabilityRemoved = document.getElementById('removeDisabilityRetirement').checked;
+
+            document.getElementById('survivorsPensionPlanRow').classList.toggle('d-none', survivorsRemoved);
+            document.getElementById('disabilityRetirementPlanRow').classList.toggle('d-none', disabilityRemoved);
+        };
+
+        const shouldSkipHealthStep = () => {
+            if (brokerState.status !== 'valid') return false;
+
+            return document.getElementById('removeSurvivorsPension').checked
+                && document.getElementById('removeDisabilityRetirement').checked;
+        };
+
+        const setBrokerState = (status, data = {}) => {
+            brokerState = { status };
+
+            const { input, spinner, remove, feedback, riskGroup } = brokerEls();
+
+            input.classList.remove('is-valid', 'is-invalid', 'border-warning');
+            spinner.classList.add('d-none');
+            remove.classList.add('d-none');
+            feedback.className = 'small mt-1';
+            feedback.textContent = '';
+
+            if (status === 'checking') {
+                spinner.classList.remove('d-none');
+            } else if (status === 'valid') {
+                input.classList.add('is-valid');
+                remove.classList.remove('d-none');
+                feedback.classList.add('text-success');
+                feedback.textContent = '✓ ' + data.name;
+                riskGroup.classList.remove('d-none');
+            } else if (status === 'invalid') {
+                input.classList.add('is-invalid');
+                feedback.classList.add('text-danger');
+                feedback.textContent = '✗ ' + (data.message || 'Código de corretor não encontrado.');
+            } else if (status === 'error') {
+                input.classList.add('border-warning');
+                feedback.classList.add('text-warning-emphasis');
+                feedback.innerHTML =
+                    'Não foi possível validar o código agora. ' +
+                    '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="brokerCodeRetry">Tentar novamente</button>.';
+
+                document.getElementById('brokerCodeRetry')
+                    .addEventListener('click', () => lookupBrokerCode(promoNormalize(input.value)));
+            }
+
+            // Sem corretor válido, os dois riscos sempre existem: some o
+            // grupo de toggles, desmarca ambos e recalcula para restaurá-los.
+            if (status !== 'valid') {
+                riskGroup.classList.add('d-none');
+
+                const survivors = document.getElementById('removeSurvivorsPension');
+                const disability = document.getElementById('removeDisabilityRetirement');
+                const hadRemoval = survivors.checked || disability.checked;
+
+                survivors.checked = false;
+                disability.checked = false;
+                updateRiskVisibility();
+
+                if (hadRemoval) recalculatePlan();
+            }
+        };
+
+        const clearBrokerCode = () => {
+            const { input } = brokerEls();
+
+            if (brokerAbortController) brokerAbortController.abort();
+            clearTimeout(brokerDebounceTimer);
+
+            input.value = '';
+            setBrokerState('empty');
+            input.focus();
+        };
+
+        const lookupBrokerCode = async (code) => {
+            if (!code || code.length < promoMinLength) {
+                setBrokerState(code ? 'invalid' : 'empty', {
+                    message: 'O código deve ter ao menos ' + promoMinLength + ' caracteres.'
+                });
+
+                return;
+            }
+
+            if (brokerAbortController) brokerAbortController.abort();
+            brokerAbortController = new AbortController();
+
+            setBrokerState('checking');
+
+            try {
+                const response = await fetch(brokerValidateUrl + '?code=' + encodeURIComponent(code), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: brokerAbortController.signal,
+                });
+
+                const result = await response.json();
+
+                setBrokerState(result.valid ? 'valid' : 'invalid', result);
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+
+                setBrokerState('error');
+            }
+        };
+
+        const initBrokerCode = () => {
+            const { input, remove } = brokerEls();
+
+            input.addEventListener('input', () => {
+                const normalized = promoNormalize(input.value);
+
+                if (input.value !== normalized) {
+                    const position = input.selectionStart;
+                    input.value = normalized;
+                    input.setSelectionRange(position, position);
+                }
+
+                clearTimeout(brokerDebounceTimer);
+
+                if (normalized === '') {
+                    if (brokerAbortController) brokerAbortController.abort();
+                    setBrokerState('empty');
+
+                    return;
+                }
+
+                brokerDebounceTimer = setTimeout(() => lookupBrokerCode(normalized), promoDebounceMs);
+            });
+
+            input.addEventListener('blur', () => {
+                const normalized = promoNormalize(input.value);
+
+                if (normalized === '' || brokerState.status === 'valid' || brokerState.status === 'checking') return;
+
+                clearTimeout(brokerDebounceTimer);
+                lookupBrokerCode(normalized);
+            });
+
+            remove.addEventListener('click', clearBrokerCode);
+
+            // Link de divulgação do corretor: ?broker=CODIGO chega preenchido e validado.
+            const fromUrl = promoNormalize(new URLSearchParams(window.location.search).get('broker'));
+
+            if (fromUrl) {
+                input.value = fromUrl;
+                lookupBrokerCode(fromUrl);
+            }
+        };
+
         const nextPage = async () => {
             const btnPrimary = document.querySelector('#registerModal .modal-footer .btn-primary');
 
@@ -1943,6 +2525,59 @@ function createSecureCard($data, $type)
                 btnPrimary.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
                 window.location.reload();
                 return;
+            }
+
+            // Etapa 1: um código promocional preenchido precisa estar resolvido
+            // antes de avançar. Campo vazio segue normalmente (é opcional).
+            if (registerPageIndex === 0) {
+                if (promoState.status === 'checking') {
+                    // Aguarda a consulta em andamento terminar e reavalia.
+                    // Um teto evita travar o botão para sempre caso a
+                    // requisição fique pendurada sem nunca resolver.
+                    btnPrimary.disabled = true;
+
+                    await new Promise((resolve) => {
+                        let elapsed = 0;
+                        const poll = setInterval(() => {
+                            elapsed += 100;
+
+                            if (promoState.status !== 'checking') {
+                                clearInterval(poll);
+                                resolve();
+                            } else if (elapsed >= 15000) {
+                                clearInterval(poll);
+                                setPromoState('error');
+                                resolve();
+                            }
+                        }, 100);
+                    });
+
+                    btnPrimary.disabled = false;
+                }
+
+                if (promoState.status === 'invalid' || promoState.status === 'error') {
+                    document.getElementById('promotionalCode').focus();
+
+                    return;
+                }
+
+                // Vínculo associativo torna o código obrigatório e exige que
+                // o vínculo esteja selecionado.
+                if (isAssociationYes()) {
+                    if (promoState.status !== 'valid') {
+                        document.getElementById('promotionalCode').focus();
+
+                        return;
+                    }
+
+                    const { select } = associationEls();
+
+                    if (!select.value) {
+                        select.focus();
+
+                        return;
+                    }
+                }
             }
 
             let isValid = true;
@@ -2018,6 +2653,12 @@ function createSecureCard($data, $type)
 
                 registerPageIndex += 1;
 
+                // Sem nenhum risco contratado (corretor removeu os dois), a
+                // etapa de declarações de saúde não faz sentido e é pulada.
+                if (registerPageIndex === 7 && shouldSkipHealthStep()) {
+                    registerPageIndex += 1;
+                }
+
                 updatePage(registerPageIndex)
             } catch (error) {
                 alert(error?.message || 'Não foi possível avançar. Tente novamente em instantes.');
@@ -2033,6 +2674,10 @@ function createSecureCard($data, $type)
 
             if (registerPageIndex !== 0)
                 registerPageIndex -= 1;
+
+            if (registerPageIndex === 7 && shouldSkipHealthStep()) {
+                registerPageIndex -= 1;
+            }
 
             updatePage(registerPageIndex)
         }
@@ -2272,7 +2917,10 @@ function createSecureCard($data, $type)
                 url: `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'recalculate']) ?>`,
                 data: {
                     date: birthDate,
-                    value: value
+                    value: value,
+                    brokerCode: document.getElementById('brokerCode').value,
+                    removeSurvivorsPension: document.getElementById('removeSurvivorsPension').checked ? '1' : '',
+                    removeDisabilityRetirement: document.getElementById('removeDisabilityRetirement').checked ? '1' : '',
                 },
                 dataType: 'json',
                 success: (response) => {
@@ -2295,6 +2943,21 @@ function createSecureCard($data, $type)
                         style: 'currency',
                         currency: 'BRL'
                     });
+
+                    // O servidor é quem decide, de fato, se cada risco entra
+                    // no cálculo (corretor revalidado a cada chamada). Se ele
+                    // discordar do que os checkboxes mostravam — por exemplo,
+                    // o corretor foi desativado entre uma chamada e outra —
+                    // a UI se realinha ao que veio na resposta.
+                    if (response.hasSurvivorsPension !== undefined) {
+                        document.getElementById('removeSurvivorsPension').checked = !response.hasSurvivorsPension;
+                    }
+
+                    if (response.hasDisabilityRetirement !== undefined) {
+                        document.getElementById('removeDisabilityRetirement').checked = !response.hasDisabilityRetirement;
+                    }
+
+                    updateRiskVisibility();
                 },
                 error: () => {
                     errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';
@@ -2524,7 +3187,18 @@ function createSecureCard($data, $type)
             const date = $('#simulador-form input[name="dateBirth"]').val();
             const monthlyInvestmentInput = document.querySelector('#simulador-form input[name="monthlyInvestment"]');
             const value = monthlyInvestmentInput.value.replace(/\./g, '').replace(',', '.');
-            const simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
+            let simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
+
+            // "Simular novamente" recarrega esta mesma página: sem isto, um
+            // ?promo=/?broker= já em uso na URL atual se perderia no reload.
+            const incomingParams = new URLSearchParams(window.location.search);
+
+            ['promo', 'broker'].forEach((param) => {
+                const paramValue = incomingParams.get(param);
+
+                if (paramValue) simulatorUrl += `&${param}=${encodeURIComponent(paramValue)}`;
+            });
+
             const form = document.querySelectorAll(`#simulador-form input`);
             const errorDiv = document.getElementById('simulador-form-error');
 

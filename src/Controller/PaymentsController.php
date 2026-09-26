@@ -21,8 +21,8 @@ class PaymentsController extends AppController
     public function view(string $storageUuid)
     {
         $adhesion = $this->fetchTable('AdhesionInitialDatas')->find()
-            ->where(['storage_uuid' => $storageUuid])
-            ->contain(['AdhesionPersonalDatas', 'AdhesionPaymentDetails'])
+            ->where(['AdhesionInitialDatas.storage_uuid' => $storageUuid])
+            ->contain(['AdhesionPersonalDatas', 'AdhesionPaymentDetails', 'PromotionalCodes.Partners'])
             ->first();
 
         if (!$adhesion || !$adhesion->adhesion_payment_detail)
@@ -34,6 +34,7 @@ class PaymentsController extends AppController
         ]);
 
         $customerName = $adhesion->adhesion_personal_data->name ?? 'Cliente';
+        $partner = $adhesion->promotional_code_entity->partner ?? null;
         $cpf = preg_replace('/\D/', '', $adhesion->adhesion_personal_data->cpf ?? '');
         $amount = (float)$adhesion->adhesion_payment_detail->total_contribution;
 
@@ -62,6 +63,6 @@ class PaymentsController extends AppController
                 ->getDataUri();
         }
 
-        $this->set(compact('customerName', 'amount', 'result', 'qrCodeBase64'));
+        $this->set(compact('customerName', 'amount', 'result', 'qrCodeBase64', 'partner'));
     }
 }

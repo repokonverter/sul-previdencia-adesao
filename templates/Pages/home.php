@@ -1459,7 +1459,18 @@ echo $this->Html->css('application');
         const date = $('#simulatorModal input[name="dateBirth"]').val();
         const monthlyInvestmentInput = document.querySelector('#simulatorModal input[name="monthlyInvestment"]');
         const value = monthlyInvestmentInput.value.replace(/\./g, '').replace(',', '.');
-        const simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
+        let simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
+
+        // Link de divulgação de parceiro (?promo=) ou de corretor (?broker=)
+        // chegando na home precisa sobreviver a este redirecionamento — sem
+        // isso, o link nunca alcança o formulário que de fato os usa.
+        const incomingParams = new URLSearchParams(window.location.search);
+
+        ['promo', 'broker'].forEach((param) => {
+            const value = incomingParams.get(param);
+
+            if (value) simulatorUrl += `&${param}=${encodeURIComponent(value)}`;
+        });
         const form = document.querySelectorAll(`#simulatorForm input`);
 
         form.forEach((input) => {

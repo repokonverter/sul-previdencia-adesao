@@ -115,6 +115,18 @@ return [
          * Duration will be set to '+2 minutes' in bootstrap.php when debug = true
          * If you set 'className' => 'Null' core cache will be disabled.
          */
+        /*
+         * Janela curta usada para limitar consultas ao endpoint público de
+         * códigos promocionais.
+         */
+        'rate_limit' => [
+            'className' => FileEngine::class,
+            'prefix' => 'myapp_rate_limit_',
+            'path' => CACHE . 'persistent' . DS,
+            'serialize' => true,
+            'duration' => '+1 minutes',
+        ],
+
         '_cake_translations_' => [
             'className' => FileEngine::class,
             'prefix' => 'myapp_cake_translations_',

@@ -16,6 +16,8 @@ class AdhesionPlan extends Entity
         'survivors_pension_insured_capital' => true,
         'monthly_disability_retirement_contribution' => true,
         'disability_retirement_insured_capital' => true,
+        'has_survivors_pension' => true,
+        'has_disability_retirement' => true,
         'created' => true,
         'modified' => true,
         'adhesion_initial_data' => true,

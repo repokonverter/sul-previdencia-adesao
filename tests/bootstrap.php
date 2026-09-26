@@ -15,6 +15,7 @@ declare(strict_types=1);
  * @license   https://opensource.org/licenses/mit-license.php MIT License
  */
 
+use Cake\Cache\Cache;
 use Cake\Chronos\Chronos;
 use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
@@ -60,6 +61,13 @@ session_id('cli');
 // Connection aliasing needs to happen before migrations are run.
 // Otherwise, table objects inside migrations would use the default datasource
 ConnectionHelper::addTestAliases();
+
+// O cache de schema do ORM (tmp/cache/models/) sobrevive entre execuções do
+// PHPUnit. Sem isto, uma migration nova que altera uma tabela já cacheada
+// (ex.: acrescenta uma coluna) faz o teste rodar contra o schema antigo —
+// a coluna existe no banco, mas o ORM não sabe que ela existe, e qualquer
+// leitura/gravação dela falha ou hidrata como null silenciosamente.
+Cache::clear('_cake_model_');
 
 // Use migrations to build test database schema.
 //

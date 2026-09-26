@@ -1,3 +1,15 @@
+<?php
+
+/**
+ * @var \App\View\AppView $this
+ * @var \App\Model\Entity\AdhesionInitialData $adhesion
+ */
+
+// Default true: adesões sem plano (não deveria acontecer) ou de antes desta
+// funcionalidade sempre tiveram os dois riscos contratados.
+$hasSurvivorsPension = $adhesion->adhesion_plan->has_survivors_pension ?? true;
+$hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?? true;
+?>
 <!DOCTYPE html>
 <html>
 
@@ -368,10 +380,10 @@
                     15.414.000077/2005-16
                 </td>
                 <td>
-                    R$ <?= number_format($adhesion->adhesion_plan->survivors_pension_insured_capital ?? 0, 2, ',', '.') ?>
+                    <?= $hasSurvivorsPension ? 'R$ ' . number_format($adhesion->adhesion_plan->survivors_pension_insured_capital ?? 0, 2, ',', '.') : 'NÃO CONTRATADO' ?>
                 </td>
                 <td>
-                    R$ <?= number_format($adhesion->adhesion_plan->monthly_survivors_pension_contribution ?? 0, 2, ',', '.') ?>
+                    <?= $hasSurvivorsPension ? 'R$ ' . number_format($adhesion->adhesion_plan->monthly_survivors_pension_contribution ?? 0, 2, ',', '.') : 'NÃO CONTRATADO' ?>
                 </td>
             </tr>
             <tr>
@@ -382,10 +394,10 @@
                     15.414.000078/2005-52
                 </td>
                 <td>
-                    R$ <?= number_format($adhesion->adhesion_plan->disability_retirement_insured_capital ?? 0, 2, ',', '.') ?>
+                    <?= $hasDisabilityRetirement ? 'R$ ' . number_format($adhesion->adhesion_plan->disability_retirement_insured_capital ?? 0, 2, ',', '.') : 'NÃO CONTRATADO' ?>
                 </td>
                 <td>
-                    R$ <?= number_format($adhesion->adhesion_plan->monthly_disability_retirement_contribution ?? 0, 2, ',', '.') ?>
+                    <?= $hasDisabilityRetirement ? 'R$ ' . number_format($adhesion->adhesion_plan->monthly_disability_retirement_contribution ?? 0, 2, ',', '.') : 'NÃO CONTRATADO' ?>
                 </td>
             </tr>
             <tr>
@@ -397,7 +409,11 @@
                     Total da Parcela Adicional de Risco (2):
                 </td>
                 <td>
-                    R$ <?= number_format(($adhesion->adhesion_plan->monthly_survivors_pension_contribution ?? 0) + ($adhesion->adhesion_plan->monthly_disability_retirement_contribution ?? 0), 2, ',', '.') ?>
+                    <?php if (!$hasSurvivorsPension && !$hasDisabilityRetirement): ?>
+                        NÃO CONTRATADO
+                    <?php else: ?>
+                        R$ <?= number_format(($adhesion->adhesion_plan->monthly_survivors_pension_contribution ?? 0) + ($adhesion->adhesion_plan->monthly_disability_retirement_contribution ?? 0), 2, ',', '.') ?>
+                    <?php endif; ?>
                 </td>
             </tr>
         </table>
@@ -468,57 +484,69 @@
             </tr>
         </table>
 
-        <div class="section-title">DECLARAÇÕES DO PROPONENTE <span style="font-size: 8pt; font-weight: normal;">Declaração Pessoal de Saúde (nunca deve ser assinada em branco.)</span></div>
-        <table style="font-size: 8pt;">
-            <tr>
-                <th width="75%">Perguntas</th>
-                <th width="25%">Respostas</th>
-            </tr>
-            <tr>
-                <td>1. Encontra-se com algum problema de saúde ou faz uso de algum medicamento?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->health_problem ? 'Sim, ' . $adhesion->adhesion_proponent_statement->health_problem_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>2. Sofre ou já sofreu de doenças do coração, hipertensão,circulatórias, do sangue, diabetes, pulmão, fígado, rins, infarto, acidente vascular cerebral, articulações, qualquer tipo de câncer ou HIV?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->heart_disease ? 'Sim, ' . $adhesion->adhesion_proponent_statement->heart_disease_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>3. Sofre ou sofreu de deficiências de órgãos, membros ou sentidos, incluindo doenças ortopédicas relacionadas a esforço repetitivo (LER e DORT)?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->suffered_organ_defects ? 'Sim, ' . $adhesion->adhesion_proponent_statement->suffered_organ_defects_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>4. Fez alguma cirurgia, biópsia ou esteve internado nos últimos 5 anos?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->surgery ? 'Sim, ' . $adhesion->adhesion_proponent_statement->surgery_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>5. Está afastado(a) do trabalho ou aposentado por invalidez?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->away ? 'Sim, ' . $adhesion->adhesion_proponent_statement->away_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>6. Pratica paraquedismo, motociclismo, boxe, asa delta, rodeio, alpinismo, voo livre, automobilismo, mergulho ou exerce atividade, em caráter profissional ou amador, a bordo de aeronaves, que não sejam de linhas regulares?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->practices_parachuting ? 'Sim, ' . $adhesion->adhesion_proponent_statement->practices_parachuting_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>7. Fumante?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->smoker ? 'Sim, ' . $adhesion->adhesion_proponent_statement->smoker_type . ', ' . $adhesion->adhesion_proponent_statement->smoker_type_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>8. Peso e Altura</td>
-                <td><?= $adhesion->adhesion_proponent_statement->weight ?? '' ?> Kg e <?= number_format($adhesion->adhesion_proponent_statement->height ?? 0, 2, ',', '.') ?> m</td>
-            </tr>
-            <tr>
-                <td>9. Apresenta, no momento, sintomas de gripe, febre, cansaço, tosse, coriza, dores pelo corpo, dor de cabeça, dor de garganta, falta de ar, perda de olfato, perda de paladar ou está aguardando resultado do teste da COVID-19?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->gripe ? 'Sim, ' . $adhesion->adhesion_proponent_statement->gripe_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>10. Foi diagnosticado(a) com infecção pelo novo CORONA VÍRUS ou COVID-19?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->covid ? 'Sim, ' . $adhesion->adhesion_proponent_statement->covid_obs : 'Não' ?></td>
-            </tr>
-            <tr>
-                <td>11. Apresenta, no momento, sequelas do COVID-19 diferente de perda de olfato e/ou paladar?</td>
-                <td><?= $adhesion->adhesion_proponent_statement->covid_sequelae ? 'Sim, ' . $adhesion->adhesion_proponent_statement->covid_sequelae_obs : 'Não' ?></td>
-            </tr>
-        </table>
+        <?php if ($hasSurvivorsPension || $hasDisabilityRetirement): ?>
+            <?php
+                // Sem nenhum risco contratado, este questionário não existe:
+                // o registro nem chega a ser criado (etapa de saúde some do
+                // formulário — ver RegistrationsController::save()), então
+                // $adhesion->adhesion_proponent_statement pode ser null aqui.
+                $statement = $adhesion->adhesion_proponent_statement;
+            ?>
+            <div class="section-title">DECLARAÇÕES DO PROPONENTE <span style="font-size: 8pt; font-weight: normal;">Declaração Pessoal de Saúde (nunca deve ser assinada em branco.)</span></div>
+            <table style="font-size: 8pt;">
+                <tr>
+                    <th width="75%">Perguntas</th>
+                    <th width="25%">Respostas</th>
+                </tr>
+                <tr>
+                    <td>1. Encontra-se com algum problema de saúde ou faz uso de algum medicamento?</td>
+                    <td><?= $statement && $statement->health_problem ? 'Sim, ' . $statement->health_problem_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>2. Sofre ou já sofreu de doenças do coração, hipertensão,circulatórias, do sangue, diabetes, pulmão, fígado, rins, infarto, acidente vascular cerebral, articulações, qualquer tipo de câncer ou HIV?</td>
+                    <td><?= $statement && $statement->heart_disease ? 'Sim, ' . $statement->heart_disease_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>3. Sofre ou sofreu de deficiências de órgãos, membros ou sentidos, incluindo doenças ortopédicas relacionadas a esforço repetitivo (LER e DORT)?</td>
+                    <td><?= $statement && $statement->suffered_organ_defects ? 'Sim, ' . $statement->suffered_organ_defects_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>4. Fez alguma cirurgia, biópsia ou esteve internado nos últimos 5 anos?</td>
+                    <td><?= $statement && $statement->surgery ? 'Sim, ' . $statement->surgery_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>5. Está afastado(a) do trabalho ou aposentado por invalidez?</td>
+                    <td><?= $statement && $statement->away ? 'Sim, ' . $statement->away_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>6. Pratica paraquedismo, motociclismo, boxe, asa delta, rodeio, alpinismo, voo livre, automobilismo, mergulho ou exerce atividade, em caráter profissional ou amador, a bordo de aeronaves, que não sejam de linhas regulares?</td>
+                    <td><?= $statement && $statement->practices_parachuting ? 'Sim, ' . $statement->practices_parachuting_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>7. Fumante?</td>
+                    <td><?= $statement && $statement->smoker ? 'Sim, ' . $statement->smoker_type . ', ' . $statement->smoker_type_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>8. Peso e Altura</td>
+                    <td><?= $statement->weight ?? '' ?> Kg e <?= number_format($statement->height ?? 0, 2, ',', '.') ?> m</td>
+                </tr>
+                <tr>
+                    <td>9. Apresenta, no momento, sintomas de gripe, febre, cansaço, tosse, coriza, dores pelo corpo, dor de cabeça, dor de garganta, falta de ar, perda de olfato, perda de paladar ou está aguardando resultado do teste da COVID-19?</td>
+                    <td><?= $statement && $statement->gripe ? 'Sim, ' . $statement->gripe_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>10. Foi diagnosticado(a) com infecção pelo novo CORONA VÍRUS ou COVID-19?</td>
+                    <td><?= $statement && $statement->covid ? 'Sim, ' . $statement->covid_obs : 'Não' ?></td>
+                </tr>
+                <tr>
+                    <td>11. Apresenta, no momento, sequelas do COVID-19 diferente de perda de olfato e/ou paladar?</td>
+                    <td><?= $statement && $statement->covid_sequelae ? 'Sim, ' . $statement->covid_sequelae_obs : 'Não' ?></td>
+                </tr>
+            </table>
+        <?php else: ?>
+            <div class="section-title">DECLARAÇÕES DO PROPONENTE</div>
+            <div class="small-note">Não se aplica: nenhum risco (pensão por morte ou aposentadoria por invalidez) foi contratado nesta adesão.</div>
+        <?php endif; ?>
 
         <table class="signature-table invisible-table">
             <tr>
