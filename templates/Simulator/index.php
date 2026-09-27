@@ -13,7 +13,9 @@ $this->assign('title', 'Sul Previdência - Simulador');
 $csrfToken = $this->request->getAttribute('csrfToken');
 $logoAssetPath = 'logo_sul_transparente.png';
 
-function createScenario($data, $type)
+// Closures, e não declarações: esta tela passou a ser renderizada também pelo
+// link de retomada, e dois render no mesmo processo redeclarariam a função.
+$createScenario = function ($data, $type)
 {
     $annualProfitabilityRate = floor($data['taxa_rentabilidade_anual'] * 100);
 
@@ -39,9 +41,9 @@ function createScenario($data, $type)
             <div class="cenario-renda">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
         </div>
     ';
-}
+};
 
-function createSecureCard($data, $type)
+$createSecureCard = function ($data, $type)
 {
     switch ($type) {
         case 'death':
@@ -60,7 +62,7 @@ function createSecureCard($data, $type)
             <div style="font-size: 1rem; color: #6c757d;">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
         </div>
     ';
-}
+};
 ?>
 <!DOCTYPE html>
 <html>
@@ -520,11 +522,11 @@ function createSecureCard($data, $type)
             <form class="simulador-form" id="simulador-form">
                 <div class="simulador-form-group">
                     <label for="data-nascimento">Data de nascimento</label>
-                    <input type="date" max="9999-12-31" class="form-control" name="dateBirth" placeholder="XX/XX/XXXX" value="<?= $_GET['date']; ?>" required>
+                    <input type="date" max="9999-12-31" class="form-control" name="dateBirth" placeholder="XX/XX/XXXX" value="<?= h($simulationDate) ?>" required>
                 </div>
                 <div class="simulador-form-group">
                     <label for="valor-investimento">Investimento mensal <small class="text-muted">(mínimo R$ 100,00)</small></label>
-                    <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal" value="<?= $_GET['value']; ?>" required>
+                    <input type="text" class="form-control money" name="monthlyInvestment" placeholder="Investimento mensal" value="<?= h($simulationValue) ?>" required>
                 </div>
             </form>
             <div id="simulador-form-error" class="text-danger mb-2" style="display: none;"></div>
@@ -542,7 +544,7 @@ function createSecureCard($data, $type)
                             <div class="cenarios-container" id="patrimonio-cenarios">
                                 <?php
                                 foreach ($simulations as $simulation) {
-                                    echo createScenario($simulation, 'property');
+                                    echo $createScenario($simulation, 'property');
                                 }
                                 ?>
                             </div>
@@ -557,7 +559,7 @@ function createSecureCard($data, $type)
                             Pensão por Morte
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="seguro-morte-cenarios"><?= createSecureCard($simulations[1], 'death'); ?></div>
+                            <div class="cenarios-container" id="seguro-morte-cenarios"><?= $createSecureCard($simulations[1], 'death'); ?></div>
                             <div class="descricao-secundaria" id="seguro-morte-contribuicao">
                                 Contribuição Mensal<br>
                                 <?= Number::currency($simulations[1]['contribuicao_morte']); ?>
@@ -569,7 +571,7 @@ function createSecureCard($data, $type)
                             Aposentadoria por Invalidez
                         </div>
                         <div class="card-body">
-                            <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= createSecureCard($simulations[1], 'disability'); ?></div>
+                            <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= $createSecureCard($simulations[1], 'disability'); ?></div>
                             <div class="descricao-secundaria" id="seguro-invalidez-contribuicao">
                                 Contribuição Mensal<br>
                                 <?= Number::currency($simulations[1]['contribuicao_invalidez']); ?>
@@ -719,7 +721,7 @@ function createSecureCard($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="birthDate" class="form-label">Data de nasc.*</label>
-                                        <input type="date" max="9999-12-31" class="form-control" name="personalData[birthDate]" placeholder="Data de nascimento" value="<?= $_GET['date']; ?>" required>
+                                        <input type="date" max="9999-12-31" class="form-control" name="personalData[birthDate]" placeholder="Data de nascimento" value="<?= h($simulationDate) ?>" required>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -894,6 +896,10 @@ function createSecureCard($data, $type)
                         </div>
 
                         <div id="plan" class="hidden">
+                            <div class="alert alert-info d-none" id="planLockedNotice">
+                                <strong>Valores ajustados pela Sul Previdência.</strong>
+                                Para alterá-los, fale com seu atendente.
+                            </div>
                             <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
@@ -911,50 +917,22 @@ function createSecureCard($data, $type)
                                             <span class="input-group-text">R$</span>
                                             <input type="text" class="form-control money" id="planMonthlyInvestment" value="<?= number_format($totalMonthlyContributionPlan, 2, '.', ''); ?>">
                                             <button type="button" class="btn btn-outline-primary" id="btnRecalculatePlan" onclick="recalculatePlan();">Recalcular</button>
+                                            <button type="button" class="btn btn-outline-secondary d-none" id="btnRefreshPlan" onclick="refreshPlanFromServer();" title="Traz os valores que a Sul Previdência gravou">Atualizar</button>
                                         </div>
                                         <div id="planRecalculateError" class="text-danger mt-1" style="display: none;"></div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3" id="brokerCodeGroup">
-                                        <label for="brokerCode" class="form-label">
-                                            Corretor <span class="text-muted fw-normal">(opcional)</span>
-                                        </label>
-                                        <div class="input-group">
-                                            <input type="text"
-                                                class="form-control text-uppercase"
-                                                id="brokerCode"
-                                                name="plans[brokerCode]"
-                                                placeholder="Código do corretor, se você tiver um"
-                                                maxlength="30"
-                                                autocomplete="off"
-                                                spellcheck="false">
-                                            <span class="input-group-text d-none" id="brokerCodeSpinner">
-                                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                            </span>
-                                            <button type="button" class="btn btn-outline-secondary d-none" id="brokerCodeRemove">
-                                                Remover
-                                            </button>
-                                        </div>
-                                        <div id="brokerCodeFeedback" class="small mt-1"></div>
-                                    </div>
-                                </div>
+                            <!--
+                                O código do corretor deixou de ser campo da
+                                etapa: remover risco é ato do admin sobre uma
+                                adesão, não escolha de quem preenche. O campo
+                                oculto mantém o link de divulgação
+                                (?broker=CODIGO) atribuindo a adesão ao
+                                corretor, que é o que ele de fato faz.
+                            -->
+                            <input type="hidden" id="brokerCode" name="plans[brokerCode]" value="">
 
-                                <div class="col-md-6 d-none" id="riskRemovalGroup">
-                                    <label class="form-label d-block">Riscos incluídos no plano</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="removeSurvivorsPension" name="plans[removeSurvivorsPension]" value="1" onchange="recalculatePlan();">
-                                        <label class="form-check-label" for="removeSurvivorsPension">Remover pensão por morte</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="removeDisabilityRetirement" name="plans[removeDisabilityRetirement]" value="1" onchange="recalculatePlan();">
-                                        <label class="form-check-label" for="removeDisabilityRetirement">Remover aposentadoria por invalidez</label>
-                                    </div>
-                                    <div class="form-text">O valor do risco removido passa a compor a contribuição de previdência.</div>
-                                </div>
-                            </div>
                             <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
@@ -1826,7 +1804,7 @@ function createSecureCard($data, $type)
                     </form>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <button type="button" id="fakerFillBtn" class="btn btn-outline-secondary me-auto" style="display: none;" onclick="fillStepWithFakeData(registerPages[registerPageIndex].id)">🎲 Preencher (dev)</button>
+                    <button type="button" id="fakerFillBtn" class="btn btn-outline-secondary me-auto" style="display: none;" onclick="fillStepWithFakeData(currentStepId)">🎲 Preencher (dev)</button>
                     <button type="button" class="btn btn-secondary" onclick="previousPage()">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="nextPage()">Concordo</button>
                 </div>
@@ -1835,28 +1813,68 @@ function createSecureCard($data, $type)
     </div>
     <script>
         const isDebug = <?= Configure::read('debug') ? 'true' : 'false' ?>;
-        const localStorageKey = 'adesaoSulPrevidencia';
-        let draftUUID = localStorage.getItem(localStorageKey);
+        /**
+         * Proposta retomada: a adesão inteira no formato do formulário, mais
+         * a etapa em que o admin quer que ela recomece. Null numa visita
+         * comum, em que o formulário nasce vazio como sempre.
+         */
+        const resumed = <?= json_encode($resumed ?? null, JSON_UNESCAPED_UNICODE) ?>;
+
         let initialDataId = null;
+        // Devolvido pelo servidor quando a adesão nasce, e reenviado a cada
+        // gravação seguinte: é ele que autoriza escrever *nesta* adesão. Era
+        // gerado aqui e guardado no localStorage, mas initialDataId volta a
+        // null a cada recarregamento, então o mesmo valor acabava servindo a
+        // várias adesões e o link de pagamento ficava ambíguo.
+        let storageUuid = null;
+        /* ---------------------------------------------------------------
+         * Passos do formulário
+         *
+         * Esta lista é a ordem canônica. Cada passo se identifica pelo seu
+         * `id` — o mesmo do <div> correspondente e o mesmo que
+         * RegistrationsController::save() espera — e nunca por posição: a
+         * navegação opera sobre os passos *visíveis*, calculados na hora, e
+         * um passo condicional faz os índices deixarem de ser contíguos.
+         *
+         * Ganchos, todos opcionais:
+         *   visible()        o passo entra na navegação? (padrão: sim)
+         *   onEnter()        roda ao exibir o passo
+         *   beforeValidate() roda antes da validação do HTML; false aborta
+         *                    sem marcar o formulário
+         *   validate()       soma-se à validação do HTML; false marca o
+         *                    formulário como was-validated
+         *   afterValidate()  roda depois do portão de validação; false
+         *                    aborta (para quem já mostra o próprio aviso)
+         * ------------------------------------------------------------- */
         const registerPages = [{
                 title: 'Dados iniciais',
                 id: 'initialData',
+                beforeValidate: (btnPrimary) => validateInitialDataStep(btnPrimary),
             },
             {
                 title: 'Dados pessoais',
                 id: 'personalData',
+                onEnter: () => {
+                    const name = $('#registerModal #initialData input[name="initialData[name]"]').val();
+
+                    $('#registerModal #personalData input[name="personalData[name]"]').val(name);
+                },
             },
             {
                 title: 'Documentos',
                 id: 'documents',
             },
             {
-                title: 'Plano',
-                id: 'plan',
-            },
-            {
                 title: 'Beneficiário(s)',
                 id: 'dependents',
+                afterValidate: () => {
+                    if (checkDependents())
+                        return true;
+
+                    alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
+
+                    return false;
+                },
             },
             {
                 title: 'Endereço',
@@ -1865,14 +1883,83 @@ function createSecureCard($data, $type)
             {
                 title: 'Outras informações',
                 id: 'otherInformation',
-            },
-            {
-                title: 'Declarações do proponente',
-                id: 'proponentStatement',
+                validate: () => {
+                    if ($('#mainOccupationCode').val())
+                        return true;
+
+                    $('#mainOccupationSearch').addClass('is-invalid');
+
+                    return false;
+                },
             },
             {
                 title: 'Regime de previdência',
                 id: 'pensionScheme',
+                onEnter: () => {
+                    const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]:checked').val();
+                    const anyPensionSchema = $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]').is(':checked');
+
+                    if (planFor === 'Dependente') {
+                        $('#registerModal #pensionSchemeAnyPensionSchema').hide();
+
+                        pensionSchema(false);
+
+                        return;
+                    }
+
+                    $('#registerModal #pensionSchemeType').slideUp();
+
+                    if (!anyPensionSchema) {
+                        $('#registerModal #pensionSchemeAnyPensionSchema input[type="checkbox"]').prop('checked', false);
+                        $('#registerModal #pensionSchemeAnyPensionSchema').show();
+
+                        return;
+                    }
+
+                    $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]:checked').click();
+                },
+                validate: () => {
+                    if (!$('#pensionSchemeType').is(':visible'))
+                        return true;
+
+                    const checked = $('#pensionSchemeType input[name="pensionScheme[pensionSchemeType][]"]:checked').length > 0;
+
+                    $('#pensionSchemeTypeComplementar').toggleClass('is-invalid', !checked);
+
+                    return checked;
+                },
+            },
+            {
+                title: 'Plano',
+                id: 'plan',
+                onEnter: () => {
+                    const age = calculateAge($('#registerModal input[name="personalData[birthDate]"]').val());
+                    const benefitEntry = age <= 55 ? 65 : age + 10;
+
+                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
+
+                    // Uma proposta retomada pode chegar com risco já removido
+                    // pelo admin: as linhas correspondentes não podem aparecer.
+                    updateRiskVisibility();
+                    applyPlanLock();
+
+                    // Só faz sentido oferecer "Atualizar" quando existe uma
+                    // adesão gravada de onde puxar.
+                    document.getElementById('btnRefreshPlan')
+                        .classList.toggle('d-none', initialDataId === null);
+
+                    // Busca automática ao abrir o passo: o caso comum é o
+                    // proponente ao telefone enquanto o admin mexe, e ele não
+                    // tem por que saber que existe um botão.
+                    refreshPlanFromServer();
+                },
+            },
+            {
+                title: 'Declarações do proponente',
+                id: 'proponentStatement',
+                // Sem nenhum risco contratado, a Declaração Pessoal de Saúde
+                // não tem o que subscrever e o passo sai da navegação.
+                visible: () => !shouldSkipHealthStep(),
             },
             {
                 title: 'Dados para pagamento',
@@ -1883,7 +1970,15 @@ function createSecureCard($data, $type)
                 id: 'conclusion',
             },
         ];
-        let registerPageIndex = 0
+
+        let currentStepId = registerPages[0].id;
+
+        const visibleSteps = () => registerPages.filter((step) => !step.visible || step.visible());
+
+        const currentStep = () => registerPages.find((step) => step.id === currentStepId);
+
+        const currentPosition = () => visibleSteps().findIndex((step) => step.id === currentStepId);
+
         let registerModal;
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1891,25 +1986,110 @@ function createSecureCard($data, $type)
             const registerModalEl = document.getElementById('registerModal');
             registerModal = new bootstrap.Modal(registerModalEl);
 
-            if (!draftUUID) {
-                draftUUID = self.crypto.randomUUID ? self.crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
-                localStorage.setItem(localStorageKey, draftUUID);
-                console.log('Novo UUID gerado:', draftUUID);
-            }
-
             openModalBtn.addEventListener('click', function() {
-                registerPageIndex = 0;
+                currentStepId = registerPages[0].id;
 
-                updatePage(registerPageIndex);
+                updatePage();
 
                 registerModal.show();
             });
 
             initPromotionalCode();
             initBrokerCode();
+            initResumedProposal();
 
             simulationChart();
         });
+
+        /**
+         * Preenche um campo pelo atributo name, disparando os mesmos eventos
+         * que uma pessoa dispararia.
+         *
+         * Disparar é obrigatório, não cosmético: metade destes campos tem
+         * handler que mostra ou esconde a seção dependente (showHide,
+         * planForHandle, pensionSchema). Preencher sem disparar deixaria
+         * valores certos dentro de blocos escondidos, e blocos abertos vazios.
+         */
+        const fillField = (name, value) => {
+            const $nodes = $(`#registerModal [name="${name}"]`);
+
+            if ($nodes.length === 0 || value === null || value === undefined) return;
+
+            const first = $nodes[0];
+
+            if (first.type === 'radio' || first.type === 'checkbox') {
+                const wanted = (Array.isArray(value) ? value : [value]).map(String);
+
+                $nodes.each(function() {
+                    const shouldCheck = wanted.includes(this.value);
+
+                    $(this).prop('checked', shouldCheck);
+
+                    // Só o que ficou marcado dispara: um 'click' no que ficou
+                    // desmarcado reabriria a seção que o handler acabou de
+                    // fechar.
+                    if (shouldCheck) $(this).trigger('click').trigger('change');
+                });
+
+                return;
+            }
+
+            $nodes.val(value);
+
+            // 'change' só em select. Em campo de texto ele dispara busca
+            // remota -- o CEP chama getCEP(), cuja resposta reescreve
+            // endereço, bairro e cidade, apagando o que acabou de ser
+            // preenchido. Quem precisa do evento para mostrar ou esconder
+            // seção é rádio e checkbox, tratados acima.
+            if (first.tagName === 'SELECT') $nodes.trigger('change');
+        };
+
+        const fillSection = (section, values) => {
+            if (!values) return;
+
+            Object.entries(values).forEach(([field, value]) => fillField(`${section}[${field}]`, value));
+        };
+
+        /**
+         * Reabre a proposta preenchida, na etapa que o admin escolheu.
+         */
+        const initResumedProposal = () => {
+            if (!resumed) return;
+
+            initialDataId = resumed.initialDataId;
+            storageUuid = resumed.storageUuid;
+            planLocked = resumed.planLocked;
+
+            Object.entries(resumed.form).forEach(([section, values]) => {
+                if (section === 'dependents') {
+                    // Beneficiário não existe no HTML até alguém criar: a
+                    // linha precisa ser acrescentada antes de ter o que
+                    // preencher.
+                    (values || []).forEach((dependent, index) => {
+                        addDependent();
+                        fillSection(`dependents[${index}]`, dependent);
+                    });
+
+                    return;
+                }
+
+                fillSection(section, values);
+            });
+
+            // A ocupação tem um campo visível de busca além dos dois ocultos
+            // que de fato viajam; sem ele a pessoa vê o campo em branco.
+            const occupation = resumed.form.otherInformations || {};
+
+            if (occupation.mainOccupationDescription)
+                $('#mainOccupationSearch').val(occupation.mainOccupationDescription);
+
+            const target = registerPages.find((step) => step.id === resumed.step);
+
+            currentStepId = target && (!target.visible || target.visible()) ? target.id : registerPages[0].id;
+
+            updatePage();
+            registerModal.show();
+        };
 
         const planForHandle = (planFor) => {
             if (planFor.value === 'Dependente') {
@@ -1928,111 +2108,43 @@ function createSecureCard($data, $type)
             $('#registerModal #divLegalRepresentative input').removeAttr('required');
         }
 
-        const updateButtonPreviousNext = (pageIndex) => {
-            jQuery('#fakerFillBtn').toggle(isDebug && pageIndex !== 10);
+        const updateButtonPreviousNext = () => {
+            const position = currentPosition();
+            const isFirst = position === 0;
+            const isLast = position === visibleSteps().length - 1;
 
-            switch (pageIndex) {
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                case 8:
-                case 9:
-                    jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior').show();
-                    jQuery('#registerModal .modal-footer .btn-primary').text('Próximo');
-                    break;
-                case 10:
-                    jQuery('#registerModal .modal-footer .btn-secondary').hide();
-                    jQuery('#registerModal .modal-footer .btn-primary').text('Fechar');
-                    break;
-                default:
-                    jQuery('#registerModal .modal-footer .btn-secondary').text('Cancelar').show();
-                    jQuery('#registerModal .modal-footer .btn-primary').text('Concordo');
-                    break;
+            jQuery('#fakerFillBtn').toggle(isDebug && !isLast);
+
+            if (isLast) {
+                jQuery('#registerModal .modal-footer .btn-secondary').hide();
+                jQuery('#registerModal .modal-footer .btn-primary').text('Fechar');
+
+                return;
             }
+
+            if (isFirst) {
+                jQuery('#registerModal .modal-footer .btn-secondary').text('Cancelar').show();
+                jQuery('#registerModal .modal-footer .btn-primary').text('Concordo');
+
+                return;
+            }
+
+            jQuery('#registerModal .modal-footer .btn-secondary').text('Anterior').show();
+            jQuery('#registerModal .modal-footer .btn-primary').text('Próximo');
         }
 
-        const updatePage = (pageIndex) => {
-            $('#registerModal #initialData').hide();
-            $('#registerModal #personalData').hide();
-            $('#registerModal #documents').hide();
-            $('#registerModal #plan').hide();
-            $('#registerModal #dependents').hide();
-            $('#registerModal #addressData').hide();
-            $('#registerModal #otherInformation').hide();
-            $('#registerModal #proponentStatement').hide();
-            $('#registerModal #pensionScheme').hide();
-            $('#registerModal #paymentDetail').hide();
-            $('#registerModal #conclusion').hide();
+        const updatePage = () => {
+            registerPages.forEach((step) => $(`#registerModal #${step.id}`).hide());
 
-            switch (pageIndex) {
-                case 0:
-                    $('#registerModal #initialData').fadeIn().show();
-                    break;
-                case 1:
-                    const name = $('#registerModal #initialData input[name="initialData[name]"]').val();
+            const step = currentStep();
 
-                    $('#registerModal #personalData input[name="personalData[name]"]').val(name);
+            if (step.onEnter)
+                step.onEnter();
 
-                    $('#registerModal #personalData').fadeIn().show();
-                    break;
-                case 2:
-                    $('#registerModal #documents').fadeIn().show();
-                    break;
-                case 3:
-                    const age = calculateAge($('#registerModal input[name="personalData[birthDate]"]').val());
-                    const benefitEntry = age <= 55 ? 65 : age + 10;
+            $(`#registerModal #${step.id}`).fadeIn().show();
 
-                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(benefitEntry);
-
-                    $('#registerModal #plan').fadeIn().show();
-                    break;
-                case 4:
-                    $('#registerModal #dependents').fadeIn().show();
-                    break;
-                case 5:
-                    $('#registerModal #addressData').fadeIn().show();
-                    break;
-                case 6:
-                    $('#registerModal #otherInformation').fadeIn().show();
-                    break;
-                case 7:
-                    $('#registerModal #proponentStatement').fadeIn().show();
-                    break;
-                case 8:
-                    const planFor = $('#registerModal #personalData input[name="personalData[planFor]"]:checked').val();
-                    const anyPensionSchema = $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]').is(':checked');
-
-                    if (planFor === 'Dependente') {
-                        $('#registerModal #pensionSchemeAnyPensionSchema').hide();
-
-                        pensionSchema(false);
-                    } else {
-                        $('#registerModal #pensionSchemeType').slideUp();
-
-                        if (!anyPensionSchema) {
-                            $('#registerModal #pensionSchemeAnyPensionSchema input[type="checkbox"]').prop('checked', false);
-                            $('#registerModal #pensionSchemeAnyPensionSchema').show();
-                        } else {
-                            $('#registerModal #pensionScheme input[name="pensionScheme[anyPensionSchema]"]:checked').click();
-                        }
-                    }
-
-                    $('#registerModal #pensionScheme').fadeIn().show();
-                    break;
-                case 9:
-                    $('#registerModal #paymentDetail').fadeIn().show();
-                    break;
-                case 10:
-                    $('#registerModal #conclusion').fadeIn().show();
-                    break;
-            }
-
-            $('#registerModal .modal-body h4').html(registerPages[registerPageIndex].title);
-            updateButtonPreviousNext(registerPageIndex);
+            $('#registerModal .modal-body h4').html(step.title);
+            updateButtonPreviousNext();
         }
 
         /* ---------------------------------------------------------------
@@ -2341,247 +2453,143 @@ function createSecureCard($data, $type)
         };
 
         /* ---------------------------------------------------------------
-         * Corretor e remoção de riscos
+         * Riscos contratados
          *
-         * Um corretor validado libera os toggles de remoção de risco. O
-         * servidor revalida o código a cada chamada de recálculo e na
-         * gravação final — os valores aqui são só conveniência de UI.
+         * Quem decide é o servidor, e só o admin muda: o formulário público
+         * não tem mais como remover risco. Estas variáveis nascem do que a
+         * página recebeu e se realinham a cada recálculo, que devolve o que o
+         * servidor de fato aplicou.
          * ------------------------------------------------------------- */
-        const brokerValidateUrl = '<?= $this->Url->build(['controller' => 'Brokers', 'action' => 'validate', 'prefix' => false]) ?>';
-
-        let brokerState = { status: 'empty' };
-        let brokerDebounceTimer = null;
-        let brokerAbortController = null;
-
-        const brokerEls = () => ({
-            input: document.getElementById('brokerCode'),
-            spinner: document.getElementById('brokerCodeSpinner'),
-            remove: document.getElementById('brokerCodeRemove'),
-            feedback: document.getElementById('brokerCodeFeedback'),
-            riskGroup: document.getElementById('riskRemovalGroup'),
-        });
+        let hasSurvivorsPension = <?= $includeSurvivorsPension ? 'true' : 'false' ?>;
+        let hasDisabilityRetirement = <?= $includeDisabilityRetirement ? 'true' : 'false' ?>;
 
         /**
-         * Mostra/esconde as linhas de contribuição de cada risco removido no
-         * próprio passo "Plano", e recalcula se a etapa de saúde deve
-         * aparecer na navegação (ver shouldSkipHealthStep()).
+         * Plano com valor ajustado à mão pelo admin.
+         *
+         * Nasce falso: uma proposta nova é sempre fórmula pura, e só uma
+         * proposta retomada chega ajustada. Enquanto vale, o investimento
+         * mensal e o "Recalcular" ficam bloqueados -- um clique rodaria a
+         * fórmula de novo e apagaria, em silêncio, o que foi negociado por
+         * telefone. A data de nascimento também trava: os valores foram
+         * calculados para aquela idade, e a procedure escolhe custo unitário e
+         * teto por ela, então mudá-la tornaria o capital atuarialmente
+         * impossível. O servidor recusa de todo jeito (ver
+         * RegistrationsController::save); isto é a tela contando o porquê.
          */
+        let planLocked = false;
+
+        const applyPlanLock = () => {
+            document.getElementById('planLockedNotice').classList.toggle('d-none', !planLocked);
+            document.getElementById('planMonthlyInvestment').disabled = planLocked;
+            document.getElementById('btnRecalculatePlan').disabled = planLocked;
+
+            const birthDate = document.querySelector('#registerModal input[name="personalData[birthDate]"]');
+
+            if (birthDate)
+                birthDate.readOnly = planLocked;
+        };
+
         const updateRiskVisibility = () => {
-            const survivorsRemoved = document.getElementById('removeSurvivorsPension').checked;
-            const disabilityRemoved = document.getElementById('removeDisabilityRetirement').checked;
-
-            document.getElementById('survivorsPensionPlanRow').classList.toggle('d-none', survivorsRemoved);
-            document.getElementById('disabilityRetirementPlanRow').classList.toggle('d-none', disabilityRemoved);
+            document.getElementById('survivorsPensionPlanRow').classList.toggle('d-none', !hasSurvivorsPension);
+            document.getElementById('disabilityRetirementPlanRow').classList.toggle('d-none', !hasDisabilityRetirement);
         };
 
-        const shouldSkipHealthStep = () => {
-            if (brokerState.status !== 'valid') return false;
+        /**
+         * Sem nenhum risco contratado, a Declaração Pessoal de Saúde não tem o
+         * que subscrever. Só com os dois removidos: as perguntas subscrevem
+         * morte e invalidez, e esconder a declaração com um risco vivo
+         * deixaria exposição não subscrita num contrato assinado.
+         */
+        const shouldSkipHealthStep = () => !hasSurvivorsPension && !hasDisabilityRetirement;
 
-            return document.getElementById('removeSurvivorsPension').checked
-                && document.getElementById('removeDisabilityRetirement').checked;
-        };
-
-        const setBrokerState = (status, data = {}) => {
-            brokerState = { status };
-
-            const { input, spinner, remove, feedback, riskGroup } = brokerEls();
-
-            input.classList.remove('is-valid', 'is-invalid', 'border-warning');
-            spinner.classList.add('d-none');
-            remove.classList.add('d-none');
-            feedback.className = 'small mt-1';
-            feedback.textContent = '';
-
-            if (status === 'checking') {
-                spinner.classList.remove('d-none');
-            } else if (status === 'valid') {
-                input.classList.add('is-valid');
-                remove.classList.remove('d-none');
-                feedback.classList.add('text-success');
-                feedback.textContent = '✓ ' + data.name;
-                riskGroup.classList.remove('d-none');
-            } else if (status === 'invalid') {
-                input.classList.add('is-invalid');
-                feedback.classList.add('text-danger');
-                feedback.textContent = '✗ ' + (data.message || 'Código de corretor não encontrado.');
-            } else if (status === 'error') {
-                input.classList.add('border-warning');
-                feedback.classList.add('text-warning-emphasis');
-                feedback.innerHTML =
-                    'Não foi possível validar o código agora. ' +
-                    '<button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="brokerCodeRetry">Tentar novamente</button>.';
-
-                document.getElementById('brokerCodeRetry')
-                    .addEventListener('click', () => lookupBrokerCode(promoNormalize(input.value)));
-            }
-
-            // Sem corretor válido, os dois riscos sempre existem: some o
-            // grupo de toggles, desmarca ambos e recalcula para restaurá-los.
-            if (status !== 'valid') {
-                riskGroup.classList.add('d-none');
-
-                const survivors = document.getElementById('removeSurvivorsPension');
-                const disability = document.getElementById('removeDisabilityRetirement');
-                const hadRemoval = survivors.checked || disability.checked;
-
-                survivors.checked = false;
-                disability.checked = false;
-                updateRiskVisibility();
-
-                if (hadRemoval) recalculatePlan();
-            }
-        };
-
-        const clearBrokerCode = () => {
-            const { input } = brokerEls();
-
-            if (brokerAbortController) brokerAbortController.abort();
-            clearTimeout(brokerDebounceTimer);
-
-            input.value = '';
-            setBrokerState('empty');
-            input.focus();
-        };
-
-        const lookupBrokerCode = async (code) => {
-            if (!code || code.length < promoMinLength) {
-                setBrokerState(code ? 'invalid' : 'empty', {
-                    message: 'O código deve ter ao menos ' + promoMinLength + ' caracteres.'
-                });
-
-                return;
-            }
-
-            if (brokerAbortController) brokerAbortController.abort();
-            brokerAbortController = new AbortController();
-
-            setBrokerState('checking');
-
-            try {
-                const response = await fetch(brokerValidateUrl + '?code=' + encodeURIComponent(code), {
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    signal: brokerAbortController.signal,
-                });
-
-                const result = await response.json();
-
-                setBrokerState(result.valid ? 'valid' : 'invalid', result);
-            } catch (error) {
-                if (error.name === 'AbortError') return;
-
-                setBrokerState('error');
-            }
-        };
-
+        /**
+         * Link de divulgação do corretor: ?broker=CODIGO segue atribuindo a
+         * adesão, agora sem campo visível e sem validação em tempo real -- o
+         * servidor revalida o código ao gravar, que sempre foi a única
+         * garantia de verdade.
+         */
         const initBrokerCode = () => {
-            const { input, remove } = brokerEls();
-
-            input.addEventListener('input', () => {
-                const normalized = promoNormalize(input.value);
-
-                if (input.value !== normalized) {
-                    const position = input.selectionStart;
-                    input.value = normalized;
-                    input.setSelectionRange(position, position);
-                }
-
-                clearTimeout(brokerDebounceTimer);
-
-                if (normalized === '') {
-                    if (brokerAbortController) brokerAbortController.abort();
-                    setBrokerState('empty');
-
-                    return;
-                }
-
-                brokerDebounceTimer = setTimeout(() => lookupBrokerCode(normalized), promoDebounceMs);
-            });
-
-            input.addEventListener('blur', () => {
-                const normalized = promoNormalize(input.value);
-
-                if (normalized === '' || brokerState.status === 'valid' || brokerState.status === 'checking') return;
-
-                clearTimeout(brokerDebounceTimer);
-                lookupBrokerCode(normalized);
-            });
-
-            remove.addEventListener('click', clearBrokerCode);
-
-            // Link de divulgação do corretor: ?broker=CODIGO chega preenchido e validado.
             const fromUrl = promoNormalize(new URLSearchParams(window.location.search).get('broker'));
 
-            if (fromUrl) {
-                input.value = fromUrl;
-                lookupBrokerCode(fromUrl);
+            if (fromUrl)
+                document.getElementById('brokerCode').value = fromUrl;
+        };
+
+        /**
+         * Gancho beforeValidate do passo "Dados iniciais": um código
+         * promocional preenchido precisa estar resolvido antes de avançar.
+         * Campo vazio segue normalmente (é opcional), a menos que a pessoa
+         * tenha afirmado ter vínculo associativo.
+         */
+        const validateInitialDataStep = async (btnPrimary) => {
+            if (promoState.status === 'checking') {
+                // Aguarda a consulta em andamento terminar e reavalia.
+                // Um teto evita travar o botão para sempre caso a
+                // requisição fique pendurada sem nunca resolver.
+                btnPrimary.disabled = true;
+
+                await new Promise((resolve) => {
+                    let elapsed = 0;
+                    const poll = setInterval(() => {
+                        elapsed += 100;
+
+                        if (promoState.status !== 'checking') {
+                            clearInterval(poll);
+                            resolve();
+                        } else if (elapsed >= 15000) {
+                            clearInterval(poll);
+                            setPromoState('error');
+                            resolve();
+                        }
+                    }, 100);
+                });
+
+                btnPrimary.disabled = false;
             }
+
+            if (promoState.status === 'invalid' || promoState.status === 'error') {
+                document.getElementById('promotionalCode').focus();
+
+                return false;
+            }
+
+            // Vínculo associativo torna o código obrigatório e exige que
+            // o vínculo esteja selecionado.
+            if (isAssociationYes()) {
+                if (promoState.status !== 'valid') {
+                    document.getElementById('promotionalCode').focus();
+
+                    return false;
+                }
+
+                const { select } = associationEls();
+
+                if (!select.value) {
+                    select.focus();
+
+                    return false;
+                }
+            }
+
+            return true;
         };
 
         const nextPage = async () => {
             const btnPrimary = document.querySelector('#registerModal .modal-footer .btn-primary');
+            const step = currentStep();
 
-            if (registerPageIndex === registerPages.length - 1) {
+            if (currentPosition() === visibleSteps().length - 1) {
                 btnPrimary.disabled = true;
                 btnPrimary.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
                 window.location.reload();
                 return;
             }
 
-            // Etapa 1: um código promocional preenchido precisa estar resolvido
-            // antes de avançar. Campo vazio segue normalmente (é opcional).
-            if (registerPageIndex === 0) {
-                if (promoState.status === 'checking') {
-                    // Aguarda a consulta em andamento terminar e reavalia.
-                    // Um teto evita travar o botão para sempre caso a
-                    // requisição fique pendurada sem nunca resolver.
-                    btnPrimary.disabled = true;
-
-                    await new Promise((resolve) => {
-                        let elapsed = 0;
-                        const poll = setInterval(() => {
-                            elapsed += 100;
-
-                            if (promoState.status !== 'checking') {
-                                clearInterval(poll);
-                                resolve();
-                            } else if (elapsed >= 15000) {
-                                clearInterval(poll);
-                                setPromoState('error');
-                                resolve();
-                            }
-                        }, 100);
-                    });
-
-                    btnPrimary.disabled = false;
-                }
-
-                if (promoState.status === 'invalid' || promoState.status === 'error') {
-                    document.getElementById('promotionalCode').focus();
-
-                    return;
-                }
-
-                // Vínculo associativo torna o código obrigatório e exige que
-                // o vínculo esteja selecionado.
-                if (isAssociationYes()) {
-                    if (promoState.status !== 'valid') {
-                        document.getElementById('promotionalCode').focus();
-
-                        return;
-                    }
-
-                    const { select } = associationEls();
-
-                    if (!select.value) {
-                        select.focus();
-
-                        return;
-                    }
-                }
-            }
+            if (step.beforeValidate && !(await step.beforeValidate(btnPrimary)))
+                return;
 
             let isValid = true;
-            const form = document.querySelectorAll(`#${registerPages[registerPageIndex].id} input, #${registerPages[registerPageIndex].id} select`);
+            const form = document.querySelectorAll(`#${step.id} input, #${step.id} select`);
 
             form.forEach((input) => {
                 if (!input.checkValidity())
@@ -2606,44 +2614,23 @@ function createSecureCard($data, $type)
                 }
             })
 
-            if (registerPageIndex === 6) {
-                const occupationCode = $('#mainOccupationCode').val();
-
-                if (!occupationCode) {
-                    $('#mainOccupationSearch').addClass('is-invalid');
-                    isValid = false;
-                }
-            }
-
-            if (registerPageIndex === 8 && $('#pensionSchemeType').is(':visible')) {
-                const pensionSchemeTypeChecked = $('#pensionSchemeType input[name="pensionScheme[pensionSchemeType][]"]:checked').length > 0;
-
-                if (!pensionSchemeTypeChecked) {
-                    $('#pensionSchemeTypeComplementar').addClass('is-invalid');
-                    isValid = false;
-                } else {
-                    $('#pensionSchemeTypeComplementar').removeClass('is-invalid');
-                }
-            }
+            if (step.validate && !step.validate())
+                isValid = false;
 
             if (!isValid) {
-                $(`#registerModalForm #${registerPages[registerPageIndex].id}`)[0].classList.add('was-validated')
+                $(`#registerModalForm #${step.id}`)[0].classList.add('was-validated')
 
                 return;
             }
 
-            if (registerPageIndex === 4)
-                if (!checkDependents()) {
-                    alert('A porcentagem de participação total é diferente de 100%, favor verificar.');
-
-                    return;
-                }
+            if (step.afterValidate && !step.afterValidate())
+                return;
 
             btnPrimary.disabled = true;
             btnPrimary.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
 
             try {
-                const response = await saveForm(registerPages[registerPageIndex].id);
+                const response = await saveForm(step.id);
 
                 if (response.redirectUrl) {
                     window.location.href = response.redirectUrl;
@@ -2651,35 +2638,43 @@ function createSecureCard($data, $type)
                     return;
                 }
 
-                registerPageIndex += 1;
+                // Os passos visíveis são recalculados *depois* de gravar: a
+                // resposta do servidor pode mudar quais riscos a adesão tem,
+                // e com isso fazer a etapa de saúde aparecer ou sair.
+                goToAdjacentStep(1);
 
-                // Sem nenhum risco contratado (corretor removeu os dois), a
-                // etapa de declarações de saúde não faz sentido e é pulada.
-                if (registerPageIndex === 7 && shouldSkipHealthStep()) {
-                    registerPageIndex += 1;
-                }
-
-                updatePage(registerPageIndex)
+                updatePage()
             } catch (error) {
                 alert(error?.message || 'Não foi possível avançar. Tente novamente em instantes.');
             } finally {
                 btnPrimary.disabled = false;
-                updateButtonPreviousNext(registerPageIndex);
+                updateButtonPreviousNext();
             }
         }
 
+        /**
+         * Move o passo corrente `offset` posições na lista de passos
+         * visíveis. Um passo invisível simplesmente não está na lista, então
+         * não existe "pular": a aritmética já o ignora.
+         */
+        const goToAdjacentStep = (offset) => {
+            const steps = visibleSteps();
+            const target = steps[steps.findIndex((step) => step.id === currentStepId) + offset];
+
+            if (target)
+                currentStepId = target.id;
+        };
+
         const previousPage = () => {
-            if (registerPageIndex === 0)
+            if (currentPosition() === 0) {
                 registerModal.hide();
 
-            if (registerPageIndex !== 0)
-                registerPageIndex -= 1;
-
-            if (registerPageIndex === 7 && shouldSkipHealthStep()) {
-                registerPageIndex -= 1;
+                return;
             }
 
-            updatePage(registerPageIndex)
+            goToAdjacentStep(-1);
+
+            updatePage()
         }
 
         const saveForm = async (id) => {
@@ -2693,12 +2688,16 @@ function createSecureCard($data, $type)
                     headers: {
                         'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
                     },
-                    data: formElements.serialize() + `&storageUuid=${draftUUID}${initialDataId !== null ? `&initialDataId=${initialDataId}` : ''}`,
+                    data: formElements.serialize()
+                        + (storageUuid !== null ? `&storageUuid=${encodeURIComponent(storageUuid)}` : '')
+                        + (initialDataId !== null ? `&initialDataId=${initialDataId}` : ''),
                     dataType: 'json',
                     beforeSend: () => {},
                     success: (response) => {
-                        if (response?.success === true && response?.initialDataId)
+                        if (response?.success === true && response?.initialDataId) {
                             initialDataId = response.initialDataId;
+                            storageUuid = response.storageUuid;
+                        }
 
                         if (response?.success === false) {
                             reject(response);
@@ -2902,6 +2901,71 @@ function createSecureCard($data, $type)
             })
         }
 
+        /**
+         * Traz o plano como a Sul Previdência gravou, sem recalcular.
+         *
+         * Serve ao caso do proponente ao telefone com o atendimento: o admin
+         * mexe na adesão e o valor novo aparece na tela aberta, sem precisar
+         * de link nem de recarregar a página. "Recalcular" faria o oposto --
+         * rodaria a fórmula e apagaria o que acabou de ser combinado.
+         */
+        const refreshPlanFromServer = () => {
+            if (initialDataId === null || storageUuid === null) return;
+
+            const button = document.getElementById('btnRefreshPlan');
+
+            button.disabled = true;
+
+            $.ajax({
+                type: 'GET',
+                url: `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'planState']) ?>`,
+                data: { initialDataId, storageUuid },
+                dataType: 'json',
+                success: (response) => {
+                    if (!response.success) return;
+
+                    applyPlanResponse(response);
+                },
+                complete: () => {
+                    button.disabled = false;
+                },
+            });
+        };
+
+        /**
+         * Aplica na tela um plano vindo do servidor, seja do recálculo, seja
+         * do que está gravado. Os dois respondem no mesmo formato de
+         * propósito: a tela não precisa saber qual dos dois falou.
+         */
+        const applyPlanResponse = (response) => {
+            const formatMoney = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            $('#registerModal input[name="plans[benefitEntryAge]"]').val(response.benefitEntryAge);
+            $('#registerModal input[name="plans[monthly_retirement_contribution]"]').val(formatMoney(response.monthlyRetirementContribution));
+            $('#registerModal input[name="plans[monthly_survivors_pension_contribution]"]').val(formatMoney(response.monthlySurvivorsPensionContribution));
+            $('#registerModal input[name="plans[survivors_pension_insured_capital]"]').val(formatMoney(response.survivorsPensionInsuredCapital));
+            $('#registerModal input[name="plans[monthly_disability_retirement_contribution]"]').val(formatMoney(response.monthlyDisabilityRetirementContribution));
+            $('#registerModal input[name="plans[disability_retirement_insured_capital]"]').val(formatMoney(response.disabilityRetirementInsuredCapital));
+            $('#paymentTotalContribution').val(formatMoney(response.totalMonthlyContribution));
+            document.getElementById('planTotalMonthlyContribution').textContent = response.totalMonthlyContribution.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+
+            if (response.hasSurvivorsPension !== undefined)
+                hasSurvivorsPension = response.hasSurvivorsPension;
+
+            if (response.hasDisabilityRetirement !== undefined)
+                hasDisabilityRetirement = response.hasDisabilityRetirement;
+
+            if (response.planLocked !== undefined) {
+                planLocked = response.planLocked;
+                applyPlanLock();
+            }
+
+            updateRiskVisibility();
+        };
+
         const recalculatePlan = () => {
             const birthDate = $('#registerModal input[name="personalData[birthDate]"]').val();
             const investmentInput = document.getElementById('planMonthlyInvestment');
@@ -2918,9 +2982,10 @@ function createSecureCard($data, $type)
                 data: {
                     date: birthDate,
                     value: value,
-                    brokerCode: document.getElementById('brokerCode').value,
-                    removeSurvivorsPension: document.getElementById('removeSurvivorsPension').checked ? '1' : '',
-                    removeDisabilityRetirement: document.getElementById('removeDisabilityRetirement').checked ? '1' : '',
+                    // Identifica a adesão para o servidor saber quais riscos
+                    // ela tem; sem isso é simulação nova, com os dois.
+                    initialDataId: initialDataId ?? '',
+                    storageUuid: storageUuid ?? '',
                 },
                 dataType: 'json',
                 success: (response) => {
@@ -2930,34 +2995,10 @@ function createSecureCard($data, $type)
                         return;
                     }
 
-                    const formatMoney = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-                    $('#registerModal input[name="plans[benefitEntryAge]"]').val(response.benefitEntryAge);
-                    $('#registerModal input[name="plans[monthly_retirement_contribution]"]').val(formatMoney(response.monthlyRetirementContribution));
-                    $('#registerModal input[name="plans[monthly_survivors_pension_contribution]"]').val(formatMoney(response.monthlySurvivorsPensionContribution));
-                    $('#registerModal input[name="plans[survivors_pension_insured_capital]"]').val(formatMoney(response.survivorsPensionInsuredCapital));
-                    $('#registerModal input[name="plans[monthly_disability_retirement_contribution]"]').val(formatMoney(response.monthlyDisabilityRetirementContribution));
-                    $('#registerModal input[name="plans[disability_retirement_insured_capital]"]').val(formatMoney(response.disabilityRetirementInsuredCapital));
-                    $('#paymentTotalContribution').val(formatMoney(response.totalMonthlyContribution));
-                    document.getElementById('planTotalMonthlyContribution').textContent = response.totalMonthlyContribution.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                    });
-
-                    // O servidor é quem decide, de fato, se cada risco entra
-                    // no cálculo (corretor revalidado a cada chamada). Se ele
-                    // discordar do que os checkboxes mostravam — por exemplo,
-                    // o corretor foi desativado entre uma chamada e outra —
-                    // a UI se realinha ao que veio na resposta.
-                    if (response.hasSurvivorsPension !== undefined) {
-                        document.getElementById('removeSurvivorsPension').checked = !response.hasSurvivorsPension;
-                    }
-
-                    if (response.hasDisabilityRetirement !== undefined) {
-                        document.getElementById('removeDisabilityRetirement').checked = !response.hasDisabilityRetirement;
-                    }
-
-                    updateRiskVisibility();
+                    // O servidor é quem decide quais riscos a adesão tem e se o
+                    // plano está travado: a tela se realinha ao que veio, que é
+                    // como ela fica sabendo de uma mudança feita no admin.
+                    applyPlanResponse(response);
                 },
                 error: () => {
                     errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';
@@ -3270,7 +3311,7 @@ function createSecureCard($data, $type)
             const RETIREMENT_AGE = 65;
             const RETIREMENT_ALLOCATION = 0.74;
             const dateBirth = $('.simulador-form-group input[name="dateBirth"]').val();
-            const contribution = parseFloat(<?= $_GET['value']; ?>);
+            const contribution = parseFloat(<?= h($simulationValue) ?>);
 
             if (!dateBirth || contribution <= 0) {
                 alert('Por favor, insira uma data de nascimento e uma contribuição mensal válidas.');

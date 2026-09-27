@@ -109,7 +109,10 @@ class ClicksignService
         if ($success)
             return [
                 'success' => true,
-                ...$responseJson
+                // DELETE bem-sucedido responde 204 sem corpo: getJson()
+                // devolve null, e o spread quebrava com TypeError mesmo a
+                // chamada tendo funcionado do lado da Clicksign.
+                ...($responseJson ?? []),
             ];
 
         throw new Exception($errorMessage);
@@ -399,6 +402,33 @@ class ClicksignService
     public function deleteFolder(string $key): array
     {
         return $this->_request('delete', "/folders/{$key}");
+    }
+
+    public function getWebhooks(array $payload = []): array
+    {
+        return $this->_request('get', "/webhooks", $payload);
+    }
+
+    /**
+     * @param array $attributes 'endpoint' (obrigatório), 'events' (array,
+     *     obrigatório), 'status' ('active'/'inactive', padrão inactive na API).
+     *     A resposta traz 'secret', gerado pela Clicksign -- única vez que ele
+     *     aparece.
+     */
+    public function createWebhook(array $attributes): array
+    {
+        $payload = [
+            'data' => [
+                'type' => 'webhooks',
+                'attributes' => $attributes,
+            ],
+        ];
+        return $this->_request('post', "/webhooks", $payload);
+    }
+
+    public function deleteWebhook(string $id): array
+    {
+        return $this->_request('delete', "/webhooks/{$id}");
     }
 
     public function createWhatsAppAcceptance(array $attributes): array

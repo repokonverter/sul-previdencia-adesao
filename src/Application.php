@@ -38,9 +38,13 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
     public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     {
         $csrf = new CsrfProtectionMiddleware(['httponly' => true]);
-        // O Sicoob chama o webhook sem cookie/sessão; CSRF não se aplica a essa rota.
+        // Sicoob e Clicksign chamam o webhook sem cookie/sessão; CSRF não se
+        // aplica a essas rotas -- o segredo que autentica é o token no path.
         $csrf->skipCheckCallback(function ($request) {
-            return str_starts_with($request->getUri()->getPath(), '/sicoob/webhook/');
+            $path = $request->getUri()->getPath();
+
+            return str_starts_with($path, '/sicoob/webhook/')
+                || str_starts_with($path, '/clicksign/webhook/');
         });
 
         $middlewareQueue

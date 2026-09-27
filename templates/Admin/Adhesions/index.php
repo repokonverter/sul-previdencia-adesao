@@ -6,7 +6,7 @@
  * @var iterable<\App\Model\Entity\Partner> $partners
  */
 
-function getAdhesionStage($adhesion)
+$getAdhesionStage = function ($adhesion)
 {
     if (!empty($adhesion->adhesion_other_information))
         return 'Outras Informações (Finalizado)';
@@ -36,9 +36,9 @@ function getAdhesionStage($adhesion)
         return 'Dados Pessoais';
 
     return 'Dados Iniciais';
-}
+};
 
-function getPromotionalCodeCell($adhesion)
+$getPromotionalCodeCell = function ($adhesion)
 {
     if (empty($adhesion->promotional_code))
         return '<span class="text-muted">&mdash;</span>';
@@ -52,17 +52,17 @@ function getPromotionalCodeCell($adhesion)
         $cell .= '<br><span class="text-muted small">' . h($partner) . '</span>';
 
     return $cell;
-}
+};
 
-function getBrokerCell($adhesion)
+$getBrokerCell = function ($adhesion)
 {
     if (empty($adhesion->broker_code))
         return '<span class="text-muted">&mdash;</span>';
 
     return '<code>' . h($adhesion->broker_code) . '</code><br><span class="text-muted small">' . h($adhesion->broker_name) . '</span>';
-}
+};
 
-function getPixStatusBadge($adhesion)
+$getPixStatusBadge = function ($adhesion)
 {
     if (empty($adhesion->adhesion_payment_detail))
         return '—';
@@ -76,16 +76,39 @@ function getPixStatusBadge($adhesion)
         return '<span class="badge bg-success">Pago</span>';
 
     return '<span class="badge bg-warning text-dark">Aguardando</span>';
-}
+};
+
+$getSignatureStatusBadge = function ($adhesion)
+{
+    $latest = $adhesion->clicksign_datas[0] ?? null;
+
+    if (!$latest)
+        return '—';
+
+    return match ($latest->status) {
+        'signed' => '<span class="badge bg-success">Assinado</span>',
+        'sent' => '<span class="badge bg-warning text-dark">Aguardando</span>',
+        'canceled' => '<span class="badge bg-secondary">Cancelado</span>',
+        'failed' => '<span class="badge bg-danger">Falhou</span>',
+        default => '<span class="badge bg-secondary">' . h($latest->status) . '</span>',
+    };
+};
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">Adesões</h2>
 
-    <?= $this->Html->link(
-        '<i class="bi bi-plus-circle me-1"></i> Nova Adesão',
-        ['action' => 'add'],
-        ['escape' => false, 'class' => 'btn btn-primary']
-    ) ?>
+    <div>
+        <?= $this->Html->link(
+            '<i class="bi bi-trash me-1"></i> Excluídas',
+            ['action' => 'deletions'],
+            ['escape' => false, 'class' => 'btn btn-outline-secondary me-2']
+        ) ?>
+        <?= $this->Html->link(
+            '<i class="bi bi-plus-circle me-1"></i> Nova Adesão',
+            ['action' => 'add'],
+            ['escape' => false, 'class' => 'btn btn-primary']
+        ) ?>
+    </div>
 </div>
 
 <div class="card mb-4 shadow-sm border-0">
@@ -163,6 +186,7 @@ function getPixStatusBadge($adhesion)
                     <th>Código</th>
                     <th>Corretor</th>
                     <th>Pix</th>
+                    <th>Assinatura</th>
                     <th>Data/hora</th>
                     <th class="text-end">Ações</th>
                 </tr>
@@ -173,10 +197,11 @@ function getPixStatusBadge($adhesion)
                         <td class="fw-semibold"><?= h($adhesion->name ?? $adhesion->adhesion_personal_data->name) ?></td>
                         <td><?= h($adhesion->phone ?? '—') ?></td>
                         <td><?= h($adhesion->email ?? '—') ?></td>
-                        <td><?= h(getAdhesionStage($adhesion)) ?></td>
-                        <td><?= getPromotionalCodeCell($adhesion) ?></td>
-                        <td><?= getBrokerCell($adhesion) ?></td>
-                        <td><?= getPixStatusBadge($adhesion) ?></td>
+                        <td><?= h($getAdhesionStage($adhesion)) ?></td>
+                        <td><?= $getPromotionalCodeCell($adhesion) ?></td>
+                        <td><?= $getBrokerCell($adhesion) ?></td>
+                        <td><?= $getPixStatusBadge($adhesion) ?></td>
+                        <td><?= $getSignatureStatusBadge($adhesion) ?></td>
                         <td><?= h($adhesion->created->format('d/m/Y H:i:s') ?? '—') ?></td>
                         <td class="text-end">
                             <?php

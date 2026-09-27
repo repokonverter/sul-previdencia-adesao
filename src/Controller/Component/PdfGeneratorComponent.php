@@ -22,6 +22,36 @@ class PdfGeneratorComponent extends Component
 
     public function generatePdfApplicationForm($id, $returnContent = false)
     {
+        $proposalNumber = $this->proposalNumber($id);
+        $html = $this->applicationFormHtml($id);
+
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        if ($returnContent)
+            return $dompdf->output();
+
+        return $dompdf->stream("proposta-plenoprev-$proposalNumber.pdf", [
+            'Attachment' => true
+        ]);
+    }
+
+    private function proposalNumber($id): string
+    {
+        return 'BFX-' . $id . '-' . date('m-Y');
+    }
+
+    /**
+     * O HTML da proposta, antes de virar PDF.
+     *
+     * Existe separado para que o conteúdo do documento possa ser verificado
+     * sem passar pelo dompdf: o que importa conferir é o que está escrito na
+     * proposta que alguém vai assinar, e isso é texto, não um binário.
+     */
+    public function applicationFormHtml($id): string
+    {
         $adhesion = $this->AdhesionInitialDatas->get(
             $id,
             contain: [
@@ -64,7 +94,7 @@ class PdfGeneratorComponent extends Component
         $birthDate = new DateTime($adhesion->adhesion_personal_data->birth_date->format('Y-m-d'));
         $today = new DateTime();
         $age = $today->diff($birthDate)->y;
-        $proposalNumber = 'BFX-' . $id . '-' . date('m-Y');
+        $proposalNumber = $this->proposalNumber($id);
         $controller = $this->getController();
         $controller->set(compact('adhesion', 'age', 'proposalNumber', 'fixedData'));
         $builder = $controller->viewBuilder();
@@ -76,17 +106,7 @@ class PdfGeneratorComponent extends Component
         if ($oldLayout)
             $builder->setLayout($oldLayout);
 
-        $dompdf = new Dompdf();
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        if ($returnContent)
-            return $dompdf->output();
-
-        return $dompdf->stream("proposta-plenoprev-$proposalNumber.pdf", [
-            'Attachment' => true
-        ]);
+        return $html;
     }
 
     public function generateRegistrationFormPdf($id, $returnContent = false)

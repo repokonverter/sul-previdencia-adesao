@@ -10,10 +10,9 @@ use Cake\Event\EventInterface;
 use Cake\I18n\Date;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
-class PromotionalCodesTable extends Table
+class PromotionalCodesTable extends AppTable
 {
     public function initialize(array $config): void
     {
@@ -22,8 +21,6 @@ class PromotionalCodesTable extends Table
         $this->setTable('promotional_codes');
         $this->setDisplayField('code');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
 
         // LEFT (padrão), não INNER: quando essa associação é encadeada a
         // partir de AdhesionInitialDatas.PromotionalCodes.Partners, um INNER

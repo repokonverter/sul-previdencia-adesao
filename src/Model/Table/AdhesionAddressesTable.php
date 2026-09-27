@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
-class AdhesionAddressesTable extends Table
+class AdhesionAddressesTable extends AppTable
 {
     public function initialize(array $config): void
     {
         parent::initialize($config);
         $this->setTable('adhesion_addresses');
-        $this->addBehavior('Timestamp');
         $this->belongsTo('AdhesionInitialDatas', [
             'foreignKey' => 'adhesion_initial_data_id',
             'joinType' => 'INNER',

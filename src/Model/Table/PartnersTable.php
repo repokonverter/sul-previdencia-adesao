@@ -7,11 +7,10 @@ namespace App\Model\Table;
 use App\Model\Entity\Partner;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 use Psr\Http\Message\UploadedFileInterface;
 
-class PartnersTable extends Table
+class PartnersTable extends AppTable
 {
     public const LOGO_MAX_BYTES = 1048576; // 1 MB
 
@@ -28,8 +27,6 @@ class PartnersTable extends Table
         $this->setTable('partners');
         $this->setDisplayField('name');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
 
         $this->hasMany('PromotionalCodes', [
             'foreignKey' => 'partner_id',

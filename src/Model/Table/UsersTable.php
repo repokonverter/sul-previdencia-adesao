@@ -6,7 +6,6 @@ namespace App\Model\Table;
 
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
-use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 /**
@@ -28,7 +27,7 @@ use Cake\Validation\Validator;
  *
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
-class UsersTable extends Table
+class UsersTable extends AppTable
 {
     /**
      * Initialize method
@@ -43,8 +42,6 @@ class UsersTable extends Table
         $this->setTable('users');
         $this->setDisplayField('email');
         $this->setPrimaryKey('id');
-
-        $this->addBehavior('Timestamp');
     }
 
     /**
@@ -88,5 +85,4 @@ class UsersTable extends Table
 
         return $rules;
     }
-
 }
