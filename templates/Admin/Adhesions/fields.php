@@ -1,14 +1,19 @@
+<div id="incompleteFieldsAlert" class="alert alert-warning d-none" role="alert">
+    <i class="bi bi-exclamation-triangle"></i>
+    <span id="incompleteFieldsAlertText"></span>
+</div>
+
 <ul class="nav nav-tabs mb-4" role="tablist">
-    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#initialData">Dados Iniciais</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#personalData">Dados Pessoais</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#documents">Documentos</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#plan">Plano</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dependents">Beneficiários</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#addressData">Endereço</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#otherInformation">Outras Informações</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#proponentStatement">Declarações do Proponente</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pensionScheme">Regime de Previdência</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento</a></li>
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#initialData">Dados Iniciais <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#personalData">Dados Pessoais <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#documents">Documentos <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#plan">Plano <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#dependents">Beneficiários <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#addressData">Endereço <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#otherInformation">Outras Informações <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#proponentStatement">Declarações do Proponente <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pensionScheme">Regime de Previdência <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento <span class="badge rounded-pill text-bg-danger d-none tab-missing-badge"></span></a></li>
 </ul>
 
 <div class="tab-content">
@@ -63,9 +68,8 @@
                 </div>
                 <div class="col-md-3 mb-3">
                     <?php
-                    $birthDate = $adhesion->adhesion_personal_data->birth_date
-                        ? $adhesion->adhesion_personal_data->birth_date->format('Y-m-d')
-                        : null;
+                    $birthDate = $adhesion->adhesion_personal_data?->birth_date
+                        ?->format('Y-m-d');
                     echo $this->Form->label('adhesion_personal_data.birth_date', 'Data de nasc.*', ['class' => 'form-label']);
                     echo $this->Form->input('adhesion_personal_data.birth_date', ['class' => 'form-control', 'type' => 'date', 'required' => true, 'value' => $birthDate, 'max' => '9999-12-31']) ?>
                 </div>
@@ -157,9 +161,8 @@
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <?php
-                    $issueDate = $adhesion->adhesion_document->issue_date
-                        ? $adhesion->adhesion_document->issue_date->format('Y-m-d')
-                        : null;
+                    $issueDate = $adhesion->adhesion_document?->issue_date
+                        ?->format('Y-m-d');
                     echo $this->Form->label('adhesion_document.issue_date', 'Data de expedição*', ['class' => 'form-label']);
                     echo $this->Form->input('adhesion_document.issue_date', [
                         'class' => 'form-control',
@@ -272,12 +275,12 @@
                     <?= $this->Form->control('adhesion_plan.benefit_entry_age', ['label' => 'Idade para entrada em benefício', 'class' => 'form-control', 'type' => 'number']) ?>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <?= $this->Form->control('adhesion_plan.monthly_retirement_contribution', ['label' => 'Contribuição mensal aposentadoria', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_plan.monthly_retirement_contribution', ['label' => 'Contribuição mensal aposentadoria', 'class' => 'form-control money plan-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_plan.monthly_survivors_pension_contribution', ['label' => 'Contribuição mensal pensão por morte', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_plan.monthly_survivors_pension_contribution', ['label' => 'Contribuição mensal pensão por morte', 'class' => 'form-control money plan-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
                 </div>
                 <div class="col-md-6 mb-3">
                     <?= $this->Form->control('adhesion_plan.survivors_pension_insured_capital', ['label' => 'Capital segurado pensão por morte', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
@@ -285,10 +288,43 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_plan.monthly_disability_retirement_contribution', ['label' => 'Contribuição mensal aposentadoria por invalidez', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_plan.monthly_disability_retirement_contribution', ['label' => 'Contribuição mensal aposentadoria por invalidez', 'class' => 'form-control money plan-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
                 </div>
                 <div class="col-md-6 mb-3">
                     <?= $this->Form->control('adhesion_plan.disability_retirement_insured_capital', ['label' => 'Capital segurado aposentadoria por invalidez', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
+                </div>
+            </div>
+
+            <hr class="my-3">
+
+            <?php $canRecalculate = ($adhesion->adhesion_personal_data?->birth_date !== null) && empty($economicallyLocked); ?>
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="planTotalContribution" class="form-label fw-bold">Contribuição total mensal</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" class="form-control money fw-bold" id="planTotalContribution"
+                               <?= $canRecalculate ? '' : 'readonly' ?>>
+                        <button type="button" class="btn btn-outline-primary" id="btnRecalculatePlan"
+                                data-adhesion-id="<?= $adhesion->id ?>"
+                                data-storage-uuid="<?= h($adhesion->storage_uuid) ?>"
+                                <?= $canRecalculate ? '' : 'disabled' ?>>
+                            <i class="bi bi-arrow-repeat"></i> Recalcular
+                        </button>
+                    </div>
+                    <div class="form-text">
+                        <?php if ($canRecalculate): ?>
+                            É a soma das três contribuições, mas dá para editar: digite
+                            um novo total e clique em "Recalcular" para redistribuir —
+                            roda a mesma fórmula do simulador. Usa os riscos como estão
+                            <strong>salvos</strong>: se você acabou de desmarcar um aqui
+                            em cima, salve antes de recalcular, senão ele volta.
+                        <?php else: ?>
+                            Recalcular exige a data de nascimento preenchida na aba
+                            "Dados Pessoais"<?= empty($economicallyLocked) ? '' : ', e esta adesão está com os valores travados' ?>.
+                        <?php endif; ?>
+                    </div>
+                    <div id="planRecalculateError" class="alert alert-danger py-2 mt-2 small" style="display:none;"></div>
                 </div>
             </div>
         </div>
@@ -443,7 +479,7 @@
                     <?= $this->Form->hidden('adhesion_other_information.main_occupation_description', ['id' => 'mainOccupationDescription']) ?>
                     <?= $this->Form->hidden('adhesion_other_information.main_occupation_code', ['id' => 'mainOccupationCode']) ?>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="mainOccupationSearch" placeholder="Digite para buscar..." autocomplete="off" value="<?= h($adhesion->adhesion_other_information->main_occupation_description ?? '') ?>">
+                        <input type="text" class="form-control" id="mainOccupationSearch" placeholder="Digite para buscar..." autocomplete="off" value="<?= h($adhesion->adhesion_other_information?->main_occupation_description ?? '') ?>">
                         <span class="input-group-text" id="occupationLoading" style="display:none;">
                             <div class="spinner-border spinner-border-sm"></div>
                         </span>

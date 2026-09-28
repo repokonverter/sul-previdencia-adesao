@@ -2161,6 +2161,13 @@ $createSecureCard = function ($data, $type)
         let promoDebounceTimer = null;
         let promoAbortController = null;
 
+        // Último valor efetivamente consultado. Evita que o blur dispare uma
+        // nova consulta para o mesmo código que já está com resultado
+        // conhecido (ex.: clicar no botão "continue sem código" tira o foco
+        // do campo antes do click, e sem essa checagem o blur refaria a
+        // consulta e recriaria o botão antes do click chegar a ele).
+        let promoLastQuery = null;
+
         const promoNormalize = (value) => (value || '')
             .normalize('NFD')
             .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
@@ -2178,9 +2185,9 @@ $createSecureCard = function ($data, $type)
          * Vínculo associativo
          *
          * Só existe no DOM quando há ao menos um vínculo ativo cadastrado
-         * (ver SimulatorController::index()). O código promocional vira
-         * obrigatório quando a resposta é "sim", e passa a restringir a
-         * validação ao parceiro do vínculo selecionado.
+         * (ver SimulatorController::index()). O código promocional segue
+         * opcional mesmo quando a resposta é "sim"; a validação apenas
+         * passa a restringir o código informado ao parceiro selecionado.
          * ------------------------------------------------------------- */
         const hasAssociationQuestion = document.getElementById('associationQuestionGroup') !== null;
 
@@ -2198,7 +2205,7 @@ $createSecureCard = function ($data, $type)
         const updatePromotionalCodeRequirement = () => {
             const hint = document.getElementById('promotionalCodeOptionalHint');
 
-            if (hint) hint.textContent = isAssociationYes() ? '(obrigatório)' : '(opcional)';
+            if (hint) hint.textContent = '(opcional)';
         };
 
         const setAssociationAnswer = (isYes, partnerId = '') => {
@@ -2232,13 +2239,10 @@ $createSecureCard = function ($data, $type)
             const hatch = document.createElement('div');
             hatch.className = 'mt-1';
             hatch.innerHTML = 'Não tem um código válido? Entre em contato com ' + partnerName +
-                ', ou <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="associationSkip">continue sem vínculo</button>.';
+                ', ou <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="associationSkip">continue sem código</button>.';
             feedback.appendChild(hatch);
 
-            document.getElementById('associationSkip').addEventListener('click', () => {
-                setAssociationAnswer(false);
-                clearPromoCode();
-            });
+            document.getElementById('associationSkip').addEventListener('click', clearPromoCode);
         };
 
         const initAssociationQuestion = () => {
@@ -2356,11 +2360,14 @@ $createSecureCard = function ($data, $type)
             clearTimeout(promoDebounceTimer);
 
             input.value = '';
+            promoLastQuery = null;
             setPromoState('empty');
             input.focus();
         };
 
         const lookupPromoCode = async (code) => {
+            promoLastQuery = code;
+
             if (!code || code.length < promoMinLength) {
                 setPromoState(code ? 'invalid' : 'empty', {
                     message: 'O código deve ter ao menos ' + promoMinLength + ' caracteres.'
@@ -2433,7 +2440,7 @@ $createSecureCard = function ($data, $type)
             input.addEventListener('blur', () => {
                 const normalized = promoNormalize(input.value);
 
-                if (normalized === '' || promoState.status === 'valid' || promoState.status === 'checking') return;
+                if (normalized === '' || normalized === promoLastQuery || promoState.status === 'checking') return;
 
                 clearTimeout(promoDebounceTimer);
                 lookupPromoCode(normalized);
@@ -2518,8 +2525,8 @@ $createSecureCard = function ($data, $type)
         /**
          * Gancho beforeValidate do passo "Dados iniciais": um código
          * promocional preenchido precisa estar resolvido antes de avançar.
-         * Campo vazio segue normalmente (é opcional), a menos que a pessoa
-         * tenha afirmado ter vínculo associativo.
+         * Campo vazio segue normalmente, pois o código é sempre opcional,
+         * mesmo quando a pessoa afirma ter vínculo associativo.
          */
         const validateInitialDataStep = async (btnPrimary) => {
             if (promoState.status === 'checking') {
@@ -2553,15 +2560,9 @@ $createSecureCard = function ($data, $type)
                 return false;
             }
 
-            // Vínculo associativo torna o código obrigatório e exige que
-            // o vínculo esteja selecionado.
+            // Vínculo associativo exige que o vínculo esteja selecionado,
+            // mas o código promocional em si continua opcional.
             if (isAssociationYes()) {
-                if (promoState.status !== 'valid') {
-                    document.getElementById('promotionalCode').focus();
-
-                    return false;
-                }
-
                 const { select } = associationEls();
 
                 if (!select.value) {

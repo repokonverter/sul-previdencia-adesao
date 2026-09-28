@@ -89,6 +89,296 @@
         $('#directDebitType').slideUp();
     }
 
+    /**
+     * Campos obrigatórios (`required`) ficam dentro de abas do Bootstrap que
+     * começam ocultas (`display: none`). O navegador bloqueia o submit
+     * silenciosamente nesse caso: não consegue rolar até um campo invisível
+     * para mostrar o balão de erro, e a tela simplesmente não reage --
+     * exatamente o "não me apresenta falha nenhuma" que motivou isto.
+     *
+     * A solução: marcar cada aba com um selo mostrando quantos campos
+     * obrigatórios ainda faltam (atualizado a cada digitação) e, ao tentar
+     * salvar, trocar para a primeira aba com pendência antes de deixar a
+     * validação nativa rodar -- só então o campo está visível e o balão
+     * aparece no lugar certo.
+     */
+    const updateIncompleteBadges = () => {
+        let totalPending = 0;
+        const pendingTabs = [];
+
+        document.querySelectorAll('.tab-pane').forEach((pane) => {
+            const fields = pane.querySelectorAll('[required]');
+            const seenRadioGroups = new Set();
+            let missing = 0;
+
+            fields.forEach((field) => {
+                if (field.type === 'radio') {
+                    if (seenRadioGroups.has(field.name)) return;
+                    seenRadioGroups.add(field.name);
+                }
+
+                if (!field.checkValidity()) missing++;
+            });
+
+            const badge = document.querySelector(`a[href="#${pane.id}"] .tab-missing-badge`);
+            if (!badge) return;
+
+            if (missing > 0) {
+                badge.textContent = missing;
+                badge.classList.remove('d-none');
+                totalPending++;
+                pendingTabs.push(pane.id);
+            } else {
+                badge.classList.add('d-none');
+            }
+        });
+
+        return { totalPending, pendingTabs };
+    };
+
+    const tabLabel = (paneId) => {
+        const link = document.querySelector(`a[href="#${paneId}"]`);
+        if (!link) return paneId;
+
+        // O texto do link inclui o badge (ex.: "Documentos 2"); o próprio nó
+        // de texto do link, sem os filhos, é só o rótulo.
+        return Array.from(link.childNodes)
+            .filter((node) => node.nodeType === Node.TEXT_NODE)
+            .map((node) => node.textContent.trim())
+            .join(' ')
+            .trim();
+    };
+
+    const showIncompleteAlert = (pendingTabs) => {
+        const $alert = $('#incompleteFieldsAlert');
+        if (pendingTabs.length === 0) {
+            $alert.addClass('d-none');
+            return;
+        }
+
+        const labels = pendingTabs.map(tabLabel).join(', ');
+        $('#incompleteFieldsAlertText').text(
+            `Ainda faltam campos obrigatórios em: ${labels}. Corrija-os ou use ` +
+            `"Salvar Mesmo Incompleto" para gravar assim mesmo.`
+        );
+        $alert.removeClass('d-none');
+    };
+
+    /**
+     * Só exibição -- soma as três contribuições do plano (aposentadoria,
+     * pensão por morte, invalidez) para o admin ter noção do total sem
+     * somar de cabeça. Não é gravada: o campo não tem `name`.
+     */
+    /**
+     * Mesma regra de App\Utility\Money::parse() do lado do servidor: o campo
+     * carrega ponto decimal cru do banco até a máscara jQuery rodar (no
+     * carregamento da página) e vírgula pt-BR depois que o admin mexe nele.
+     * Tratar todo ponto como separador de milhar sem checar a vírgula inflava
+     * "2000.00" em 100x, virando "200000".
+     */
+    const parseMoneyValue = (value) => {
+        if (!value) return 0;
+
+        const str = String(value).trim();
+        const normalized = str.includes(',') ? str.replace(/\./g, '').replace(',', '.') : str;
+        const parsed = parseFloat(normalized);
+
+        return isNaN(parsed) ? 0 : parsed;
+    };
+
+    const updatePlanTotalContribution = () => {
+        const total = Array.from(document.querySelectorAll('.plan-contribution-field'))
+            .reduce((sum, field) => sum + parseMoneyValue(field.value), 0);
+
+        const $total = $('#planTotalContribution');
+        if ($total.length) $total.val(total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    };
+
+    const formatMoneyValue = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    /**
+     * Desmarcar um risco zera a contribuição dele e soma o que tinha na de
+     * aposentadoria -- "sem risco, o valor inteiro vai para aposentadoria".
+     * Marcar de volta devolve exatamente o que foi tirado, guardado no
+     * próprio checkbox enquanto ele fica desmarcado.
+     */
+    const RISK_FIELDS = {
+        has_survivors_pension: {
+            contribution: 'adhesion_plan[monthly_survivors_pension_contribution]',
+            capital: 'adhesion_plan[survivors_pension_insured_capital]',
+        },
+        has_disability_retirement: {
+            contribution: 'adhesion_plan[monthly_disability_retirement_contribution]',
+            capital: 'adhesion_plan[disability_retirement_insured_capital]',
+        },
+    };
+
+    const setRiskFieldsDisabled = (checkbox, disabled) => {
+        const fields = RISK_FIELDS[checkbox.id];
+        if (!fields) return;
+
+        // `readonly`, não `disabled`: um campo `disabled` não é enviado no
+        // submit, e o zero precisa chegar ao servidor tanto quanto o valor
+        // restaurado ao marcar de volta. `bg-body-secondary`/`text-muted` só
+        // para o campo não parecer editável como os outros -- sem isso a
+        // diferença visual entre "risco fora" e "risco dentro" era quase nula.
+        [`input[name="${fields.contribution}"]`, `input[name="${fields.capital}"]`].forEach((selector) => {
+            $(selector)
+                .prop('readOnly', disabled)
+                .toggleClass('bg-body-secondary text-muted', disabled);
+        });
+    };
+
+    const handleRiskToggle = function() {
+        const fields = RISK_FIELDS[this.id];
+        if (!fields) return;
+
+        const $contribution = $(`input[name="${fields.contribution}"]`);
+        const $capital = $(`input[name="${fields.capital}"]`);
+        const $retirement = $('input[name="adhesion_plan[monthly_retirement_contribution]"]');
+
+        if (!this.checked) {
+            $(this).data('lastContribution', parseMoneyValue($contribution.val()));
+            $(this).data('lastCapital', parseMoneyValue($capital.val()));
+
+            $retirement.val(formatMoneyValue(parseMoneyValue($retirement.val()) + parseMoneyValue($contribution.val())));
+            $contribution.val(formatMoneyValue(0));
+            $capital.val(formatMoneyValue(0));
+        } else {
+            const contributionValue = $(this).data('lastContribution') || 0;
+            const capitalValue = $(this).data('lastCapital') || 0;
+
+            $retirement.val(formatMoneyValue(Math.max(0, parseMoneyValue($retirement.val()) - contributionValue)));
+            $contribution.val(formatMoneyValue(contributionValue));
+            $capital.val(formatMoneyValue(capitalValue));
+
+            $(this).removeData('lastContribution').removeData('lastCapital');
+        }
+
+        setRiskFieldsDisabled(this, !this.checked);
+        updatePlanTotalContribution();
+    };
+
+    $(document).ready(function() {
+        const form = document.querySelector('.adhesion-form-container form');
+
+        updateIncompleteBadges();
+        updatePlanTotalContribution();
+
+        Object.keys(RISK_FIELDS).forEach((id) => {
+            const checkbox = document.getElementById(id);
+            if (!checkbox) return;
+
+            // Estado inicial só reflete o que já está marcado, sem mover valor.
+            setRiskFieldsDisabled(checkbox, !checkbox.checked);
+            checkbox.addEventListener('change', handleRiskToggle);
+        });
+
+        // Delegado: cobre também os beneficiários adicionados dinamicamente.
+        $(form).on('input change', updateIncompleteBadges);
+        $(form).on('input change', '.plan-contribution-field', updatePlanTotalContribution);
+
+        /**
+         * "Recalcular": mesmo endpoint que o formulário público usa no passo
+         * Plano (SimulatorController::recalculate), reaproveitado aqui para
+         * não duplicar a fórmula atuarial. Ele lê os riscos como estão
+         * salvos no banco -- o aviso ao lado do botão existe por causa disso.
+         */
+        const recalcButton = document.getElementById('btnRecalculatePlan');
+
+        if (recalcButton) {
+            recalcButton.addEventListener('click', function() {
+                const errorDiv = document.getElementById('planRecalculateError');
+                const birthDate = $('input[name="adhesion_personal_data[birth_date]"]').val();
+                const value = parseMoneyValue(document.getElementById('planTotalContribution').value);
+
+                errorDiv.style.display = 'none';
+
+                if (!birthDate) {
+                    errorDiv.textContent = 'Preencha a data de nascimento em "Dados Pessoais" antes de recalcular.';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                recalcButton.disabled = true;
+
+                $.ajax({
+                    type: 'GET',
+                    url: <?= json_encode($this->Url->build([
+                        'controller' => 'Simulator',
+                        'action' => 'recalculate',
+                        'prefix' => false,
+                    ])) ?>,
+                    data: {
+                        date: birthDate,
+                        value: value,
+                        initialDataId: recalcButton.dataset.adhesionId,
+                        storageUuid: recalcButton.dataset.storageUuid,
+                    },
+                    dataType: 'json',
+                    success: (response) => {
+                        if (!response.success) {
+                            errorDiv.textContent = response.message || 'Não foi possível recalcular o plano.';
+                            errorDiv.style.display = 'block';
+                            return;
+                        }
+
+                        $('input[name="adhesion_plan[benefit_entry_age]"]').val(response.benefitEntryAge);
+                        $('input[name="adhesion_plan[monthly_retirement_contribution]"]').val(formatMoneyValue(response.monthlyRetirementContribution));
+                        $('input[name="adhesion_plan[monthly_survivors_pension_contribution]"]').val(formatMoneyValue(response.monthlySurvivorsPensionContribution));
+                        $('input[name="adhesion_plan[survivors_pension_insured_capital]"]').val(formatMoneyValue(response.survivorsPensionInsuredCapital));
+                        $('input[name="adhesion_plan[monthly_disability_retirement_contribution]"]').val(formatMoneyValue(response.monthlyDisabilityRetirementContribution));
+                        $('input[name="adhesion_plan[disability_retirement_insured_capital]"]').val(formatMoneyValue(response.disabilityRetirementInsuredCapital));
+
+                        updatePlanTotalContribution();
+                    },
+                    error: () => {
+                        errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';
+                        errorDiv.style.display = 'block';
+                    },
+                    complete: () => {
+                        recalcButton.disabled = false;
+                    },
+                });
+            });
+        }
+
+        $(form).on('submit', function(e) {
+            const submitter = e.originalEvent?.submitter;
+
+            // Botão "Salvar Mesmo Incompleto": pula toda a checagem, é
+            // exatamente para permitir gravar pela metade.
+            if (submitter && submitter.hasAttribute('formnovalidate')) {
+                $('#incompleteFieldsAlert').addClass('d-none');
+                return;
+            }
+
+            const { pendingTabs } = updateIncompleteBadges();
+
+            if (pendingTabs.length === 0) return;
+
+            e.preventDefault();
+            showIncompleteAlert(pendingTabs);
+
+            const firstPaneId = pendingTabs[0];
+            const tabLink = document.querySelector(`a[href="#${firstPaneId}"]`);
+            if (tabLink) {
+                bootstrap.Tab.getOrCreateInstance(tabLink).show();
+            }
+
+            // Espera a aba ficar visível antes de focar o campo -- reportar
+            // validade de um campo ainda oculto falha do mesmo jeito que o
+            // submit nativo.
+            setTimeout(() => {
+                const pane = document.getElementById(firstPaneId);
+                const invalidField = Array.from(pane.querySelectorAll('[required]'))
+                    .find((field) => !field.checkValidity());
+                invalidField?.reportValidity();
+                invalidField?.focus();
+            }, 200);
+        });
+    });
+
     $(document).ready(function() {
         if ($('input[name="adhesion_personal_data[plan_for]"]:checked').val() === 'Dependente') {
             $('#divLegalRepresentative').show();

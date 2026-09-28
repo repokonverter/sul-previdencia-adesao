@@ -15,6 +15,7 @@ use App\Services\AdhesionSteps;
 use App\Services\ClicksignService;
 use App\Services\PixPaymentService;
 use App\Services\SicoobService;
+use App\Utility\Money;
 
 class AdhesionsController extends AppController
 {
@@ -107,7 +108,31 @@ class AdhesionsController extends AppController
         $adhesions = $this->paginate($query);
         $partners = $this->Partners->find()->orderBy(['name' => 'ASC'])->all();
 
-        $this->set(compact('adhesions', 'partners'));
+        // Uma por adesão da página: o botão "Link de retomada" da listagem
+        // abre um modal por linha, e cada um precisa da mesma informação que
+        // view() monta para o seu -- sem query extra, forPicker() só lê
+        // associações que o find() acima já carregou.
+        $resumeInfo = [];
+        foreach ($adhesions as $adhesion) {
+            $resumeInfo[$adhesion->id] = $this->resumeLinkInfo($adhesion);
+        }
+
+        $this->set(compact('adhesions', 'partners', 'resumeInfo'));
+    }
+
+    /**
+     * @return array{steps: array, suggestedStep: string, url: string|null}
+     */
+    private function resumeLinkInfo(\Cake\Datasource\EntityInterface $adhesion): array
+    {
+        return [
+            'steps' => AdhesionSteps::forPicker($adhesion),
+            'suggestedStep' => AdhesionSteps::firstIncomplete($adhesion),
+            'url' => $adhesion->resume_token === null ? null : Router::url(
+                ['controller' => 'Simulator', 'action' => 'resume', $adhesion->resume_token, 'prefix' => false],
+                true
+            ),
+        ];
     }
 
     public function view($id)
@@ -120,14 +145,13 @@ class AdhesionsController extends AppController
             'ClicksignDatas' => ['sort' => ['ClicksignDatas.attempt' => 'DESC']],
         ]);
 
+        $resume = $this->resumeLinkInfo($adhesion);
+
         $this->set([
             'adhesion' => $adhesion,
-            'resumeSteps' => AdhesionSteps::forPicker($adhesion),
-            'suggestedStep' => AdhesionSteps::firstIncomplete($adhesion),
-            'resumeUrl' => $adhesion->resume_token === null ? null : Router::url(
-                ['controller' => 'Simulator', 'action' => 'resume', $adhesion->resume_token, 'prefix' => false],
-                true
-            ),
+            'resumeSteps' => $resume['steps'],
+            'suggestedStep' => $resume['suggestedStep'],
+            'resumeUrl' => $resume['url'],
         ]);
     }
 
@@ -180,6 +204,94 @@ class AdhesionsController extends AppController
         'adhesion_dependents',
         'adhesion_payment_detail',
     ];
+
+    /**
+     * Campos que a tela renderiza com a máscara jQuery `money`: pt-BR, ponto
+     * de milhar e vírgula decimal (ex.: "1.234,56"). O tipo `decimal` da
+     * coluna só aceita ponto decimal -- sem essa conversão, patchEntity()
+     * grava a string como veio e o Postgres recusa com "Cannot convert value
+     * ... to a decimal".
+     */
+    private const MONEY_FIELDS = [
+        ['adhesion_plan', 'monthly_retirement_contribution'],
+        ['adhesion_plan', 'monthly_survivors_pension_contribution'],
+        ['adhesion_plan', 'survivors_pension_insured_capital'],
+        ['adhesion_plan', 'monthly_disability_retirement_contribution'],
+        ['adhesion_plan', 'disability_retirement_insured_capital'],
+        ['adhesion_other_information', 'monthly_income'],
+        ['adhesion_payment_detail', 'total_contribution'],
+    ];
+
+    /**
+     * Peso e altura usam a mesma máscara, mas sem separador de milhar -- só
+     * trocar a vírgula por ponto basta.
+     */
+    private const DECIMAL_FIELDS = [
+        ['adhesion_proponent_statement', 'weight'],
+        ['adhesion_proponent_statement', 'height'],
+    ];
+
+    private function normalizeNumericFields(array $data): array
+    {
+        foreach (self::MONEY_FIELDS as [$section, $field]) {
+            if (isset($data[$section][$field])) {
+                $data[$section][$field] = Money::parse($data[$section][$field]);
+            }
+        }
+
+        foreach (self::DECIMAL_FIELDS as [$section, $field]) {
+            if (isset($data[$section][$field]) && $data[$section][$field] !== '') {
+                $data[$section][$field] = str_replace(',', '.', (string)$data[$section][$field]);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * A tela sempre envia os campos de todas as abas no mesmo POST, mesmo as
+     * que o admin nunca abriu -- inclusive alguns já vêm com valor por padrão
+     * (o rádio "Titular" do plano, o "10" fixo do dia de vencimento), então a
+     * seção não chega vazia nem quando ninguém a preencheu.
+     *
+     * Sem isto, "Salvar Mesmo Incompleto" criaria as sete linhas associadas
+     * de uma adesão que só tem os dados iniciais -- e o resto do admin (a
+     * etapa mostrada na lista, os botões de PDF) lê "a linha existe" como "a
+     * etapa foi concluída", então uma proposta mal começada passaria a
+     * aparecer como finalizada.
+     *
+     * A campo-sinal de cada seção não tem valor padrão nem é enviado à toa:
+     * só chega preenchido se alguém de fato respondeu aquele pedaço do
+     * formulário. Uma seção cujo sinal está vazio e que a adesão ainda não
+     * tinha é descartada do patch; editar uma seção que já existe nunca é
+     * afetado, então apagar um campo à mão continua possível.
+     */
+    private const SIGNAL_FIELDS = [
+        'adhesion_personal_data' => 'cpf',
+        'adhesion_document' => 'document_number',
+        'adhesion_address' => 'cep',
+        'adhesion_other_information' => 'category',
+        'adhesion_plan' => 'monthly_retirement_contribution',
+        'adhesion_proponent_statement' => 'health_problem',
+        'adhesion_payment_detail' => 'payment_type',
+    ];
+
+    private function stripUntouchedNewSections(\Cake\Datasource\EntityInterface $adhesion, array $data): array
+    {
+        foreach (self::SIGNAL_FIELDS as $property => $signalField) {
+            if ($adhesion->get($property) !== null) {
+                continue;
+            }
+
+            $signalValue = $data[$property][$signalField] ?? null;
+
+            if ($signalValue === null || $signalValue === '') {
+                unset($data[$property]);
+            }
+        }
+
+        return $data;
+    }
 
     /**
      * Com o Pix pago, mudar valor, risco, beneficiário ou conta bancária
@@ -296,7 +408,7 @@ class AdhesionsController extends AppController
     {
         $adhesion = $this->AdhesionInitialDatas->newEmptyEntity();
         if ($this->request->is('post')) {
-            $adhesion = $this->AdhesionInitialDatas->patchEntity($adhesion, $this->request->getData(), [
+            $adhesion = $this->AdhesionInitialDatas->patchEntity($adhesion, $this->normalizeNumericFields($this->request->getData()), [
                 'associated' => [
                     'AdhesionPersonalDatas',
                     'AdhesionAddresses',
@@ -361,7 +473,10 @@ class AdhesionsController extends AppController
             // O retrato tem que sair daqui: patchEntity() altera o mesmo
             // objeto, e depois dele não existe mais um "antes" para comparar.
             $before = AdhesionAuditor::snapshot($adhesion);
-            $data = $this->request->getData();
+            $data = $this->stripUntouchedNewSections(
+                $adhesion,
+                $this->normalizeNumericFields($this->request->getData())
+            );
 
             if ($economicallyLocked) {
                 $refused = array_intersect_key($data, array_flip(self::ECONOMIC_FIELDS));
@@ -605,7 +720,7 @@ class AdhesionsController extends AppController
         if (!AdhesionSteps::exists($step)) {
             $this->Flash->error('Etapa inválida.');
 
-            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+            return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
         }
 
         if (!AdhesionSteps::forPicker($adhesion)[$step]['selectable']) {
@@ -613,7 +728,7 @@ class AdhesionsController extends AppController
                 'Esta etapa depende de outra que ainda está em branco: o proponente a pularia sem preencher.'
             );
 
-            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+            return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
         }
 
         $days = $this->fetchTable('PlanParameters')->current()->resumeLinkDays();
@@ -625,7 +740,7 @@ class AdhesionsController extends AppController
 
         $this->Flash->success('Link gerado. O anterior, se havia, deixou de valer.');
 
-        return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+        return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
     }
 
     /**
@@ -644,13 +759,13 @@ class AdhesionsController extends AppController
         if ($adhesion->resume_token === null || $adhesion->resumeTokenHasExpired()) {
             $this->Flash->error('Não há link ativo para enviar. Gere um primeiro.');
 
-            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+            return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->Flash->error('Informe um e-mail válido.');
 
-            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+            return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
         }
 
         $url = Router::url(
@@ -681,7 +796,7 @@ class AdhesionsController extends AppController
             $this->Flash->error('Não foi possível enviar o e-mail agora. O link continua válido para copiar.');
         }
 
-        return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+        return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
     }
 
     public function revokeResumeLink($id)
@@ -698,7 +813,7 @@ class AdhesionsController extends AppController
 
         $this->Flash->success('Link revogado.');
 
-        return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'resume']]);
+        return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
     }
 
     /**

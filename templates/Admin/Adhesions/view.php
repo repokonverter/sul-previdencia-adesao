@@ -2,7 +2,7 @@
 $validTabs = [
     'initialData', 'personalData', 'documents', 'plan', 'dependents', 'addressData',
     'otherInformation', 'proponentStatement', 'pensionScheme', 'paymentDetail', 'integrationLogs',
-    'audits', 'resume',
+    'audits',
 ];
 $activeTab = $this->request->getQuery('tab');
 if (!in_array($activeTab, $validTabs, true))
@@ -77,8 +77,13 @@ $formatLogBody = function (?string $value): string
     </h2>
 
     <div>
-        <?= $this->Html->link(' Proposta PDF', ['action' => 'generatePdf', $adhesion->id], ['class' => 'btn btn-primary']) ?>
-        <?= $this->Html->link(' Inscrição PDF', ['action' => 'generateFormPdf', $adhesion->id], ['class' => 'btn btn-primary']) ?>
+        <?php if (!empty($adhesion->adhesion_payment_detail)): ?>
+            <?= $this->Html->link(' Proposta PDF', ['action' => 'generatePdf', $adhesion->id], ['class' => 'btn btn-primary']) ?>
+            <?= $this->Html->link(' Inscrição PDF', ['action' => 'generateFormPdf', $adhesion->id], ['class' => 'btn btn-primary']) ?>
+        <?php endif; ?>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#resumeLinkModal-<?= $adhesion->id ?>">
+            <i class="bi bi-link-45deg"></i> Link de retomada
+        </button>
         <?= $this->Html->link('<i class="bi bi-pencil"></i> Editar', ['action' => 'edit', $adhesion->id], ['escape' => false, 'class' => 'btn btn-warning']) ?>
         <?= $this->Html->link('<i class="bi bi-arrow-left"></i> Voltar', ['action' => 'index'], ['escape' => false, 'class' => 'btn btn-outline-secondary']) ?>
     </div>
@@ -97,7 +102,6 @@ $formatLogBody = function (?string $value): string
     <li class="nav-item"><a class="<?= $navLinkClass('paymentDetail', $activeTab) ?>" data-bs-toggle="tab" href="#paymentDetail">Dados para Pagamento</a></li>
     <li class="nav-item"><a class="<?= $navLinkClass('integrationLogs', $activeTab) ?>" data-bs-toggle="tab" href="#integrationLogs">Integrações</a></li>
     <li class="nav-item"><a class="<?= $navLinkClass('audits', $activeTab) ?>" data-bs-toggle="tab" href="#audits">Histórico</a></li>
-    <li class="nav-item"><a class="<?= $navLinkClass('resume', $activeTab) ?>" data-bs-toggle="tab" href="#resume">Retomada</a></li>
 </ul>
 
 <div class="tab-content" style="margin-bottom: 80px;">
@@ -547,117 +551,6 @@ $formatLogBody = function (?string $value): string
         </div>
     </div>
 
-    <!-- RETOMADA -->
-    <div id="resume" class="<?= $tabPaneClass('resume', $activeTab) ?>">
-        <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">Link de retomada</h5>
-
-            <?php if ($resumeUrl !== null): ?>
-                <div class="alert <?= $adhesion->resumeTokenHasExpired() ? 'alert-warning' : 'alert-success' ?>">
-                    <?php if ($adhesion->resumeTokenHasExpired()): ?>
-                        <i class="bi bi-clock-history"></i> Este link <strong>expirou</strong>
-                        em <?= $adhesion->resume_token_expires_at->format('d/m/Y H:i') ?>.
-                        Gere outro abaixo.
-                    <?php else: ?>
-                        <i class="bi bi-check-circle"></i> Link ativo, válido até
-                        <strong><?= $adhesion->resume_token_expires_at->format('d/m/Y H:i') ?></strong>,
-                        apontando para
-                        <strong><?= h(\App\Services\AdhesionSteps::ORDER[$adhesion->resume_step] ?? 'a primeira etapa') ?></strong>.
-                    <?php endif; ?>
-                </div>
-
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" id="resumeUrl" value="<?= h($resumeUrl) ?>" readonly>
-                    <button class="btn btn-outline-secondary" type="button" id="copyResumeUrl">
-                        <i class="bi bi-clipboard"></i> Copiar
-                    </button>
-                    <?php
-                    $phone = preg_replace('/\D/', '', (string)$adhesion->phone);
-                    $message = 'Olá! Continue sua proposta de adesão por aqui: ' . $resumeUrl;
-                    ?>
-                    <?php if ($phone !== ''): ?>
-                        <a class="btn btn-outline-success"
-                           target="_blank"
-                           rel="noopener"
-                           href="https://wa.me/55<?= h($phone) ?>?text=<?= rawurlencode($message) ?>">
-                            <i class="bi bi-whatsapp"></i> WhatsApp
-                        </a>
-                    <?php endif; ?>
-                </div>
-
-                <?= $this->Form->create(null, [
-                    'url' => ['action' => 'sendResumeLink', $adhesion->id],
-                    'class' => 'row g-2 align-items-end mb-3',
-                ]) ?>
-                <div class="col-md-6">
-                    <label for="resumeEmail" class="form-label">Enviar por e-mail para</label>
-                    <input type="email" name="email" id="resumeEmail" class="form-control"
-                           value="<?= h($adhesion->email) ?>" required>
-                    <div class="form-text">
-                        Vem preenchido com o e-mail da adesão. Digitar outro envia para ele
-                        sem alterar o cadastro.
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <?= $this->Form->button('<i class="bi bi-envelope"></i> Enviar', [
-                        'escape' => false,
-                        'class' => 'btn btn-outline-primary w-100',
-                    ]) ?>
-                </div>
-                <?= $this->Form->end() ?>
-
-                <?= $this->Form->postLink(
-                    '<i class="bi bi-x-circle"></i> Revogar link',
-                    ['action' => 'revokeResumeLink', $adhesion->id],
-                    [
-                        'escape' => false,
-                        'class' => 'btn btn-outline-danger btn-sm',
-                        'confirm' => 'Revogar o link? Quem o tiver deixa de conseguir abrir a proposta.',
-                    ]
-                ) ?>
-            <?php else: ?>
-                <p class="text-muted">
-                    Nenhum link ativo. Gere um para o proponente continuar de onde parou.
-                </p>
-            <?php endif; ?>
-
-            <hr class="my-4">
-
-            <h6 class="fw-bold mb-2"><?= $resumeUrl === null ? 'Gerar link' : 'Gerar um link novo' ?></h6>
-            <p class="text-muted small">
-                Gerar invalida o link anterior. O mesmo link pode ser distribuído por
-                quantos canais quiser.
-            </p>
-
-            <?= $this->Form->create(null, ['url' => ['action' => 'issueResumeLink', $adhesion->id]]) ?>
-            <div class="row align-items-end">
-                <div class="col-md-6">
-                    <label for="resumeStep" class="form-label">O proponente recomeça em</label>
-                    <select name="step" id="resumeStep" class="form-select">
-                        <?php foreach ($resumeSteps as $id => $step): ?>
-                            <option value="<?= h($id) ?>"
-                                <?= $step['selectable'] ? '' : 'disabled' ?>
-                                <?= $id === $suggestedStep ? 'selected' : '' ?>>
-                                <?= h($step['label']) ?><?= $step['complete'] ? '' : ' — em branco' ?><?= $step['reason'] ? ' (' . h($step['reason']) . ')' : '' ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <div class="form-text">
-                        Etapas que dependem de outra ainda em branco ficam indisponíveis: o
-                        proponente as pularia sem preencher, e a adesão seria finalizada
-                        incompleta.
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <?= $this->Form->button('<i class="bi bi-link-45deg"></i> Gerar link', [
-                        'escape' => false,
-                        'class' => 'btn btn-primary w-100',
-                    ]) ?>
-                </div>
-            </div>
-            <?= $this->Form->end() ?>
-        </div>
-    </div>
 
     <!-- HISTÓRICO -->
     <div id="audits" class="<?= $tabPaneClass('audits', $activeTab) ?>">
@@ -721,13 +614,22 @@ $formatLogBody = function (?string $value): string
     </div>
 </div>
 
+<?= $this->element('../Admin/Adhesions/resume_modal', [
+    'adhesion' => $adhesion,
+    'resumeSteps' => $resumeSteps,
+    'suggestedStep' => $suggestedStep,
+    'resumeUrl' => $resumeUrl,
+]) ?>
+
 <script>
     $(document).ready(function() {
-        const copyButton = document.getElementById('copyResumeUrl');
+        <?php if ($this->request->getQuery('openResumeModal')): ?>
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('resumeLinkModal-<?= $adhesion->id ?>')).show();
+        <?php endif; ?>
 
-        if (copyButton) {
+        document.querySelectorAll('.copy-resume-url').forEach(function(copyButton) {
             copyButton.addEventListener('click', function() {
-                const field = document.getElementById('resumeUrl');
+                const field = copyButton.closest('.input-group').querySelector('.resume-url-field');
 
                 field.select();
                 navigator.clipboard.writeText(field.value);
@@ -737,7 +639,7 @@ $formatLogBody = function (?string $value): string
                     copyButton.innerHTML = '<i class="bi bi-clipboard"></i> Copiar';
                 }, 2000);
             });
-        }
+        });
 
         document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(trigger) {
             trigger.addEventListener('shown.bs.tab', function(e) {

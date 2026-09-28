@@ -20,6 +20,16 @@
             'escapeTitle' => false,
             'class' => 'btn btn-success btn-lg px-5'
         ]) ?>
+        <?= $this->Form->button('<i class="bi bi-save"></i> Salvar Mesmo Incompleto', [
+            'escapeTitle' => false,
+            'class' => 'btn btn-outline-secondary btn-lg px-4 ms-2',
+            'formnovalidate' => true,
+        ]) ?>
+        <div class="form-text mt-2">
+            "Salvar Alterações" exige o preenchimento dos campos marcados com *.
+            Use "Salvar Mesmo Incompleto" para gravar só o que já foi digitado e,
+            depois, mandar o link de retomada para o cliente terminar o cadastro.
+        </div>
     </div>
 
     <?= $this->Form->end() ?>

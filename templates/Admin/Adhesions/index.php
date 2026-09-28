@@ -192,6 +192,7 @@ $getSignatureStatusBadge = function ($adhesion)
                 </tr>
             </thead>
             <tbody>
+                <?php $resumeModals = ''; ?>
                 <?php foreach ($adhesions as $adhesion): ?>
                     <tr>
                         <td class="fw-semibold"><?= h($adhesion->name ?? $adhesion->adhesion_personal_data->name) ?></td>
@@ -225,6 +226,11 @@ $getSignatureStatusBadge = function ($adhesion)
                                 ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Visualizar']
                             ) ?>
 
+                            <button type="button" class="btn btn-sm btn-light me-1" title="Link de retomada"
+                                    data-bs-toggle="modal" data-bs-target="#resumeLinkModal-<?= $adhesion->id ?>">
+                                <i class="bi bi-link-45deg"></i>
+                            </button>
+
                             <?= $this->Html->link(
                                 '<i class="bi bi-pencil-square"></i>',
                                 ['action' => 'edit', $adhesion->id],
@@ -243,10 +249,24 @@ $getSignatureStatusBadge = function ($adhesion)
                             ) ?>
                         </td>
                     </tr>
+                    <?php
+                    // Acumulado à parte: um <div class="modal"> não pode ser
+                    // filho direto de <tbody> -- o navegador o realocaria para
+                    // fora da tabela de qualquer jeito, então ele já nasce
+                    // depois dela, sem depender desse comportamento.
+                    $resumeModals .= $this->element('../Admin/Adhesions/resume_modal', [
+                        'adhesion' => $adhesion,
+                        'resumeSteps' => $resumeInfo[$adhesion->id]['steps'],
+                        'suggestedStep' => $resumeInfo[$adhesion->id]['suggestedStep'],
+                        'resumeUrl' => $resumeInfo[$adhesion->id]['url'],
+                    ]);
+                    ?>
                 <?php endforeach; ?>
             </tbody>
         </table>
     </div>
+
+    <?= $resumeModals ?>
 
     <div class="card-footer d-flex justify-content-between align-items-center">
         <div class="text-muted small">
