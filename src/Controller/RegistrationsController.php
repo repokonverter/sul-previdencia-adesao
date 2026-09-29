@@ -311,11 +311,11 @@ class RegistrationsController extends AppController
             // payload contém, isto grava por causa de qual passo o navegador
             // diz estar enviando.
             if ($initialDataId !== null && ($data['currentStepId'] ?? null) === 'dependents') {
-                $this->markStepAnswered($initialDataId, 'dependents_answered_at');
+                $this->markStepAnswered(intval($initialDataId), 'dependents_answered_at');
             }
 
             if ($initialDataId !== null && ($data['currentStepId'] ?? null) === 'pensionScheme') {
-                $this->markStepAnswered($initialDataId, 'pension_scheme_answered_at');
+                $this->markStepAnswered(intval($initialDataId), 'pension_scheme_answered_at');
             }
 
             if (!empty($data['paymentDetail'])) {
