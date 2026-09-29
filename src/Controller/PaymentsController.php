@@ -22,7 +22,7 @@ class PaymentsController extends AppController
     {
         $adhesion = $this->fetchTable('AdhesionInitialDatas')->find()
             ->where(['AdhesionInitialDatas.storage_uuid' => $storageUuid])
-            ->contain(['AdhesionPersonalDatas', 'AdhesionPaymentDetails', 'PromotionalCodes.Partners'])
+            ->contain(['AdhesionPersonalDatas', 'AdhesionPaymentDetails', 'PromotionalCodes.Partners', 'AssociationPartners'])
             ->first();
 
         if (!$adhesion || !$adhesion->adhesion_payment_detail)
@@ -34,7 +34,11 @@ class PaymentsController extends AppController
         ]);
 
         $customerName = $adhesion->adhesion_personal_data->name ?? 'Cliente';
-        $partner = $adhesion->promotional_code_entity->partner ?? null;
+        // O código promocional tem prioridade porque, quando os dois
+        // coexistem, é sempre do mesmo parceiro do vínculo (a validação já
+        // garante isso). Sem código, o vínculo selecionado sozinho já basta
+        // -- mesma prioridade usada no cabeçalho do modal de adesão.
+        $partner = $adhesion->promotional_code_entity->partner ?? $adhesion->association_partner ?? null;
         $cpf = preg_replace('/\D/', '', $adhesion->adhesion_personal_data->cpf ?? '');
         $amount = (float)$adhesion->adhesion_payment_detail->total_contribution;
 
