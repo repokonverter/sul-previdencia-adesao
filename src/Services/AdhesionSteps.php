@@ -134,4 +134,26 @@ final class AdhesionSteps
     {
         return $step !== null && array_key_exists($step, self::ORDER);
     }
+
+    /**
+     * A etapa em que a adesão está agora, para telas de listagem/status.
+     *
+     * É a mesma noção de "onde retomar" de firstIncomplete() -- a etapa em
+     * que o proponente parou é justamente a primeira que ainda falta. Só
+     * distingue o caso de já ter passado por todas: firstIncomplete() cai no
+     * último item da ordem tanto quando ele está genuinamente incompleto
+     * quanto quando a adesão está de fato pronta, e aqui as duas leituras
+     * precisam de rótulos diferentes.
+     */
+    public static function currentStageLabel(EntityInterface $adhesion): string
+    {
+        $step = self::firstIncomplete($adhesion);
+        $label = self::ORDER[$step];
+
+        if ($step === array_key_last(self::ORDER) && self::isComplete($adhesion, $step)) {
+            return $label . ' (Finalizado)';
+        }
+
+        return $label;
+    }
 }

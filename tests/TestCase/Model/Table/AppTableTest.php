@@ -20,6 +20,7 @@ class AppTableTest extends TestCase
     protected array $fixtures = [
         'app.Users',
         'app.PlanParameters',
+        'app.ClicksignWebhooks',
     ];
 
     public function testStampsUpdatedOnTablesThatHaveIt(): void
@@ -55,12 +56,16 @@ class AppTableTest extends TestCase
 
     public function testStampsCreatedOnInsert(): void
     {
-        $table = TableRegistry::getTableLocator()->get('Brokers');
+        $table = TableRegistry::getTableLocator()->get('ClicksignWebhooks');
 
-        $broker = $table->newEntity(['name' => 'Corretor Carimbo', 'code' => 'CARIMBO1', 'active' => true]);
-        $table->saveOrFail($broker);
+        $webhook = $table->newEntity([
+            'clicksign_webhook_id' => 'wh_carimbo',
+            'token' => 'token-carimbo',
+            'url' => 'https://example.test/clicksign/webhook/token-carimbo',
+        ]);
+        $table->saveOrFail($webhook);
 
-        $this->assertNotNull($broker->created);
-        $this->assertNotNull($broker->updated);
+        $this->assertNotNull($webhook->created);
+        $this->assertNotNull($webhook->updated);
     }
 }

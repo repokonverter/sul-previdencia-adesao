@@ -19,7 +19,8 @@ $this->assign('title', 'Parâmetros do Plano');
             <div class="mb-3">
                 <?= $this->Form->control('minimum_monthly_contribution', [
                     'label' => 'Contribuição mensal mínima (R$)*',
-                    'class' => 'form-control',
+                    'class' => 'form-control money2',
+                    'prepend' => 'R$',
                     'type' => 'text',
                     'required' => true,
                 ]) ?>
@@ -43,7 +44,7 @@ $this->assign('title', 'Parâmetros do Plano');
             <div class="mb-3">
                 <?= $this->Form->control('survivors_pension_percent', [
                     'label' => 'Pensão por morte (%)*',
-                    'class' => 'form-control',
+                    'class' => 'form-control percent',
                     'type' => 'text',
                     'required' => true,
                 ]) ?>
@@ -54,7 +55,7 @@ $this->assign('title', 'Parâmetros do Plano');
             <div class="mb-3">
                 <?= $this->Form->control('disability_retirement_percent', [
                     'label' => 'Aposentadoria por invalidez (%)*',
-                    'class' => 'form-control',
+                    'class' => 'form-control percent',
                     'type' => 'text',
                     'required' => true,
                 ]) ?>
@@ -76,7 +77,8 @@ $this->assign('title', 'Parâmetros do Plano');
             <div class="mb-3">
                 <?= $this->Form->control('survivors_pension_floor', [
                     'label' => 'Mínimo da pensão por morte (R$)*',
-                    'class' => 'form-control',
+                    'class' => 'form-control money2',
+                    'prepend' => 'R$',
                     'type' => 'text',
                     'required' => true,
                 ]) ?>
@@ -87,7 +89,8 @@ $this->assign('title', 'Parâmetros do Plano');
             <div class="mb-3">
                 <?= $this->Form->control('disability_retirement_floor', [
                     'label' => 'Mínimo da invalidez (R$)*',
-                    'class' => 'form-control',
+                    'class' => 'form-control money2',
+                    'prepend' => 'R$',
                     'type' => 'text',
                     'required' => true,
                 ]) ?>

@@ -6,38 +6,6 @@
  * @var iterable<\App\Model\Entity\Partner> $partners
  */
 
-$getAdhesionStage = function ($adhesion)
-{
-    if (!empty($adhesion->adhesion_other_information))
-        return 'Outras Informações (Finalizado)';
-
-    if (!empty($adhesion->adhesion_proponent_statement))
-        return 'Declarações do Proponente';
-
-    if (!empty($adhesion->adhesion_pension_schemes))
-        return 'Beneficiários / Pensão';
-
-    if (!empty($adhesion->adhesion_payment_detail))
-        return 'Dados de Pagamento';
-
-    if (!empty($adhesion->adhesion_plan))
-        return 'Plano';
-
-    if (!empty($adhesion->adhesion_documents))
-        return 'Documentos';
-
-    if (!empty($adhesion->adhesion_dependents))
-        return 'Dependentes';
-
-    if (!empty($adhesion->adhesion_address))
-        return 'Endereço';
-
-    if (!empty($adhesion->adhesion_personal_data))
-        return 'Dados Pessoais';
-
-    return 'Dados Iniciais';
-};
-
 $getPromotionalCodeCell = function ($adhesion)
 {
     if (empty($adhesion->promotional_code))
@@ -52,14 +20,6 @@ $getPromotionalCodeCell = function ($adhesion)
         $cell .= '<br><span class="text-muted small">' . h($partner) . '</span>';
 
     return $cell;
-};
-
-$getBrokerCell = function ($adhesion)
-{
-    if (empty($adhesion->broker_code))
-        return '<span class="text-muted">&mdash;</span>';
-
-    return '<code>' . h($adhesion->broker_code) . '</code><br><span class="text-muted small">' . h($adhesion->broker_name) . '</span>';
 };
 
 $getPixStatusBadge = function ($adhesion)
@@ -155,14 +115,6 @@ $getSignatureStatusBadge = function ($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-2">
-                <?= $this->Form->control('brokerCode', [
-                    'label' => 'Corretor',
-                    'class' => 'form-control text-uppercase',
-                    'placeholder' => 'Buscar por código'
-                ]) ?>
-            </div>
-
             <div class="col-md-2 d-flex align-items-end">
                 <?= $this->Form->button('<i class="bi bi-search"></i> Filtrar', [
                     'escapeTitle' => false,
@@ -184,7 +136,6 @@ $getSignatureStatusBadge = function ($adhesion)
                     <th>E-mail</th>
                     <th>Etapa</th>
                     <th>Código</th>
-                    <th>Corretor</th>
                     <th>Pix</th>
                     <th>Assinatura</th>
                     <th>Data/hora</th>
@@ -198,9 +149,8 @@ $getSignatureStatusBadge = function ($adhesion)
                         <td class="fw-semibold"><?= h($adhesion->name ?? $adhesion->adhesion_personal_data->name) ?></td>
                         <td><?= h($adhesion->phone ?? '—') ?></td>
                         <td><?= h($adhesion->email ?? '—') ?></td>
-                        <td><?= h($getAdhesionStage($adhesion)) ?></td>
+                        <td><?= h(\App\Services\AdhesionSteps::currentStageLabel($adhesion)) ?></td>
                         <td><?= $getPromotionalCodeCell($adhesion) ?></td>
-                        <td><?= $getBrokerCell($adhesion) ?></td>
                         <td><?= $getPixStatusBadge($adhesion) ?></td>
                         <td><?= $getSignatureStatusBadge($adhesion) ?></td>
                         <td><?= h($adhesion->created->format('d/m/Y H:i:s') ?? '—') ?></td>

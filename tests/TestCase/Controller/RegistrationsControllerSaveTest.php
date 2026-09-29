@@ -9,18 +9,16 @@ use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
 /**
- * Cobre RegistrationsController::save() na etapa de idade e valores: o
- * corretor trava na primeira validação bem-sucedida, e quais riscos a
- * adesão tem é recalculado a partir dele — nunca aceito das flags que o
- * front-end mandou. Não cobre a etapa final (dados de pagamento), que
- * dispara PDF e Clicksign.
+ * Cobre RegistrationsController::save() na etapa de idade e valores: quais
+ * riscos a adesão tem é propriedade exclusiva do admin -- o formulário
+ * público nunca escreve as flags, nem quando o payload as forja. Não cobre
+ * a etapa final (dados de pagamento), que dispara PDF e Clicksign.
  */
 class RegistrationsControllerSaveTest extends TestCase
 {
     use IntegrationTestTrait;
 
     protected array $fixtures = [
-        'app.Brokers',
         'app.PlanParameters',
     ];
 
@@ -60,44 +58,6 @@ class RegistrationsControllerSaveTest extends TestCase
         $this->assertNotEmpty($result['storageUuid']);
 
         return [(int)$result['initialDataId'], (string)$result['storageUuid']];
-    }
-
-    /**
-     * O corretor válido continua travando na adesão -- é o que o link de
-     * divulgação faz -- mas já não remove risco nenhum: isso passou a ser ato
-     * do admin, e o formulário público não escreve mais as flags.
-     */
-    public function testValidBrokerIsAttributedButChangesNoRisk(): void
-    {
-        [$initialDataId, $storageUuid] = $this->createInitialData();
-
-        $this->postAjax('/registrations/save', [
-            'storageUuid' => $storageUuid,
-            'initialDataId' => $initialDataId,
-            'plans' => [
-                'benefitEntryAge' => 65,
-                'monthly_retirement_contribution' => '740,00',
-                'monthly_survivors_pension_contribution' => '160,00',
-                'survivors_pension_insured_capital' => '1000,00',
-                'monthly_disability_retirement_contribution' => '100,00',
-                'disability_retirement_insured_capital' => '1000,00',
-                'brokerCode' => 'joao2026',
-                // Ignorada: a flag não tem mais efeito nenhum aqui.
-                'removeSurvivorsPension' => '1',
-            ],
-        ]);
-
-        $this->assertResponseOk();
-        $result = json_decode((string)$this->_response->getBody(), true);
-        $this->assertTrue($result['success']);
-
-        $adhesion = TableRegistry::getTableLocator()->get('AdhesionInitialDatas')
-            ->get($initialDataId, contain: ['AdhesionPlans']);
-
-        $this->assertSame('JOAO2026', $adhesion->broker_code);
-        $this->assertSame('João da Silva', $adhesion->broker_name);
-        $this->assertTrue($adhesion->adhesion_plan->has_survivors_pension);
-        $this->assertTrue($adhesion->adhesion_plan->has_disability_retirement);
     }
 
     /**
@@ -180,7 +140,7 @@ class RegistrationsControllerSaveTest extends TestCase
         $this->assertSame(65, $plan->benefit_entry_age);
     }
 
-    public function testForgedRiskFlagsWithoutBrokerAreIgnored(): void
+    public function testForgedRiskFlagsAreAlwaysIgnored(): void
     {
         [$initialDataId, $storageUuid] = $this->createInitialData();
 
@@ -194,8 +154,9 @@ class RegistrationsControllerSaveTest extends TestCase
                 'survivors_pension_insured_capital' => '1000,00',
                 'monthly_disability_retirement_contribution' => '100,00',
                 'disability_retirement_insured_capital' => '1000,00',
-                // Nenhum brokerCode enviado: as duas flags têm que ser
-                // completamente ignoradas pelo servidor.
+                // As duas flags têm que ser completamente ignoradas pelo
+                // servidor: quais riscos a adesão tem é propriedade
+                // exclusiva do admin.
                 'removeSurvivorsPension' => '1',
                 'removeDisabilityRetirement' => '1',
             ],
@@ -208,37 +169,8 @@ class RegistrationsControllerSaveTest extends TestCase
         $adhesion = TableRegistry::getTableLocator()->get('AdhesionInitialDatas')
             ->get($initialDataId, contain: ['AdhesionPlans']);
 
-        $this->assertNull($adhesion->broker_id);
         $this->assertTrue($adhesion->adhesion_plan->has_survivors_pension);
         $this->assertTrue($adhesion->adhesion_plan->has_disability_retirement);
-    }
-
-    public function testInactiveBrokerCodeIsNeverLockedIn(): void
-    {
-        [$initialDataId, $storageUuid] = $this->createInitialData();
-
-        $this->postAjax('/registrations/save', [
-            'storageUuid' => $storageUuid,
-            'initialDataId' => $initialDataId,
-            'plans' => [
-                'benefitEntryAge' => 65,
-                'monthly_retirement_contribution' => '740,00',
-                'monthly_survivors_pension_contribution' => '160,00',
-                'survivors_pension_insured_capital' => '1000,00',
-                'monthly_disability_retirement_contribution' => '100,00',
-                'disability_retirement_insured_capital' => '1000,00',
-                'brokerCode' => 'MARIAINATIVA',
-                'removeSurvivorsPension' => '1',
-            ],
-        ]);
-
-        $this->assertResponseOk();
-
-        $adhesion = TableRegistry::getTableLocator()->get('AdhesionInitialDatas')
-            ->get($initialDataId, contain: ['AdhesionPlans']);
-
-        $this->assertNull($adhesion->broker_id);
-        $this->assertTrue($adhesion->adhesion_plan->has_survivors_pension);
     }
 
     /**

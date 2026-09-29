@@ -923,16 +923,6 @@ $createSecureCard = function ($data, $type)
                                     </div>
                                 </div>
                             </div>
-                            <!--
-                                O código do corretor deixou de ser campo da
-                                etapa: remover risco é ato do admin sobre uma
-                                adesão, não escolha de quem preenche. O campo
-                                oculto mantém o link de divulgação
-                                (?broker=CODIGO) atribuindo a adesão ao
-                                corretor, que é o que ele de fato faz.
-                            -->
-                            <input type="hidden" id="brokerCode" name="plans[brokerCode]" value="">
-
                             <div class="row">
                                 <div class="col">
                                     <div class="mb-3">
@@ -1995,7 +1985,6 @@ $createSecureCard = function ($data, $type)
             });
 
             initPromotionalCode();
-            initBrokerCode();
             initResumedProposal();
 
             simulationChart();
@@ -2508,19 +2497,6 @@ $createSecureCard = function ($data, $type)
          * deixaria exposição não subscrita num contrato assinado.
          */
         const shouldSkipHealthStep = () => !hasSurvivorsPension && !hasDisabilityRetirement;
-
-        /**
-         * Link de divulgação do corretor: ?broker=CODIGO segue atribuindo a
-         * adesão, agora sem campo visível e sem validação em tempo real -- o
-         * servidor revalida o código ao gravar, que sempre foi a única
-         * garantia de verdade.
-         */
-        const initBrokerCode = () => {
-            const fromUrl = promoNormalize(new URLSearchParams(window.location.search).get('broker'));
-
-            if (fromUrl)
-                document.getElementById('brokerCode').value = fromUrl;
-        };
 
         /**
          * Gancho beforeValidate do passo "Dados iniciais": um código
@@ -3232,10 +3208,10 @@ $createSecureCard = function ($data, $type)
             let simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
 
             // "Simular novamente" recarrega esta mesma página: sem isto, um
-            // ?promo=/?broker= já em uso na URL atual se perderia no reload.
+            // ?promo= já em uso na URL atual se perderia no reload.
             const incomingParams = new URLSearchParams(window.location.search);
 
-            ['promo', 'broker'].forEach((param) => {
+            ['promo'].forEach((param) => {
                 const paramValue = incomingParams.get(param);
 
                 if (paramValue) simulatorUrl += `&${param}=${encodeURIComponent(paramValue)}`;

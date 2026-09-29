@@ -67,7 +67,6 @@ class AdhesionsController extends AppController
         $searchCpf  = $this->request->getQuery('cpf');
         $searchPromotionalCode = $this->request->getQuery('promotionalCode');
         $searchPartnerId = $this->request->getQuery('partnerId');
-        $searchBrokerCode = $this->request->getQuery('brokerCode');
 
         if ($searchName) {
             $query->where([
@@ -95,14 +94,6 @@ class AdhesionsController extends AppController
             // não entram nesse filtro.
             $query->innerJoinWith('PromotionalCodes')
                 ->where(['PromotionalCodes.partner_id' => (int)$searchPartnerId]);
-        }
-
-        if ($searchBrokerCode) {
-            // Mesmo padrão do filtro de código promocional: compara com o
-            // snapshot gravado na adesão, não com o cadastro atual.
-            $query->where([
-                'AdhesionInitialDatas.broker_code' => \App\Model\Entity\Broker::normalizeCode($searchBrokerCode),
-            ]);
         }
 
         $adhesions = $this->paginate($query);
@@ -390,20 +381,6 @@ class AdhesionsController extends AppController
         return $this->redirect(['action' => 'view', $id]);
     }
 
-    private function brokerOptions(?int $current = null): array
-    {
-        $conditions = $current === null
-            ? ['Brokers.active' => true]
-            : ['OR' => ['Brokers.active' => true, 'Brokers.id' => $current]];
-
-        return $this->fetchTable('Brokers')->find()
-            ->where($conditions)
-            ->orderBy(['Brokers.name' => 'ASC'])
-            ->all()
-            ->combine('id', fn($broker) => $broker->name . ' (' . $broker->code . ')')
-            ->toArray();
-    }
-
     public function add()
     {
         $adhesion = $this->AdhesionInitialDatas->newEmptyEntity();
@@ -436,14 +413,13 @@ class AdhesionsController extends AppController
                 $this->Flash->success(__('A adesão foi salva com sucesso.'));
                 return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('A adesão não pôde ser salva. Por favor, tente novamente.'));
+            $this->flashValidationErrors($adhesion);
         }
 
-        $brokers = $this->brokerOptions();
         $economicallyLocked = false;
         $lockReason = ['paid' => false, 'signed' => false];
 
-        $this->set(compact('adhesion', 'brokers', 'economicallyLocked', 'lockReason'));
+        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason'));
     }
 
     private function savePensionSchemes($adhesionInitialDataId, array $data): void
@@ -517,12 +493,10 @@ class AdhesionsController extends AppController
                 return $this->redirect(['action' => 'view', $id]);
             }
 
-            $this->Flash->error('Erro ao salvar, revise os dados.');
+            $this->flashValidationErrors($adhesion);
         }
 
-        $brokers = $this->brokerOptions($adhesion->broker_id);
-
-        $this->set(compact('adhesion', 'brokers', 'economicallyLocked', 'lockReason'));
+        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason'));
     }
 
     /**
@@ -578,6 +552,36 @@ class AdhesionsController extends AppController
         $user = $identity?->getOriginalData();
 
         return $user instanceof \Cake\Datasource\EntityInterface ? $user : null;
+    }
+
+    /**
+     * O flash genérico "revise os dados" escondia o motivo real de uma
+     * gravação falhar -- por exemplo, uma contribuição de risco abaixo do
+     * piso configurado rejeita o `adhesion_plan` inteiro e, por o save() com
+     * associados ser atômico, derruba a adesão inteira junto, em silêncio.
+     * getErrors() traz os erros de toda a árvore, inclusive das associações
+     * patchadas (ex.: `adhesion_plan.monthly_survivors_pension_contribution`).
+     */
+    private function flashValidationErrors(\Cake\Datasource\EntityInterface $entity): void
+    {
+        $messages = $this->collectErrorMessages($entity->getErrors());
+
+        $this->Flash->error($messages === []
+            ? 'Erro ao salvar, revise os dados.'
+            : 'Erro ao salvar: ' . implode(' | ', $messages));
+    }
+
+    private function collectErrorMessages(array $errors): array
+    {
+        $messages = [];
+
+        foreach ($errors as $value) {
+            $messages = is_array($value)
+                ? array_merge($messages, $this->collectErrorMessages($value))
+                : array_merge($messages, [(string)$value]);
+        }
+
+        return $messages;
     }
 
     public function delete($id)

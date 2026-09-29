@@ -79,9 +79,6 @@
                     <a class="nav-link" href="<?= $this->Url->build('/admin/associations') ?>">Vínculos associativos</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="<?= $this->Url->build('/admin/brokers') ?>">Corretores</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/plan-parameters/edit') ?>">Parâmetros do Plano</a>
                 </li>
                 <li class="nav-item">

@@ -22,7 +22,6 @@ class SimulatorControllerTest extends TestCase
     use IntegrationTestTrait;
 
     protected array $fixtures = [
-        'app.Brokers',
         'app.PlanParameters',
     ];
 
@@ -63,16 +62,14 @@ class SimulatorControllerTest extends TestCase
     }
 
     /**
-     * Nem mesmo acompanhadas de um corretor válido e ativo: o campo saiu do
-     * formulário, e aceitar a flag deixaria qualquer um tirar risco montando
-     * a URL à mão.
+     * O campo saiu do formulário faz tempo, e aceitar a flag deixaria
+     * qualquer um tirar risco montando a URL à mão.
      */
     public function testRemovalFlagsInTheQueryAreIgnored(): void
     {
         $result = $this->recalculate([
             'date' => '1990-01-01',
             'value' => '1000',
-            'brokerCode' => 'JOAO2026',
             'removeSurvivorsPension' => '1',
             'removeDisabilityRetirement' => '1',
         ]);

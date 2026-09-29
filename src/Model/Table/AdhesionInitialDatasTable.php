@@ -35,10 +35,6 @@ class AdhesionInitialDatasTable extends AppTable
             'propertyName' => 'association_partner',
         ]);
 
-        $this->belongsTo('Brokers', [
-            'foreignKey' => 'broker_id',
-        ]);
-
         $this->hasOne('AdhesionPersonalDatas', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);

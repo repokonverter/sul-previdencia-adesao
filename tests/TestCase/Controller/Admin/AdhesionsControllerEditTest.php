@@ -179,7 +179,7 @@ class AdhesionsControllerEditTest extends TestCase
         $this->assertResponseContains('ajustados manualmente');
     }
 
-    public function testTheFormOffersRiskSwitchesAndABrokerSelect(): void
+    public function testTheFormOffersRiskSwitches(): void
     {
         [$adhesionId] = $this->createAdhesion();
 
@@ -187,7 +187,6 @@ class AdhesionsControllerEditTest extends TestCase
 
         $this->assertResponseOk();
         $this->assertResponseContains('Riscos contratados');
-        $this->assertResponseContains('Corretor');
 
         // O checkbox precisa vir acompanhado do campo oculto: sem ele,
         // desmarcar não posta nada, a chave some do payload e o patch deixa o

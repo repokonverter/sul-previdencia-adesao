@@ -30,18 +30,6 @@
                 <div class="col-md-6 mb-3">
                     <?= $this->Form->control('phone', ['label' => 'Celular*', 'class' => 'form-control phone', 'required' => true]) ?>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('broker_id', [
-                        'label' => 'Corretor',
-                        'type' => 'select',
-                        'class' => 'form-select',
-                        'options' => $brokers,
-                        'empty' => 'Sem corretor',
-                    ]) ?>
-                    <div class="form-text">
-                        Atribuição da adesão. Não influencia valor nem risco.
-                    </div>
-                </div>
             </div>
         </div>
     </div>

@@ -265,6 +265,18 @@
         updateIncompleteBadges();
         updatePlanTotalContribution();
 
+        // Sem isso, clicar no meio do valor só posiciona o cursor ali --
+        // digitar por cima do texto existente produz um número errado em
+        // vez de substituir o total inteiro. setTimeout(0) porque a máscara
+        // jQuery (reverse:true) também mexe na posição do cursor no foco, e
+        // roda depois -- sem adiar, ela desfazia a seleção.
+        const planTotalField = document.getElementById('planTotalContribution');
+        ['focus', 'click'].forEach((eventName) => {
+            planTotalField?.addEventListener(eventName, function() {
+                setTimeout(() => this.select(), 0);
+            });
+        });
+
         Object.keys(RISK_FIELDS).forEach((id) => {
             const checkbox = document.getElementById(id);
             if (!checkbox) return;
