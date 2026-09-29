@@ -19,6 +19,7 @@ use App\Model\Table\ClicksignDatasTable;
 use App\Model\Table\PromotionalCodesTable;
 use App\Services\IntegrationLogger;
 use Cake\Http\Exception\BadRequestException;
+use Cake\I18n\DateTime;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
 use Cake\Http\Client;
@@ -303,6 +304,20 @@ class RegistrationsController extends AppController
                 }
             }
 
+            // Zero linhas em dependents/pensionScheme é resposta legítima, e
+            // por isso os dois passos precisam de um marcador próprio para
+            // provar que foram de fato enviados (ver AdhesionSteps::EVIDENCE)
+            // -- diferente dos blocos acima, que gravam por causa do que o
+            // payload contém, isto grava por causa de qual passo o navegador
+            // diz estar enviando.
+            if ($initialDataId !== null && ($data['currentStepId'] ?? null) === 'dependents') {
+                $this->markStepAnswered($initialDataId, 'dependents_answered_at');
+            }
+
+            if ($initialDataId !== null && ($data['currentStepId'] ?? null) === 'pensionScheme') {
+                $this->markStepAnswered($initialDataId, 'pension_scheme_answered_at');
+            }
+
             if (!empty($data['paymentDetail'])) {
                 $paymentDetailsData = $data['paymentDetail'];
 
@@ -422,6 +437,19 @@ class RegistrationsController extends AppController
                     'initialDataId' => $adhesionCommitted ? intval($initialDataId) : null,
                 ]));
         }
+    }
+
+    /**
+     * Grava o instante em que um passo sem evidência própria (dependents,
+     * pensionScheme) foi enviado. Ver AdhesionSteps::EVIDENCE.
+     */
+    private function markStepAnswered(int $initialDataId, string $column): void
+    {
+        $adhesion = $this->AdhesionInitialDatas->get($initialDataId);
+        $adhesion = $this->AdhesionInitialDatas->patchEntity($adhesion, [$column => DateTime::now()]);
+
+        if (!$this->AdhesionInitialDatas->save($adhesion))
+            throw new \Exception('Falha ao marcar a etapa como respondida: ' . json_encode($adhesion->getErrors()));
     }
 
     private function notifyAdminsOfClicksignFailure(int $initialDataId, string $customerName, string $errorMessage): void

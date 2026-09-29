@@ -21,6 +21,8 @@ class AdhesionInitialData extends Entity
         'resume_token' => true,
         'resume_token_expires_at' => true,
         'resume_step' => true,
+        'pension_scheme_answered_at' => true,
+        'dependents_answered_at' => true,
         'created' => true,
         'modified' => true,
         'adhesion_personal_data' => true,

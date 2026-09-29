@@ -38,18 +38,21 @@ final class AdhesionSteps
     /**
      * A associação cuja existência prova que a etapa foi preenchida.
      *
-     * Beneficiários e regime de previdência não estão aqui de propósito: nos
-     * dois, nenhuma linha é resposta legítima — não ter beneficiário, não
-     * estar em regime nenhum — e o banco não distingue "respondeu que não" de
-     * "não respondeu". Tratá-los como sempre completos erra para o lado de
-     * deixar o admin escolher, que é recuperável; o contrário travaria o
-     * seletor sem motivo.
+     * Beneficiários e regime de previdência não podem usar a linha
+     * correspondente como prova: nos dois, zero linhas é resposta legítima —
+     * não ter beneficiário, não estar em regime nenhum — e indistinguível de
+     * "ainda não respondeu". Por isso apontam para um marcador próprio
+     * (`dependents_answered_at`, `pension_scheme_answered_at`), gravado por
+     * RegistrationsController::save() no momento em que o passo é enviado,
+     * independente do que ele contém.
      */
     private const EVIDENCE = [
         'personalData' => 'adhesion_personal_data',
         'documents' => 'adhesion_document',
+        'dependents' => 'dependents_answered_at',
         'addressData' => 'adhesion_address',
         'otherInformation' => 'adhesion_other_information',
+        'pensionScheme' => 'pension_scheme_answered_at',
         'plan' => 'adhesion_plan',
         'proponentStatement' => 'adhesion_proponent_statement',
         'paymentDetail' => 'adhesion_payment_detail',

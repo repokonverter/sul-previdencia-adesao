@@ -601,7 +601,7 @@ $createSecureCard = function ($data, $type)
                     <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
                     <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 partner-badge rounded-pill px-3 py-1">
                         <span class="text-muted small me-2 d-none d-sm-inline">em parceria com</span>
-                        <img id="registerModalPartnerLogo" src="" alt="" class="d-none" style="max-height:34px;max-width:130px;object-fit:contain;">
+                        <img id="registerModalPartnerLogo" src="" alt="" class="d-none" style="max-height:46px;max-width:170px;object-fit:contain;">
                         <span id="registerModalPartnerLabel" class="fw-semibold small"></span>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
@@ -645,7 +645,11 @@ $createSecureCard = function ($data, $type)
                                         <select class="form-select" id="associationPartnerId" name="initialData[associationPartnerId]">
                                             <option value="">Selecione seu vínculo</option>
                                             <?php foreach ($associations as $association): ?>
-                                                <option value="<?= h($association->id) ?>"><?= h($association->name) ?></option>
+                                                <option
+                                                    value="<?= h($association->id) ?>"
+                                                    data-color="<?= h($association->color) ?>"
+                                                    data-logo-url="<?= $association->has_logo ? h($this->Url->build(['controller' => 'Partners', 'action' => 'logo', $association->id])) : '' ?>"
+                                                ><?= h($association->name) ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                         <div class="invalid-feedback">Selecione seu vínculo.</div>
@@ -904,7 +908,7 @@ $createSecureCard = function ($data, $type)
                                 <div class="col">
                                     <div class="mb-3">
                                         <label for="benefitEntryAge" class="form-label">Idade para entrada em benefício</label>
-                                        <input type="number" class="form-control" name="plans[benefitEntryAge]" placeholder="Idade para entrada em benefício">
+                                        <input type="number" class="form-control" name="plans[benefitEntryAge]" placeholder="Idade para entrada em benefício" readonly>
                                         <div class="invalid-feedback">
                                             Preenchimento obrigatório.
                                         </div>
@@ -1942,6 +1946,17 @@ $createSecureCard = function ($data, $type)
                     // proponente ao telefone enquanto o admin mexe, e ele não
                     // tem por que saber que existe um botão.
                     refreshPlanFromServer();
+
+                    // Grava os valores padrão assim que a etapa abre: se o
+                    // cliente parar aqui e nunca clicar em avançar, a base não
+                    // pode ficar sem nenhum dado de plano (ver
+                    // RegistrationsController::save, que preserva um plano já
+                    // ajustado pelo admin mesmo que este save reenvie os
+                    // valores calculados). Silencioso porque é conveniência, e
+                    // não uma ação da pessoa -- uma falha de rede aqui não
+                    // deve interromper nada; o próximo avanço de etapa tenta
+                    // salvar de novo.
+                    saveForm('plan').catch(() => {});
                 },
             },
             {
@@ -2211,6 +2226,7 @@ $createSecureCard = function ($data, $type)
             if (!isYes) select.value = '';
 
             updatePromotionalCodeRequirement();
+            updatePartnerHeader();
         };
 
         /**
@@ -2250,18 +2266,44 @@ $createSecureCard = function ($data, $type)
             }));
 
             select.addEventListener('change', () => {
+                updatePartnerHeader();
+
                 const { input } = promoEls();
 
                 if (input.value) lookupPromoCode(input.value);
             });
         };
 
+        /**
+         * De onde vem o parceiro mostrado no cabeçalho: o código promocional
+         * validado tem prioridade (é sempre do mesmo parceiro do vínculo,
+         * quando os dois coexistem -- a validação já garante isso), e na
+         * ausência dele, o vínculo associativo selecionado já basta. Sem
+         * código não há como confirmar um vínculo por texto livre, mas a
+         * pessoa selecionou o parceiro num <select> alimentado pelo próprio
+         * cadastro, então o nome já está confirmado.
+         */
+        const selectedPartnerInfo = () => {
+            if (promoState.status === 'valid') {
+                return { name: promoState.partnerName, logoUrl: promoState.logoUrl, color: promoState.color };
+            }
+
+            if (!isAssociationYes()) return null;
+
+            const option = associationEls().select.selectedOptions[0];
+
+            if (!option || !option.value) return null;
+
+            return { name: option.textContent, logoUrl: option.dataset.logoUrl || null, color: option.dataset.color || null };
+        };
+
         const updatePartnerHeader = () => {
             const wrapper = document.getElementById('registerModalPartner');
             const logo = document.getElementById('registerModalPartnerLogo');
             const label = document.getElementById('registerModalPartnerLabel');
+            const partner = selectedPartnerInfo();
 
-            if (promoState.status !== 'valid') {
+            if (!partner) {
                 wrapper.classList.add('d-none');
                 wrapper.classList.remove('d-flex');
                 wrapper.style.borderColor = '';
@@ -2274,22 +2316,22 @@ $createSecureCard = function ($data, $type)
 
             wrapper.classList.remove('d-none');
             wrapper.classList.add('d-flex');
-            wrapper.style.borderColor = promoState.color || '';
+            wrapper.style.borderColor = partner.color || '';
 
-            if (promoState.logoUrl) {
-                logo.src = promoState.logoUrl;
-                logo.alt = promoState.partnerName;
+            if (partner.logoUrl) {
+                logo.src = partner.logoUrl;
+                logo.alt = partner.name;
                 logo.classList.remove('d-none');
                 // Se a imagem falhar, cai para o nome do parceiro em texto.
                 logo.onerror = () => {
                     logo.classList.add('d-none');
-                    label.textContent = promoState.partnerName;
+                    label.textContent = partner.name;
                 };
                 label.textContent = '';
             } else {
                 logo.classList.add('d-none');
                 logo.removeAttribute('src');
-                label.textContent = promoState.partnerName;
+                label.textContent = partner.name;
             }
         };
 
@@ -2666,6 +2708,7 @@ $createSecureCard = function ($data, $type)
                         'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
                     },
                     data: formElements.serialize()
+                        + `&currentStepId=${encodeURIComponent(id)}`
                         + (storageUuid !== null ? `&storageUuid=${encodeURIComponent(storageUuid)}` : '')
                         + (initialDataId !== null ? `&initialDataId=${initialDataId}` : ''),
                     dataType: 'json',
@@ -2923,6 +2966,11 @@ $createSecureCard = function ($data, $type)
             $('#registerModal input[name="plans[survivors_pension_insured_capital]"]').val(formatMoney(response.survivorsPensionInsuredCapital));
             $('#registerModal input[name="plans[monthly_disability_retirement_contribution]"]').val(formatMoney(response.monthlyDisabilityRetirementContribution));
             $('#registerModal input[name="plans[disability_retirement_insured_capital]"]').val(formatMoney(response.disabilityRetirementInsuredCapital));
+            // "Investimento mensal" é o mesmo valor de "Total de contribuição
+            // mensal" -- sem esta linha, um "Atualizar" que o admin pediu
+            // troca todos os campos calculados menos este, que fica com o
+            // valor antigo digitado antes do ajuste.
+            document.getElementById('planMonthlyInvestment').value = formatMoney(response.totalMonthlyContribution);
             $('#paymentTotalContribution').val(formatMoney(response.totalMonthlyContribution));
             document.getElementById('planTotalMonthlyContribution').textContent = response.totalMonthlyContribution.toLocaleString('pt-BR', {
                 style: 'currency',
