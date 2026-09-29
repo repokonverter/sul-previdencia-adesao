@@ -6,6 +6,36 @@
  * @var iterable<\App\Model\Entity\Partner> $partners
  */
 
+/**
+ * Uma linha "valor + botão de copiar", para os três campos que hoje têm
+ * coluna própria (nome, celular, e-mail) e passam a dividir uma só. Sem
+ * botão quando não há valor -- não faz sentido copiar um traço.
+ */
+$copyableRow = function (?string $value, string $label, array $rowClass = [])
+{
+    $class = implode(' ', array_merge(['d-flex', 'align-items-center', 'gap-1'], $rowClass));
+
+    if (empty($value)) {
+        return '<div class="' . $class . '"><span class="text-muted">&mdash;</span></div>';
+    }
+
+    return '<div class="' . $class . '">'
+        . '<span class="text-truncate" style="min-width: 0;">' . h($value) . '</span>'
+        . '<button type="button" class="btn btn-sm btn-link text-muted p-0 js-copy-value flex-shrink-0" '
+        . 'data-copy="' . h($value) . '" title="Copiar ' . h($label) . '">'
+        . '<i class="bi bi-clipboard"></i></button>'
+        . '</div>';
+};
+
+$getClientCell = function ($adhesion) use ($copyableRow)
+{
+    $name = $adhesion->name ?? $adhesion->adhesion_personal_data->name ?? null;
+
+    return $copyableRow($name, 'nome', ['fw-semibold'])
+        . $copyableRow($adhesion->phone, 'celular', ['text-muted', 'small'])
+        . $copyableRow($adhesion->email, 'e-mail', ['text-muted', 'small']);
+};
+
 $getPromotionalCodeCell = function ($adhesion)
 {
     if (empty($adhesion->promotional_code)) {
@@ -140,8 +170,6 @@ $getSignatureStatusBadge = function ($adhesion)
             <thead class="table-light">
                 <tr>
                     <th>Cliente</th>
-                    <th>Celular</th>
-                    <th>E-mail</th>
                     <th>Etapa</th>
                     <th>Código</th>
                     <th>Pix</th>
@@ -154,9 +182,7 @@ $getSignatureStatusBadge = function ($adhesion)
                 <?php $resumeModals = ''; ?>
                 <?php foreach ($adhesions as $adhesion): ?>
                     <tr>
-                        <td class="fw-semibold"><?= h($adhesion->name ?? $adhesion->adhesion_personal_data->name) ?></td>
-                        <td><?= h($adhesion->phone ?? '—') ?></td>
-                        <td><?= h($adhesion->email ?? '—') ?></td>
+                        <td style="min-width: 220px;"><?= $getClientCell($adhesion) ?></td>
                         <td><?= h(\App\Services\AdhesionSteps::currentStageLabel($adhesion)) ?></td>
                         <td><?= $getPromotionalCodeCell($adhesion) ?></td>
                         <td><?= $getPixStatusBadge($adhesion) ?></td>
@@ -241,3 +267,19 @@ $getSignatureStatusBadge = function ($adhesion)
         </div>
     </div>
 </div>
+
+<script>
+    document.querySelectorAll('.js-copy-value').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const value = button.getAttribute('data-copy');
+            const icon = button.querySelector('i');
+
+            navigator.clipboard.writeText(value).then(function () {
+                icon.className = 'bi bi-check-lg';
+                setTimeout(function () {
+                    icon.className = 'bi bi-clipboard';
+                }, 1500);
+            });
+        });
+    });
+</script>
