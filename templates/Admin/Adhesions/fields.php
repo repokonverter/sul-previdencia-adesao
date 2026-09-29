@@ -278,7 +278,7 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_plan.monthly_survivors_pension_contribution', ['label' => 'Contribuição mensal pensão por morte', 'class' => 'form-control money plan-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_plan.monthly_survivors_pension_contribution', ['label' => 'Contribuição mensal pensão por morte', 'class' => 'form-control money plan-contribution-field plan-risk-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
                 </div>
                 <div class="col-md-6 mb-3">
                     <?= $this->Form->control('adhesion_plan.survivors_pension_insured_capital', ['label' => 'Capital segurado pensão por morte', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
@@ -286,7 +286,7 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_plan.monthly_disability_retirement_contribution', ['label' => 'Contribuição mensal aposentadoria por invalidez', 'class' => 'form-control money plan-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_plan.monthly_disability_retirement_contribution', ['label' => 'Contribuição mensal aposentadoria por invalidez', 'class' => 'form-control money plan-contribution-field plan-risk-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
                 </div>
                 <div class="col-md-6 mb-3">
                     <?= $this->Form->control('adhesion_plan.disability_retirement_insured_capital', ['label' => 'Capital segurado aposentadoria por invalidez', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>

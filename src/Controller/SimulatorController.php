@@ -177,6 +177,54 @@ class SimulatorController extends AppController
     }
 
     /**
+     * O capital segurado de uma contribuição de risco editada à mão.
+     *
+     * Diferente de recalculate(), que redistribui o investimento total pelas
+     * taxas padrão e reescreve as contribuições, este endpoint parte da
+     * contribuição exata que o admin já digitou em cada risco -- sem mexer
+     * nela nem no total -- e devolve só o capital correspondente. É o que a
+     * tela de editar adesão chama a cada mudança nos campos de contribuição
+     * de morte/invalidez, para o capital não ficar desatualizado até alguém
+     * calcular na mão.
+     */
+    function recalculateRiskCapital()
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+        $this->autoRender = false;
+
+        $date = $this->request->getQuery('date');
+
+        if (empty($date)) {
+            return $this->response->withType('application/json')
+                ->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Data de nascimento é obrigatória.',
+                ]));
+        }
+
+        $survivorsPensionContribution = (float)str_replace(
+            ',',
+            '.',
+            (string)$this->request->getQuery('survivorsPensionContribution')
+        );
+        $disabilityRetirementContribution = (float)str_replace(
+            ',',
+            '.',
+            (string)$this->request->getQuery('disabilityRetirementContribution')
+        );
+
+        [$survivorsPensionInsuredCapital, $disabilityRetirementInsuredCapital] = $this->planSimulator()
+            ->riskInsuredCapital($date, $survivorsPensionContribution, $disabilityRetirementContribution);
+
+        return $this->response->withType('application/json')
+            ->withStringBody(json_encode([
+                'success' => true,
+                'survivorsPensionInsuredCapital' => $survivorsPensionInsuredCapital,
+                'disabilityRetirementInsuredCapital' => $disabilityRetirementInsuredCapital,
+            ]));
+    }
+
+    /**
      * Só oferece a pergunta "Possuí vínculo associativo?" quando há ao menos
      * um vínculo ativo cadastrado — sem isso, o formulário permanece
      * exatamente como era antes desta funcionalidade existir.

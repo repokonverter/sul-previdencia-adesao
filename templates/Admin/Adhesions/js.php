@@ -291,6 +291,59 @@
         $(form).on('input change', '.plan-contribution-field', updatePlanTotalContribution);
 
         /**
+         * Capital segurado a partir da contribuição de risco como está no
+         * campo, sem redistribuir nada -- diferente do "Recalcular" abaixo,
+         * que parte do total e reescreve as três contribuições pelas taxas
+         * padrão. Isto é o que mantém "Capital segurado pensão por morte" e
+         * "...invalidez" em dia quando o admin ajusta só a contribuição de
+         * um risco à mão (SimulatorController::recalculateRiskCapital).
+         */
+        let riskCapitalTimeout;
+
+        const recalculateRiskCapital = () => {
+            const birthDate = $('input[name="adhesion_personal_data[birth_date]"]').val();
+
+            if (!birthDate) return;
+
+            const $survivorsContribution = $('input[name="adhesion_plan[monthly_survivors_pension_contribution]"]');
+            const $disabilityContribution = $('input[name="adhesion_plan[monthly_disability_retirement_contribution]"]');
+
+            $.ajax({
+                type: 'GET',
+                url: <?= json_encode($this->Url->build([
+                    'controller' => 'Simulator',
+                    'action' => 'recalculateRiskCapital',
+                    'prefix' => false,
+                ])) ?>,
+                data: {
+                    date: birthDate,
+                    survivorsPensionContribution: parseMoneyValue($survivorsContribution.val()),
+                    disabilityRetirementContribution: parseMoneyValue($disabilityContribution.val()),
+                },
+                dataType: 'json',
+                success: (response) => {
+                    if (!response.success) return;
+
+                    // Readonly (risco desmarcado) fica de fora: o capital já
+                    // está travado em zero por handleRiskToggle, e não é
+                    // este campo que decidiu a contribuição zerada.
+                    if (!$survivorsContribution.prop('readOnly')) {
+                        $('input[name="adhesion_plan[survivors_pension_insured_capital]"]').val(formatMoneyValue(response.survivorsPensionInsuredCapital));
+                    }
+
+                    if (!$disabilityContribution.prop('readOnly')) {
+                        $('input[name="adhesion_plan[disability_retirement_insured_capital]"]').val(formatMoneyValue(response.disabilityRetirementInsuredCapital));
+                    }
+                },
+            });
+        };
+
+        $(form).on('input', '.plan-risk-contribution-field', function() {
+            clearTimeout(riskCapitalTimeout);
+            riskCapitalTimeout = setTimeout(recalculateRiskCapital, 500);
+        });
+
+        /**
          * "Recalcular": mesmo endpoint que o formulário público usa no passo
          * Plano (SimulatorController::recalculate), reaproveitado aqui para
          * não duplicar a fórmula atuarial. Ele lê os riscos como estão

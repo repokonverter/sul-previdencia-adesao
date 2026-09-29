@@ -132,4 +132,43 @@ class PlanSimulator
 
         return $age <= 55 ? 65 : $age + 10;
     }
+
+    /**
+     * O capital segurado correspondente a uma contribuição de risco já
+     * decidida -- não uma fatia recalculada do total, a contribuição exata
+     * que o admin digitou. A procedure aplica a mesma fórmula (custo
+     * unitário por idade, teto) independentemente de onde a contribuição
+     * veio, então basta chamá-la com os dois valores de risco na mão e
+     * ignorar o resto da linha: aposentadoria/saldo/benefício não entram
+     * nessa conta, e as três taxas de rentabilidade do loop interno da
+     * procedure devolvem a mesma cobertura, então uma linha basta.
+     *
+     * @return array{0: float, 1: float} [capital morte, capital invalidez]
+     */
+    public function riskInsuredCapital(
+        string $birthDate,
+        float $survivorsPensionContribution,
+        float $disabilityRetirementContribution,
+    ): array {
+        $row = $this->connection
+            ->execute(
+                'SELECT cobertura_morte, cobertura_invalidez
+                FROM simulacao_previdencia(:date, :value, :survivorsPension, :disabilityRetirement)
+                LIMIT 1',
+                [
+                    'date' => $birthDate,
+                    'value' => $survivorsPensionContribution + $disabilityRetirementContribution,
+                    'survivorsPension' => $survivorsPensionContribution,
+                    'disabilityRetirement' => $disabilityRetirementContribution,
+                ],
+                [
+                    'value' => 'decimal',
+                    'survivorsPension' => 'decimal',
+                    'disabilityRetirement' => 'decimal',
+                ],
+            )
+            ->fetch('assoc');
+
+        return [(float)$row['cobertura_morte'], (float)$row['cobertura_invalidez']];
+    }
 }

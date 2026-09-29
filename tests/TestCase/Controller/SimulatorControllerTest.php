@@ -208,4 +208,61 @@ class SimulatorControllerTest extends TestCase
         $this->assertFalse($result['hasDisabilityRetirement']);
         $this->assertEqualsWithDelta(1000.0, (float)$result['monthlyRetirementContribution'], 0.01);
     }
+
+    private function recalculateRiskCapital(array $query): array
+    {
+        $this->get('/simulator/recalculate-risk-capital?' . http_build_query($query));
+
+        $this->assertResponseOk();
+
+        return json_decode((string)$this->_response->getBody(), true);
+    }
+
+    /**
+     * O capital segue a contribuição exata que veio na URL -- não uma fração
+     * do total -- e a fórmula (custo unitário por idade) da procedure.
+     */
+    public function testRiskCapitalFollowsTheGivenContributionForTheAge(): void
+    {
+        $thirtyYearsAgo = (new \DateTime('-30 years'))->format('Y-m-d');
+
+        $result = $this->recalculateRiskCapital([
+            'date' => $thirtyYearsAgo,
+            'survivorsPensionContribution' => '100',
+            'disabilityRetirementContribution' => '50',
+        ]);
+
+        $this->assertTrue($result['success']);
+        $this->assertEqualsWithDelta(485550.03, $result['survivorsPensionInsuredCapital'], 0.01);
+        $this->assertEqualsWithDelta(694213.04, $result['disabilityRetirementInsuredCapital'], 0.01);
+    }
+
+    /**
+     * Acima do teto da faixa etária, o capital para no teto em vez de seguir
+     * a contribuição -- mesma regra que a procedure aplica na proposta.
+     */
+    public function testRiskCapitalIsCappedByTheAgeLimit(): void
+    {
+        $sixtyOneYearsAgo = (new \DateTime('-61 years'))->format('Y-m-d');
+
+        $result = $this->recalculateRiskCapital([
+            'date' => $sixtyOneYearsAgo,
+            'survivorsPensionContribution' => '2000',
+            'disabilityRetirementContribution' => '1000',
+        ]);
+
+        $this->assertTrue($result['success']);
+        $this->assertEqualsWithDelta(600000.0, $result['survivorsPensionInsuredCapital'], 0.01);
+        $this->assertEqualsWithDelta(500000.0, $result['disabilityRetirementInsuredCapital'], 0.01);
+    }
+
+    public function testRiskCapitalRequiresABirthDate(): void
+    {
+        $result = $this->recalculateRiskCapital([
+            'survivorsPensionContribution' => '100',
+            'disabilityRetirementContribution' => '50',
+        ]);
+
+        $this->assertFalse($result['success']);
+    }
 }
