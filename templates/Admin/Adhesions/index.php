@@ -189,48 +189,61 @@ $getSignatureStatusBadge = function ($adhesion)
                         <td><?= $getSignatureStatusBadge($adhesion) ?></td>
                         <td><?= h($adhesion->created->format('d/m/Y H:i:s') ?? '—') ?></td>
                         <td class="text-end">
-                            <?php
-                            if ($adhesion->adhesion_payment_detail) {
-                                echo $this->Html->link(
-                                    '<i class="bi bi-file-pdf"></i>',
-                                    ['action' => 'generatePdf', $adhesion->id],
-                                    ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Gerar PDF da proposta']
-                                );
-                                echo $this->Html->link(
-                                    '<i class="bi bi-file-pdf"></i>',
-                                    ['action' => 'generateFormPdf', $adhesion->id],
-                                    ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Gerar PDF da inscrição']
-                                );
-                            }
-                            ?>
-
-                            <?= $this->Html->link(
-                                '<i class="bi bi-eye"></i>',
-                                ['action' => 'view', $adhesion->id],
-                                ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Visualizar']
-                            ) ?>
-
-                            <button type="button" class="btn btn-sm btn-light me-1" title="Link de retomada"
-                                    data-bs-toggle="modal" data-bs-target="#resumeLinkModal-<?= $adhesion->id ?>">
-                                <i class="bi bi-link-45deg"></i>
-                            </button>
-
-                            <?= $this->Html->link(
-                                '<i class="bi bi-pencil-square"></i>',
-                                ['action' => 'edit', $adhesion->id],
-                                ['escape' => false, 'class' => 'btn btn-sm btn-secondary me-1', 'title' => 'Editar']
-                            ) ?>
-
-                            <?= $this->Form->postLink(
-                                '<i class="bi bi-trash"></i>',
-                                ['action' => 'delete', $adhesion->id],
-                                [
-                                    'escape' => false,
-                                    'class' => 'btn btn-sm btn-danger me-1',
-                                    'confirm' => 'Tem certeza que deseja remover este cadastro?',
-                                    'title' => 'Remover'
-                                ]
-                            ) ?>
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-sm btn-light" data-bs-toggle="dropdown" aria-expanded="false" title="Ações">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <?php if ($adhesion->adhesion_payment_detail): ?>
+                                        <li>
+                                            <?= $this->Html->link(
+                                                '<i class="bi bi-file-pdf me-2"></i>Gerar PDF da proposta',
+                                                ['action' => 'generatePdf', $adhesion->id],
+                                                ['escape' => false, 'class' => 'dropdown-item']
+                                            ) ?>
+                                        </li>
+                                        <li>
+                                            <?= $this->Html->link(
+                                                '<i class="bi bi-file-pdf me-2"></i>Gerar PDF da inscrição',
+                                                ['action' => 'generateFormPdf', $adhesion->id],
+                                                ['escape' => false, 'class' => 'dropdown-item']
+                                            ) ?>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                    <?php endif; ?>
+                                    <li>
+                                        <?= $this->Html->link(
+                                            '<i class="bi bi-eye me-2"></i>Visualizar',
+                                            ['action' => 'view', $adhesion->id],
+                                            ['escape' => false, 'class' => 'dropdown-item']
+                                        ) ?>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#resumeLinkModal-<?= $adhesion->id ?>">
+                                            <i class="bi bi-link-45deg me-2"></i>Link de retomada
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <?= $this->Html->link(
+                                            '<i class="bi bi-pencil-square me-2"></i>Editar',
+                                            ['action' => 'edit', $adhesion->id],
+                                            ['escape' => false, 'class' => 'dropdown-item']
+                                        ) ?>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <?= $this->Form->postLink(
+                                            '<i class="bi bi-trash me-2"></i>Remover',
+                                            ['action' => 'delete', $adhesion->id],
+                                            [
+                                                'escape' => false,
+                                                'class' => 'dropdown-item text-danger',
+                                                'confirm' => 'Tem certeza que deseja remover este cadastro?',
+                                            ]
+                                        ) ?>
+                                    </li>
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                     <?php
