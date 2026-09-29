@@ -147,11 +147,9 @@ class RegistrationsController extends AppController
                         $patchData['promotional_code_id'] = $promotionalCode->id;
                         $patchData['promotional_code'] = $promotionalCode->code;
 
-                        // O vínculo associativo trava junto com o código, na
-                        // mesma chamada: nunca é aceito isoladamente a partir
-                        // do que o front-end alega, só quando acompanhado de
-                        // um código válido do próprio vínculo (parceiro com
-                        // is_association = true). Os textos da Declaração são
+                        // Um código de vínculo associativo (parceiro com
+                        // is_association = true) grava o vínculo junto, na
+                        // mesma chamada. Os textos da Declaração são
                         // congelados agora, para que o PDF gerado depois
                         // reproduza sempre o que foi de fato assinado, mesmo
                         // que o cadastro do vínculo mude no futuro.
@@ -161,6 +159,31 @@ class RegistrationsController extends AppController
                             $patchData['association_partner_id'] = $codePartner->id;
                             $patchData['association_snapshot'] = json_encode($codePartner->declarationTexts());
                         }
+                    }
+                }
+
+                // Código promocional continua opcional para quem respondeu
+                // ter vínculo (ver templates/Simulator/index.php): sem ele, o
+                // vínculo escolhido no <select> precisa poder ser gravado
+                // sozinho. Nunca é aceito isoladamente a partir do que o
+                // front-end alega, só quando o id aponta para um vínculo
+                // ativo de verdade.
+                if (
+                    empty($initial->association_partner_id)
+                    && empty($patchData['association_partner_id'])
+                    && !empty($initialData['associationPartnerId'])
+                ) {
+                    $association = $this->fetchTable('Partners')->find()
+                        ->find('byAssociationScope', isAssociation: true)
+                        ->where([
+                            'Partners.id' => (int)$initialData['associationPartnerId'],
+                            'Partners.active' => true,
+                        ])
+                        ->first();
+
+                    if ($association !== null) {
+                        $patchData['association_partner_id'] = $association->id;
+                        $patchData['association_snapshot'] = json_encode($association->declarationTexts());
                     }
                 }
 

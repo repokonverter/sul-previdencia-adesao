@@ -8,8 +8,16 @@
 
 $getPromotionalCodeCell = function ($adhesion)
 {
-    if (empty($adhesion->promotional_code))
-        return '<span class="text-muted">&mdash;</span>';
+    if (empty($adhesion->promotional_code)) {
+        // Sem código, mas com vínculo selecionado (o código é sempre
+        // opcional): mostra o vínculo sozinho, senão a coluna fica vazia
+        // para quem de fato respondeu a pergunta.
+        $association = $adhesion->association_partner->name ?? null;
+
+        return $association
+            ? '<span class="text-muted small">Vínculo: ' . h($association) . '</span>'
+            : '<span class="text-muted">&mdash;</span>';
+    }
 
     // O snapshot é a fonte da verdade; o parceiro vem do vínculo, quando ainda existe.
     $partner = $adhesion->promotional_code_entity->partner->name ?? null;

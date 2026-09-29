@@ -122,6 +122,12 @@ $formatLogBody = function (?string $value): string
                 <div class="col-md-4">
                     <p><strong>Criado em:</strong> <?= $adhesion->created->format('d/m/Y H:i') ?></p>
                 </div>
+                <div class="col-md-4">
+                    <p><strong>Código promocional:</strong> <?= $adhesion->promotional_code ? h($adhesion->promotional_code) : '—' ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Vínculo associativo:</strong> <?= $adhesion->association_partner ? h($adhesion->association_partner->name) : '—' ?></p>
+                </div>
             </div>
         </div>
     </div>

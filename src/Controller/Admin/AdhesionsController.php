@@ -61,6 +61,7 @@ class AdhesionsController extends AppController
                 'PixTransactions' => ['sort' => ['PixTransactions.attempt' => 'DESC']],
                 'ClicksignDatas' => ['sort' => ['ClicksignDatas.attempt' => 'DESC']],
                 'PromotionalCodes.Partners',
+                'AssociationPartners',
             ]);
 
         $searchName = $this->request->getQuery('name');
@@ -134,6 +135,7 @@ class AdhesionsController extends AppController
             'IntegrationLogs' => ['sort' => ['IntegrationLogs.created' => 'DESC']],
             'AdhesionAudits' => ['sort' => ['AdhesionAudits.created' => 'DESC']],
             'ClicksignDatas' => ['sort' => ['ClicksignDatas.attempt' => 'DESC']],
+            'AssociationPartners',
         ]);
 
         $resume = $this->resumeLinkInfo($adhesion);
@@ -441,7 +443,7 @@ class AdhesionsController extends AppController
 
     public function edit($id)
     {
-        $adhesion = $this->AdhesionInitialDatas->get($id, contain: AdhesionAuditor::CONTAINS);
+        $adhesion = $this->AdhesionInitialDatas->get($id, contain: [...AdhesionAuditor::CONTAINS, 'AssociationPartners']);
         $lockReason = $this->lockReason($adhesion);
         $economicallyLocked = $lockReason['paid'] || $lockReason['signed'];
 

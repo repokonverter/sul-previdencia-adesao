@@ -31,6 +31,16 @@
                     <?= $this->Form->control('phone', ['label' => 'Celular*', 'class' => 'form-control phone', 'required' => true]) ?>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Código promocional</label>
+                    <input type="text" class="form-control" value="<?= $adhesion->promotional_code ? h($adhesion->promotional_code) : '—' ?>" disabled>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Vínculo associativo</label>
+                    <input type="text" class="form-control" value="<?= $adhesion->association_partner ? h($adhesion->association_partner->name) : '—' ?>" disabled>
+                </div>
+            </div>
         </div>
     </div>
 
