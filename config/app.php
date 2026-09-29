@@ -507,7 +507,7 @@ return [
 
     'Resend' => [
         'apiKey' => env('RESEND_API_KEY', null),
-        'fromAddress' => env('MAIL_FROM_ADDRESS', 'plenoprev@konverter.com.br'),
+        'fromAddress' => env('MAIL_FROM_ADDRESS', 'atendimento@sulprevidencia.org.br'),
         'fromName' => env('MAIL_FROM_NAME', 'Sul Previdência'),
     ],
 

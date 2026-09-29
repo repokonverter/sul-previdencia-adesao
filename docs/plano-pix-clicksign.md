@@ -51,7 +51,7 @@ O Sicoob é sempre a fonte da verdade; nada é inferido apenas do estado local.
 | Webhook Sicoob                | Apenas gatilho — ao receber, confirma via `GET /cob/{txid}` antes de marcar qualquer coisa. Token de segurança **no path**, não em query string: `/sicoob/webhook/{token}/pix` — o Sicoob acrescenta `/pix` ao final da URL cadastrada, o que quebraria um token em query string                                                                                        |
 | Admin                         | Tela de CRUD de webhooks cadastrados no Sicoob + botão manual "verificar pagamento" por adesão (mesma lógica do item acima, sob demanda)                                                                                                                                                                                                                                |
 | Provedor de e-mail            | Resend                                                                                                                                                                                                                                                                                                                                                                  |
-| Remetente                     | `plenoprev@konverter.com.br` — **provisório**, definido só em env var (endereço, nome de exibição, credenciais). Trocar deve ser mudança de config, não de código. Cliente ainda vai definir o domínio definitivo                                                                                                                                                       |
+| Remetente                     | `atendimento@sulprevidencia.org.br` — **provisório**, definido só em env var (endereço, nome de exibição, credenciais). Trocar deve ser mudança de config, não de código. Cliente ainda vai definir o domínio definitivo                                                                                                                                                |
 | `App.fullBaseUrl`             | Precisa ser configurado explicitamente — e-mail não tem request HTTP para inferir domínio, os links quebrariam sem isso                                                                                                                                                                                                                                                 |
 | Visual da página de pagamento | Herda a identidade visual do simulador (`templates/Simulator/index.php`): `--primary-color: #FF6B00`, texto `#333`, Arial, Bootstrap 5, card branco `border-radius: 24px`, `box-shadow: 0 4px 32px rgba(0,0,0,.10)`, barra superior 10px na cor primária, `max-width: 950px`, logo `logo_sul_transparente.png`. **Não** é o layout enterprise — isso é só para o e-mail |
 | Visual do e-mail              | Layout "enterprise" — a ser desenhado, com o mesmo remetente/branding provisório acima                                                                                                                                                                                                                                                                                  |
@@ -98,37 +98,37 @@ enquanto a falha esteve ativa.
    `adhesion_initial_data` (`ON DELETE CASCADE`). `App\Services\IntegrationLogger`
    é o único ponto de escrita: `logHttp()` para chamadas HTTP (sucesso e
    falha), `logEvent()` para marcos internos. Cobre:
-   - **Sicoob** — `SicoobService::request()` e `_performAuthRequest()`.
-   - **Clicksign** — `ClicksignService::_request()` (ponto único usado pelos
-     ~24 métodos públicos do serviço).
-   - **Resend** — `ResendService::send()`.
-   - **Webhook Sicoob recebido** — `WebhooksController::pix()`, direção
-     `inbound`, com o token do path redigido antes de persistir a URL.
-   - **Marcos internos** — `adhesion.finalized`, `application.pdfs_generated`,
-     `adhesion.save_failed`, `payment_page.opened`, `pix.charge_created`,
-     `pix.charge_regenerated`, `pix.payment_confirmed`.
+    - **Sicoob** — `SicoobService::request()` e `_performAuthRequest()`.
+    - **Clicksign** — `ClicksignService::_request()` (ponto único usado pelos
+      ~24 métodos públicos do serviço).
+    - **Resend** — `ResendService::send()`.
+    - **Webhook Sicoob recebido** — `WebhooksController::pix()`, direção
+      `inbound`, com o token do path redigido antes de persistir a URL.
+    - **Marcos internos** — `adhesion.finalized`, `application.pdfs_generated`,
+      `adhesion.save_failed`, `payment_page.opened`, `pix.charge_created`,
+      `pix.charge_regenerated`, `pix.payment_confirmed`.
 
-   O rótulo de operação (`sicoob.get_cob`, `clicksign.create_envelope`, ...)
-   é derivado automaticamente do nome do método chamador via
-   `debug_backtrace()`, evitando editar cada um dos ~20-30 call sites.
-   Associação com a adesão é por contexto explícito: os três serviços
-   ganharam `forAdhesion(?int $id)`, chamado antes de cada operação (direto
-   em `RegistrationsController`, ou propagado por `PixPaymentService` a
-   partir do `adhesion_initial_data_id` já resolvido).
+    O rótulo de operação (`sicoob.get_cob`, `clicksign.create_envelope`, ...)
+    é derivado automaticamente do nome do método chamador via
+    `debug_backtrace()`, evitando editar cada um dos ~20-30 call sites.
+    Associação com a adesão é por contexto explícito: os três serviços
+    ganharam `forAdhesion(?int $id)`, chamado antes de cada operação (direto
+    em `RegistrationsController`, ou propagado por `PixPaymentService` a
+    partir do `adhesion_initial_data_id` já resolvido).
 
-   **Redação:** corpos são serializados como JSON; chaves sensíveis
-   (`content_base64`, `authorization`, `access_token`, etc.) viram
-   `[REDACTED]` ou `[REDACTED, X KB]` para valores grandes. CPF e dados
-   bancários **não** são redigidos — já existem em texto na própria adesão e
-   são o que se precisa conferir ao depurar. Corpos são truncados em 8 KB
-   (`…[truncado]`). Headers (onde vive `Authorization`) nunca são
-   persistidos — só request/response bodies.
+    **Redação:** corpos são serializados como JSON; chaves sensíveis
+    (`content_base64`, `authorization`, `access_token`, etc.) viram
+    `[REDACTED]` ou `[REDACTED, X KB]` para valores grandes. CPF e dados
+    bancários **não** são redigidos — já existem em texto na própria adesão e
+    são o que se precisa conferir ao depurar. Corpos são truncados em 8 KB
+    (`…[truncado]`). Headers (onde vive `Authorization`) nunca são
+    persistidos — só request/response bodies.
 
-   Falha ao gravar um log nunca derruba o fluxo: `IntegrationLogger::logHttp()`
-   envolve a escrita em `try/catch` e cai para o log de arquivo/stdout se a
-   gravação falhar. Coberto por
-   `tests/TestCase/Services/IntegrationLoggerTest.php` (redação, truncagem,
-   falha de escrita silenciosa).
+    Falha ao gravar um log nunca derruba o fluxo: `IntegrationLogger::logHttp()`
+    envolve a escrita em `try/catch` e cai para o log de arquivo/stdout se a
+    gravação falhar. Coberto por
+    `tests/TestCase/Services/IntegrationLoggerTest.php` (redação, truncagem,
+    falha de escrita silenciosa).
 
 4. ✅ **Leitura no admin.** Aba "Integrações" em `Admin/Adhesions::view()`
    (linha do tempo da adesão, com request/response expansíveis) +
