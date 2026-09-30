@@ -203,11 +203,19 @@ $getSignatureStatusBadge = function ($adhesion)
                                             ) ?>
                                         </li>
                                         <li>
-                                            <?= $this->Html->link(
-                                                '<i class="bi bi-file-pdf me-2"></i>Gerar PDF da inscrição',
-                                                ['action' => 'generateFormPdf', $adhesion->id],
-                                                ['escape' => false, 'class' => 'dropdown-item']
-                                            ) ?>
+                                            <?php if ($adhesion->association_partner_id !== null): ?>
+                                                <?= $this->Html->link(
+                                                    '<i class="bi bi-file-pdf me-2"></i>Gerar Declaração de Vínculo',
+                                                    ['action' => 'generateAssociationDeclarationPdf', $adhesion->id],
+                                                    ['escape' => false, 'class' => 'dropdown-item']
+                                                ) ?>
+                                            <?php else: ?>
+                                                <?= $this->Html->link(
+                                                    '<i class="bi bi-file-pdf me-2"></i>Gerar PDF da inscrição',
+                                                    ['action' => 'generateFormPdf', $adhesion->id],
+                                                    ['escape' => false, 'class' => 'dropdown-item']
+                                                ) ?>
+                                            <?php endif; ?>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
                                     <?php endif; ?>

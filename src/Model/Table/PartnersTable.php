@@ -65,19 +65,32 @@ class PartnersTable extends AppTable
             ->boolean('is_association')
             ->allowEmptyString('is_association');
 
-        $validator
-            ->scalar('declaration_title')
-            ->allowEmptyString('declaration_title')
-            ->maxLength('declaration_title', 120);
+        // Só exigidos para vínculo associativo (is_association = true): a
+        // Declaração de Vínculo Associativo depende diretamente dos dois, e
+        // um parceiro comum nem mostra estes campos no formulário.
+        $requiredForAssociation = fn($context) => !empty($context['data']['is_association']);
 
         $validator
-            ->scalar('declaration_institution_name')
-            ->allowEmptyString('declaration_institution_name')
-            ->maxLength('declaration_institution_name', 120);
+            ->scalar('company_name')
+            ->maxLength('company_name', 150)
+            ->requirePresence('company_name', $requiredForAssociation)
+            ->notEmptyString('company_name', 'Informe o nome da empresa.', $requiredForAssociation);
 
         $validator
-            ->scalar('declaration_body')
-            ->allowEmptyString('declaration_body');
+            ->scalar('company_cnpj')
+            ->maxLength('company_cnpj', 18)
+            ->requirePresence('company_cnpj', $requiredForAssociation)
+            ->notEmptyString('company_cnpj', 'Informe o CNPJ da empresa.', $requiredForAssociation)
+            ->add('company_cnpj', 'format', [
+                // Aceita o CNPJ numérico atual e o alfanumérico que a
+                // Receita Federal está introduzindo -- os dois dígitos
+                // verificadores finais continuam sempre numéricos.
+                'rule' => fn($value) => (bool)preg_match(
+                    '/^\d{2}\.[0-9A-Za-z]{3}\.[0-9A-Za-z]{3}\/[0-9A-Za-z]{4}-\d{2}$/',
+                    (string)$value
+                ),
+                'message' => 'Informe um CNPJ válido, no formato 00.000.000/0000-00.',
+            ]);
 
         return $validator;
     }

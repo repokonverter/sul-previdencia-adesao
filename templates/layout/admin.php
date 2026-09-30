@@ -135,8 +135,19 @@
             $('input.cpf').mask('000.000.000-00', {
                 reverse: true
             });
-            $('input.cnpj').mask('00.000.000/0000-00', {
-                reverse: true
+            // Não é reverse (o CNPJ se digita da esquerda para a direita, ao
+            // contrário de dinheiro). 'S' aceita letra ou número nas 12
+            // primeiras posições -- o formato alfanumérico que a Receita
+            // Federal está introduzindo; os 2 dígitos verificadores finais
+            // continuam só números ('0'), nos dois formatos.
+            $('input.cnpj').mask('SS.SSS.SSS/SSSS-00', {
+                translation: {
+                    'S': { pattern: /[A-Za-z0-9]/ }
+                }
+            });
+            $('input.cnpj').on('input', function() {
+                const upper = this.value.toUpperCase();
+                if (upper !== this.value) this.value = upper;
             });
             $('input.money').mask('000.000.000.000.000,00', {
                 reverse: true

@@ -846,16 +846,25 @@ class AdhesionsController extends AppController
         }
 
         try {
+            // Vínculo associativo assina a Declaração de Vínculo em vez da
+            // ficha de inscrição CEPREV -- mesma regra de RegistrationsController::save().
+            $secondDocument = $adhesion->association_partner_id !== null
+                ? [
+                    'file' => base64_encode($this->PdfGenerator->generateAssociationDeclarationPdf($id, true)),
+                    'name' => 'declaracao_vinculo_associativo.pdf',
+                ]
+                : [
+                    'file' => base64_encode($this->PdfGenerator->generateRegistrationFormPdf($id, true)),
+                    'name' => 'formulario_inscricao.pdf',
+                ];
+
             \App\Services\ClicksignEnvelopeSender::fromConfigure($this->fetchTable('ClicksignDatas'))
                 ->send($adhesion, [
                     [
                         'file' => base64_encode($this->PdfGenerator->generatePdfApplicationForm($id, true)),
                         'name' => 'proposta_adesao.pdf',
                     ],
-                    [
-                        'file' => base64_encode($this->PdfGenerator->generateRegistrationFormPdf($id, true)),
-                        'name' => 'formulario_inscricao.pdf',
-                    ],
+                    $secondDocument,
                 ]);
 
             $this->auditor->record((int)$id, $this->currentUser(), AdhesionAudit::ACTION_UPDATED, [
@@ -887,5 +896,10 @@ class AdhesionsController extends AppController
     public function generateFormPdf($id)
     {
         return $this->PdfGenerator->generateRegistrationFormPdf($id);
+    }
+
+    public function generateAssociationDeclarationPdf($id)
+    {
+        return $this->PdfGenerator->generateAssociationDeclarationPdf($id);
     }
 }

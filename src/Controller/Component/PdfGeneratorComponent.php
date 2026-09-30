@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Component;
 
-use App\Model\Entity\Partner;
 use Cake\Controller\Component;
 use Cake\ORM\TableRegistry;
 use DateTime;
@@ -109,6 +108,11 @@ class PdfGeneratorComponent extends Component
         return $html;
     }
 
+    /**
+     * A ficha de inscrição CEPREV. Sempre a mesma, padrão -- vínculo
+     * associativo não entra mais aqui, tem sua própria declaração (ver
+     * generateAssociationDeclarationPdf).
+     */
     public function generateRegistrationFormPdf($id, $returnContent = false)
     {
         $adhesion = $this->AdhesionInitialDatas->get(
@@ -125,22 +129,11 @@ class PdfGeneratorComponent extends Component
                 'AdhesionPaymentDetails',
                 'ClicksignDatas',
                 'PixTransactions',
-                'AssociationPartners',
             ]
         );
 
-        // O snapshot gravado na adesão (association_texts) tem prioridade:
-        // reproduz sempre o texto que foi de fato assinado, mesmo que o
-        // cadastro do vínculo tenha mudado depois. Sem vínculo, usa os
-        // valores padrão (CEPREV).
-        $declaration = $adhesion->association_texts ?? [
-            'title' => Partner::DEFAULT_DECLARATION_TITLE,
-            'institutionName' => Partner::DEFAULT_DECLARATION_INSTITUTION_NAME,
-            'body' => Partner::DEFAULT_DECLARATION_BODY,
-        ];
-
         $controller = $this->getController();
-        $controller->set(compact('adhesion', 'declaration'));
+        $controller->set(compact('adhesion'));
 
         $builder = $controller->viewBuilder();
         $oldLayout = $builder->getLayout();
@@ -162,6 +155,54 @@ class PdfGeneratorComponent extends Component
         }
 
         return $dompdf->stream("formulario-inscricao-$id.pdf", [
+            "Attachment" => true
+        ]);
+    }
+
+    /**
+     * A Declaração de Vínculo Associativo: substitui a ficha de inscrição
+     * quando a adesão tem um vínculo (association_partner_id). O snapshot
+     * gravado na adesão (association_texts) tem prioridade sobre o cadastro
+     * atual do parceiro -- reproduz sempre o que foi de fato assinado, mesmo
+     * que o nome/CNPJ cadastrados no vínculo mudem depois. A logo e a cor,
+     * por outro lado, vêm do cadastro atual: não fazem parte do que foi
+     * assinado, são só a moldura visual do documento.
+     */
+    public function generateAssociationDeclarationPdf($id, $returnContent = false)
+    {
+        $adhesion = $this->AdhesionInitialDatas->get(
+            $id,
+            contain: ['AdhesionPersonalDatas', 'AssociationPartners']
+        );
+
+        $declaration = $adhesion->association_texts ?? $adhesion->association_partner?->associationDeclarationData() ?? [
+            'companyName' => null,
+            'companyCnpj' => null,
+        ];
+
+        $controller = $this->getController();
+        $controller->set(compact('adhesion', 'declaration'));
+
+        $builder = $controller->viewBuilder();
+        $oldLayout = $builder->getLayout();
+        $builder->disableAutoLayout();
+
+        $html = (string)$controller->render('/layout/pdf/pdf_association_declaration')->getBody();
+
+        if ($oldLayout) {
+            $builder->setLayout($oldLayout);
+        }
+
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        if ($returnContent) {
+            return $dompdf->output();
+        }
+
+        return $dompdf->stream("declaracao-vinculo-associativo-$id.pdf", [
             "Attachment" => true
         ]);
     }

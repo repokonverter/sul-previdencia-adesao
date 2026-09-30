@@ -3,22 +3,7 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\AdhesionInitialData $adhesion
- * @var array{title: string, institutionName: string, body: string|null} $declaration
  */
-
-$associationPartner = $adhesion->association_partner;
-
-$logoDataUri = null;
-
-if ($associationPartner !== null && $associationPartner->has_logo) {
-    $logoData = $associationPartner->logo_data;
-
-    if (is_resource($logoData)) {
-        $logoData = stream_get_contents($logoData);
-    }
-
-    $logoDataUri = 'data:' . $associationPartner->logo_mime_type . ';base64,' . base64_encode((string)$logoData);
-}
 ?>
 <!DOCTYPE html>
 <html>
@@ -99,13 +84,7 @@ if ($associationPartner !== null && $associationPartner->has_logo) {
 
 <body>
 
-    <?php if ($logoDataUri !== null): ?>
-        <div style="text-align: center; margin-bottom: 10px;">
-            <img src="<?= $logoDataUri ?>" alt="<?= h($associationPartner->name) ?>" style="max-height: 60px;">
-        </div>
-    <?php endif; ?>
-
-    <h1><?= h($declaration['title']) ?></h1>
+    <h1>FORMULÁRIO DE INSCRIÇÃO</h1>
 
     <div class="section-title">DADOS PESSOAIS</div>
 
@@ -223,12 +202,8 @@ if ($associationPartner !== null && $associationPartner->has_logo) {
         <?php } ?>
     </div>
 
-    <?php if (!empty($declaration['body'])): ?>
-        <div class="note-box"><?= nl2br(h($declaration['body'])) ?></div>
-    <?php endif; ?>
-
     <p class="footer-text">
-        (X) AUTORIZO ( ) NÃO AUTORIZO o <?= h($declaration['institutionName']) ?> a realizar o tratamento de meus Dados
+        (X) AUTORIZO ( ) NÃO AUTORIZO o CEPREV a realizar o tratamento de meus Dados
         Pessoais para oferecer produtos e serviços, por meio de e-mail, ligações, SMS,
         mensagens, bem como autorizo compartilhar meus dados com seus parceiros e demais
         prestadores de serviços.

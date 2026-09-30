@@ -17,9 +17,8 @@ use Cake\ORM\Entity;
  * @property string|null $logo_filename
  * @property bool $active
  * @property bool $is_association
- * @property string|null $declaration_title
- * @property string|null $declaration_institution_name
- * @property string|null $declaration_body
+ * @property string|null $company_name
+ * @property string|null $company_cnpj
  * @property \App\Model\Entity\PromotionalCode[] $promotional_codes
  */
 class Partner extends Entity
@@ -34,9 +33,8 @@ class Partner extends Entity
         'logo_filename' => true,
         'active' => true,
         'is_association' => true,
-        'declaration_title' => true,
-        'declaration_institution_name' => true,
-        'declaration_body' => true,
+        'company_name' => true,
+        'company_cnpj' => true,
         'created' => true,
         'modified' => true,
         'promotional_codes' => true,
@@ -46,36 +44,27 @@ class Partner extends Entity
         'logo_data',
     ];
 
-    /**
-     * Textos padrão do formulário de inscrição (pdf_form_template.php) quando
-     * a adesão não tem vínculo associativo, ou quando o vínculo não preencheu
-     * algum dos campos da declaração.
-     */
-    public const DEFAULT_DECLARATION_TITLE = 'FORMULÁRIO DE INSCRIÇÃO';
-    public const DEFAULT_DECLARATION_INSTITUTION_NAME = 'CEPREV';
-    public const DEFAULT_DECLARATION_BODY = null;
-
     protected function _getHasLogo(): bool
     {
         return $this->logo_mime_type !== null;
     }
 
     /**
-     * Título, nome de instituição e texto livre efetivos para a declaração
-     * deste vínculo, com fallback para os valores padrão (CEPREV) em qualquer
-     * campo deixado em branco no cadastro.
+     * Nome e CNPJ da empresa/entidade, para a Declaração de Vínculo
+     * Associativo (pdf_association_declaration.php).
      *
      * É a partir daqui que o snapshot gravado na adesão (association_snapshot)
-     * é montado, no momento em que o vínculo é validado pela primeira vez.
+     * é montado, no momento em que o vínculo é validado pela primeira vez --
+     * assim a declaração já assinada continua reproduzindo o que foi de fato
+     * assinado, mesmo que o cadastro do vínculo mude depois.
      *
-     * @return array{title: string, institutionName: string, body: string|null}
+     * @return array{companyName: string|null, companyCnpj: string|null}
      */
-    public function declarationTexts(): array
+    public function associationDeclarationData(): array
     {
         return [
-            'title' => $this->declaration_title ?: self::DEFAULT_DECLARATION_TITLE,
-            'institutionName' => $this->declaration_institution_name ?: self::DEFAULT_DECLARATION_INSTITUTION_NAME,
-            'body' => $this->declaration_body ?: self::DEFAULT_DECLARATION_BODY,
+            'companyName' => $this->company_name,
+            'companyCnpj' => $this->company_cnpj,
         ];
     }
 }

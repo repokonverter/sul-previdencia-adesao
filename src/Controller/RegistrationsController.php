@@ -157,7 +157,7 @@ class RegistrationsController extends AppController
 
                         if ($codePartner !== null && $codePartner->is_association) {
                             $patchData['association_partner_id'] = $codePartner->id;
-                            $patchData['association_snapshot'] = json_encode($codePartner->declarationTexts());
+                            $patchData['association_snapshot'] = json_encode($codePartner->associationDeclarationData());
                         }
                     }
                 }
@@ -183,7 +183,7 @@ class RegistrationsController extends AppController
 
                     if ($association !== null) {
                         $patchData['association_partner_id'] = $association->id;
-                        $patchData['association_snapshot'] = json_encode($association->declarationTexts());
+                        $patchData['association_snapshot'] = json_encode($association->associationDeclarationData());
                     }
                 }
 
@@ -378,15 +378,24 @@ class RegistrationsController extends AppController
                     'operation' => 'adhesion.finalized',
                 ]);
 
+                // Vínculo associativo assina a Declaração de Vínculo em vez
+                // da ficha de inscrição CEPREV -- nunca os dois juntos.
+                $secondDocument = $initialDataAll->association_partner_id !== null
+                    ? [
+                        'file' => base64_encode($this->PdfGenerator->generateAssociationDeclarationPdf($initialDataId, true)),
+                        'name' => 'declaracao_vinculo_associativo.pdf',
+                    ]
+                    : [
+                        'file' => base64_encode($this->PdfGenerator->generateRegistrationFormPdf($initialDataId, true)),
+                        'name' => 'formulario_inscricao.pdf',
+                    ];
+
                 $base64PdfForms = [
                     [
                         'file' => base64_encode($this->PdfGenerator->generatePdfApplicationForm($initialDataId, true)),
                         'name' => 'proposta_adesao.pdf',
                     ],
-                    [
-                        'file' => base64_encode($this->PdfGenerator->generateRegistrationFormPdf($initialDataId, true)),
-                        'name' => 'formulario_inscricao.pdf',
-                    ]
+                    $secondDocument,
                 ];
 
                 IntegrationLogger::logEvent([

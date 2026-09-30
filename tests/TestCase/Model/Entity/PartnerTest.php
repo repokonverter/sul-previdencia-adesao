@@ -9,29 +9,20 @@ use Cake\TestSuite\TestCase;
 
 class PartnerTest extends TestCase
 {
-    public function testDeclarationTextsFallsBackToDefaultsWhenBlank(): void
+    public function testAssociationDeclarationDataReadsCompanyFields(): void
     {
-        $partner = new Partner(['declaration_title' => null, 'declaration_institution_name' => null, 'declaration_body' => null]);
+        $partner = new Partner(['company_name' => 'Associação Catarinense de Tecnologia', 'company_cnpj' => '12.345.678/0001-99']);
 
         $this->assertSame([
-            'title' => Partner::DEFAULT_DECLARATION_TITLE,
-            'institutionName' => Partner::DEFAULT_DECLARATION_INSTITUTION_NAME,
-            'body' => Partner::DEFAULT_DECLARATION_BODY,
-        ], $partner->declarationTexts());
+            'companyName' => 'Associação Catarinense de Tecnologia',
+            'companyCnpj' => '12.345.678/0001-99',
+        ], $partner->associationDeclarationData());
     }
 
-    public function testDeclarationTextsUsesEachFieldIndependently(): void
+    public function testAssociationDeclarationDataIsNullWhenUnfilled(): void
     {
-        $partner = new Partner([
-            'declaration_title' => 'DECLARAÇÃO DE COMPARECIMENTO',
-            'declaration_institution_name' => null,
-            'declaration_body' => 'Texto específico do vínculo.',
-        ]);
+        $partner = new Partner(['company_name' => null, 'company_cnpj' => null]);
 
-        $texts = $partner->declarationTexts();
-
-        $this->assertSame('DECLARAÇÃO DE COMPARECIMENTO', $texts['title']);
-        $this->assertSame(Partner::DEFAULT_DECLARATION_INSTITUTION_NAME, $texts['institutionName']);
-        $this->assertSame('Texto específico do vínculo.', $texts['body']);
+        $this->assertSame(['companyName' => null, 'companyCnpj' => null], $partner->associationDeclarationData());
     }
 }

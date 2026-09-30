@@ -84,44 +84,37 @@
     <?php if ($isAssociationScope): ?>
         <hr>
 
-        <h5 class="mb-3">Declaração de comparecimento ao Plano</h5>
+        <h5 class="mb-3">Declaração de Vínculo Associativo</h5>
         <p class="text-muted small">
-            Textos usados no formulário de inscrição (PDF enviado para assinatura) quando o
-            aderente escolhe este vínculo. Deixe em branco para usar o texto padrão (CEPREV).
+            Nome e CNPJ da empresa/entidade, usados no PDF da declaração de vínculo (enviado
+            para assinatura no lugar da ficha de inscrição, quando o aderente escolhe este
+            vínculo).
         </p>
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-7">
                 <div class="mb-3">
-                    <?= $this->Form->control('declaration_title', [
-                        'label' => 'Título do documento',
+                    <?= $this->Form->control('company_name', [
+                        'label' => 'Nome da empresa*',
                         'class' => 'form-control',
-                        'placeholder' => \App\Model\Entity\Partner::DEFAULT_DECLARATION_TITLE,
-                        'maxlength' => 120,
+                        'placeholder' => 'Ex: Associação Catarinense de Tecnologia',
+                        'maxlength' => 150,
+                        'required' => true,
                     ]) ?>
                 </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-5">
                 <div class="mb-3">
-                    <?= $this->Form->control('declaration_institution_name', [
-                        'label' => 'Nome da instituição (parágrafo de tratamento de dados)',
-                        'class' => 'form-control',
-                        'placeholder' => \App\Model\Entity\Partner::DEFAULT_DECLARATION_INSTITUTION_NAME,
-                        'maxlength' => 120,
+                    <?= $this->Form->control('company_cnpj', [
+                        'label' => 'CNPJ da empresa*',
+                        'class' => 'form-control cnpj',
+                        'placeholder' => '00.000.000/0000-00',
+                        'maxlength' => 18,
+                        'required' => true,
                     ]) ?>
                 </div>
             </div>
-        </div>
-
-        <div class="mb-3">
-            <?= $this->Form->control('declaration_body', [
-                'label' => 'Texto de comparecimento (opcional)',
-                'type' => 'textarea',
-                'class' => 'form-control',
-                'rows' => 4,
-                'placeholder' => 'Texto livre exibido no formulário, específico deste vínculo.',
-            ]) ?>
         </div>
     <?php endif; ?>
 
