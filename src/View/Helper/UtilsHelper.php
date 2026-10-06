@@ -4,10 +4,19 @@ declare(strict_types=1);
 
 namespace App\View\Helper;
 
+use Cake\I18n\Number;
 use Cake\View\Helper;
 
 class UtilsHelper extends Helper
 {
+  /**
+   * Formata um valor em reais (R$ 1.234,50), independente do locale do servidor.
+   */
+  public function currency($value): string
+  {
+    return Number::currency((float)$value, 'BRL', ['locale' => 'pt_BR']);
+  }
+
   public function formatCpf($value)
   {
     $cpf = preg_replace('/\D/', '', (string)$value);

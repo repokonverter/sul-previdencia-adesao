@@ -6,7 +6,6 @@
  */
 
 use Cake\Core\Configure;
-use Cake\I18n\Number;
 
 $this->assign('title', 'Sul Previdência - Simulador');
 
@@ -37,8 +36,8 @@ $createScenario = function ($data, $type)
     return '
         <div class="cenario-item rentabilidade-' . $annualProfitabilityRate . '">
             <div class="cenario-titulo">Rentabilidade ' . $annualProfitabilityRate . '%</div>
-            <div class="cenario-valor ' . ($type === 'property' ? '' : 'verde') . '">' . Number::currency($mainValue) . '</div>
-            <div class="cenario-renda">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
+            <div class="cenario-valor ' . ($type === 'property' ? '' : 'verde') . '">' . $this->Utils->currency($mainValue) . '</div>
+            <div class="cenario-renda">Renda Mensal: ' . $this->Utils->currency($incomeValue) . '</div>
         </div>
     ';
 };
@@ -58,8 +57,8 @@ $createSecureCard = function ($data, $type)
 
     return '
         <div style="text-align: center; padding: 16px 0;">
-            <div style="font-size: 1.8rem; font-weight: bold; color: #3B7A3B; margin-bottom: 12px;">' . Number::currency($mainValue) . '</div>
-            <div style="font-size: 1rem; color: #6c757d;">Renda Mensal: ' . Number::currency($incomeValue) . '</div>
+            <div style="font-size: 1.8rem; font-weight: bold; color: #3B7A3B; margin-bottom: 12px;">' . $this->Utils->currency($mainValue) . '</div>
+            <div style="font-size: 1rem; color: #6c757d;">Renda Mensal: ' . $this->Utils->currency($incomeValue) . '</div>
         </div>
     ';
 };
@@ -550,7 +549,7 @@ $createSecureCard = function ($data, $type)
                             </div>
                             <div class="descricao-secundaria" id="patrimonio-contribuicao">
                                 Contribuição Mensal<br>
-                                <?= Number::currency($simulations[1]['contribuicao_aposentadoria']); ?>
+                                <?= $this->Utils->currency($simulations[1]['contribuicao_aposentadoria']); ?>
                             </div>
                         </div>
                     </div>
@@ -562,7 +561,7 @@ $createSecureCard = function ($data, $type)
                             <div class="cenarios-container" id="seguro-morte-cenarios"><?= $createSecureCard($simulations[1], 'death'); ?></div>
                             <div class="descricao-secundaria" id="seguro-morte-contribuicao">
                                 Contribuição Mensal<br>
-                                <?= Number::currency($simulations[1]['contribuicao_morte']); ?>
+                                <?= $this->Utils->currency($simulations[1]['contribuicao_morte']); ?>
                             </div>
                         </div>
                     </div>
@@ -574,7 +573,7 @@ $createSecureCard = function ($data, $type)
                             <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= $createSecureCard($simulations[1], 'disability'); ?></div>
                             <div class="descricao-secundaria" id="seguro-invalidez-contribuicao">
                                 Contribuição Mensal<br>
-                                <?= Number::currency($simulations[1]['contribuicao_invalidez']); ?>
+                                <?= $this->Utils->currency($simulations[1]['contribuicao_invalidez']); ?>
                             </div>
                         </div>
                     </div>
@@ -996,7 +995,7 @@ $createSecureCard = function ($data, $type)
                             <div class="row">
                                 <div class="col text-center">
                                     <div>Total de contribuição mensal</div>
-                                    <div id="planTotalMonthlyContribution"><?= Number::currency($totalMonthlyContributionPlan, null); ?></div>
+                                    <div id="planTotalMonthlyContribution"><?= $this->Utils->currency($totalMonthlyContributionPlan); ?></div>
                                 </div>
                             </div>
                         </div>

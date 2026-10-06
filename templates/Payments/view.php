@@ -9,7 +9,6 @@
  * @var \App\Model\Entity\Partner|null $partner
  */
 
-use Cake\I18n\Number;
 
 $this->assign('title', 'Sul Previdência - Pagamento da Adesão');
 
@@ -148,7 +147,7 @@ $logoAssetPath = 'logo_sul_transparente.png';
         <?php elseif ($result['status'] === 'active' && $qrCodeBase64): ?>
             <div class="payment-title">Pagamento da adesão</div>
             <p class="payment-subtitle">Olá, <?= h($customerName) ?>. Utilize o QR Code ou o Pix Copia e Cola abaixo para concluir sua adesão.</p>
-            <div class="payment-amount"><?= Number::currency($amount) ?></div>
+            <div class="payment-amount"><?= $this->Utils->currency($amount) ?></div>
             <img src="<?= h($qrCodeBase64) ?>" alt="QR Code PIX" class="payment-qrcode">
             <div class="mb-3 w-100">
                 <label for="pix-copy-paste" class="form-label">Pix Copia e Cola</label>

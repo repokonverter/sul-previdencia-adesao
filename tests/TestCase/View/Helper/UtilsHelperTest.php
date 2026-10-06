@@ -19,6 +19,16 @@ class UtilsHelperTest extends TestCase
     $this->Utils = new UtilsHelper($view);
   }
 
+  public function testCurrencyAlwaysUsesBrazilianReal(): void
+  {
+    // O ICU separa "R$" do número com espaço não-quebrável; normaliza para comparar.
+    $format = fn($value) => preg_replace('/\s+/u', ' ', $this->Utils->currency($value));
+
+    $this->assertSame('R$ 1.234,50', $format(1234.5));
+    $this->assertSame('R$ 10,00', $format('10'));
+    $this->assertSame('R$ 0,00', $format(null));
+  }
+
   public function testFormatCpf(): void
   {
     $this->assertEquals('123.456.789-01', $this->Utils->formatCpf('12345678901'));
