@@ -444,6 +444,13 @@ return [
      */
     'Session' => [
         'defaults' => 'php',
+        // Sessão do admin: 12 horas de inatividade (o padrão do PHP é 24 min).
+        // gc_maxlifetime e cookie_lifetime precisam acompanhar o timeout.
+        'timeout' => 720,
+        'ini' => [
+            'session.gc_maxlifetime' => 720 * 60,
+            'session.cookie_lifetime' => 720 * 60,
+        ],
     ],
 
     /**
