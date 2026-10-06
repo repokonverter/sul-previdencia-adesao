@@ -77,6 +77,12 @@ RUN chown -R www-data:www-data /var/www/html/tmp \
     && chmod -R 775 /var/www/html/tmp \
     && chmod -R 775 /var/www/html/logs
 
+# O nginx roda como www-data (nginx-master.conf), mas os diretórios temporários
+# vêm do usuário "nginx". Sem isso, POSTs maiores que o buffer (ex.: upload de
+# logo) falham com "open() /var/lib/nginx/tmp/client_body ... Permission denied".
+RUN mkdir -p /var/lib/nginx/tmp /var/log/nginx \
+    && chown -R www-data:www-data /var/lib/nginx /var/log/nginx
+
 # Configuração Nginx (Substituição do arquivo mestre)
 COPY deploy/nginx.conf /etc/nginx/conf.d/app.conf
 COPY deploy/nginx-master.conf /etc/nginx/nginx.conf
