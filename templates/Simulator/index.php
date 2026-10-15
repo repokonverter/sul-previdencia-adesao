@@ -900,7 +900,7 @@ $createSecureCard = function ($data, $type)
 
                         <div id="plan" class="hidden">
                             <div class="alert alert-info d-none" id="planLockedNotice">
-                                <strong>Valores ajustados pela Sul Previdência.</strong>
+                                <strong>Valores ajustados.</strong>
                                 Para alterá-los, fale com seu atendente.
                             </div>
                             <div class="row">
