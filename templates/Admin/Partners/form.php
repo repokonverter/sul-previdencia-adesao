@@ -86,9 +86,9 @@
 
         <h5 class="mb-3">Declaração de Vínculo Associativo</h5>
         <p class="text-muted small">
-            Nome e CNPJ da empresa/entidade, usados no PDF da declaração de vínculo (enviado
-            para assinatura no lugar da ficha de inscrição, quando o aderente escolhe este
-            vínculo).
+            Nome, CNPJ e Nº do Instituidor da empresa/entidade, usados no PDF da declaração
+            de vínculo (enviado para assinatura no lugar da ficha de inscrição) e no topo da
+            proposta, no lugar dos dados padrão, quando o aderente escolhe este vínculo.
         </p>
 
         <div class="row">
@@ -111,6 +111,19 @@
                         'class' => 'form-control cnpj',
                         'placeholder' => '00.000.000/0000-00',
                         'maxlength' => 18,
+                        'required' => true,
+                    ]) ?>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <?= $this->Form->control('institution_number', [
+                        'label' => 'Nº do Instituidor*',
+                        'class' => 'form-control',
+                        'placeholder' => 'Ex: 009',
+                        'maxlength' => 20,
+                        'inputmode' => 'numeric',
                         'required' => true,
                     ]) ?>
                 </div>

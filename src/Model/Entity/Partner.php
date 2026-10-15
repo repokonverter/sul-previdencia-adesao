@@ -19,6 +19,7 @@ use Cake\ORM\Entity;
  * @property bool $is_association
  * @property string|null $company_name
  * @property string|null $company_cnpj
+ * @property string|null $institution_number
  * @property \App\Model\Entity\PromotionalCode[] $promotional_codes
  */
 class Partner extends Entity
@@ -35,6 +36,7 @@ class Partner extends Entity
         'is_association' => true,
         'company_name' => true,
         'company_cnpj' => true,
+        'institution_number' => true,
         'created' => true,
         'modified' => true,
         'promotional_codes' => true,
@@ -50,21 +52,23 @@ class Partner extends Entity
     }
 
     /**
-     * Nome e CNPJ da empresa/entidade, para a Declaração de Vínculo
-     * Associativo (pdf_association_declaration.php).
+     * Nome, CNPJ e Nº do Instituidor da empresa/entidade, para a Declaração
+     * de Vínculo Associativo (pdf_association_declaration.php) e para o topo
+     * da proposta (pdf_template.php).
      *
      * É a partir daqui que o snapshot gravado na adesão (association_snapshot)
      * é montado, no momento em que o vínculo é validado pela primeira vez --
      * assim a declaração já assinada continua reproduzindo o que foi de fato
      * assinado, mesmo que o cadastro do vínculo mude depois.
      *
-     * @return array{companyName: string|null, companyCnpj: string|null}
+     * @return array{companyName: string|null, companyCnpj: string|null, institutionNumber: string|null}
      */
     public function associationDeclarationData(): array
     {
         return [
             'companyName' => $this->company_name,
             'companyCnpj' => $this->company_cnpj,
+            'institutionNumber' => $this->institution_number,
         ];
     }
 }

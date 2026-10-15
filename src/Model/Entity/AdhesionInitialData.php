@@ -41,12 +41,13 @@ class AdhesionInitialData extends Entity
     ];
 
     /**
-     * association_snapshot é gravado como JSON (companyName, companyCnpj)
+     * association_snapshot é gravado como JSON (companyName, companyCnpj,
+     * institutionNumber)
      * pelo RegistrationsController, no momento em que o vínculo é validado
      * pela primeira vez. Decodificado aqui para que a geração do PDF e as
      * views não precisem repetir o json_decode.
      *
-     * @return array{companyName: string|null, companyCnpj: string|null}|null
+     * @return array{companyName: string|null, companyCnpj: string|null, institutionNumber?: string|null}|null
      */
     protected function _getAssociationTexts(): ?array
     {

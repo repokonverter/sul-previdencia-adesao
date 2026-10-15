@@ -92,6 +92,16 @@ class PartnersTable extends AppTable
                 'message' => 'Informe um CNPJ válido, no formato 00.000.000/0000-00.',
             ]);
 
+        $validator
+            ->scalar('institution_number')
+            ->maxLength('institution_number', 20)
+            ->requirePresence('institution_number', $requiredForAssociation)
+            ->notEmptyString('institution_number', 'Informe o Nº do Instituidor.', $requiredForAssociation)
+            ->add('institution_number', 'digits', [
+                'rule' => fn($value) => $value === null || $value === '' || (bool)preg_match('/^\d+$/', (string)$value),
+                'message' => 'O Nº do Instituidor deve conter apenas dígitos.',
+            ]);
+
         return $validator;
     }
 

@@ -65,6 +65,7 @@ class PdfGeneratorComponent extends Component
                 'AdhesionPaymentDetails',
                 'ClicksignDatas',
                 'PixTransactions',
+                'AssociationPartners',
             ]
         );
         $fixedData = [
@@ -90,6 +91,19 @@ class PdfGeneratorComponent extends Component
                 'site' => 'www.sulprevidencia.org.br'
             ]
         ];
+
+        // Vínculo associativo troca os dados do instituidor no topo da
+        // proposta. Vêm do snapshot gravado na adesão (não do cadastro
+        // atual); snapshot sem institutionNumber (adesões anteriores ao
+        // campo) mantém os dados CEPREV, para a proposta reproduzida ser
+        // igual à já assinada.
+        $association = $adhesion->association_texts;
+        if (!empty($association['institutionNumber'])) {
+            $fixedData['cnpjPlan'] = $association['companyCnpj'] ?? $fixedData['cnpjPlan'];
+            $fixedData['institutionNumber'] = $association['institutionNumber'];
+            $fixedData['institutionName'] = $association['companyName'] ?? $fixedData['institutionName'];
+        }
+
         $birthDate = new DateTime($adhesion->adhesion_personal_data->birth_date->format('Y-m-d'));
         $today = new DateTime();
         $age = $today->diff($birthDate)->y;

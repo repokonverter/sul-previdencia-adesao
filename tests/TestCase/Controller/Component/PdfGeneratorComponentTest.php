@@ -33,6 +33,7 @@ class PdfGeneratorComponentTest extends TestCase
 
     protected array $fixtures = [
         'app.PlanParameters',
+        'app.Partners',
     ];
 
     private PdfGeneratorComponent $pdf;
@@ -55,7 +56,7 @@ class PdfGeneratorComponentTest extends TestCase
      * saúde é opcional de propósito: é justamente a ausência dela que este
      * arquivo cobre.
      */
-    private function createAdhesion(bool $withStatement, bool $hasRisks = true): int
+    private function createAdhesion(bool $withStatement, bool $hasRisks = true, ?array $association = null): int
     {
         $adhesions = $this->table('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
@@ -63,6 +64,8 @@ class PdfGeneratorComponentTest extends TestCase
             'name' => 'Fulano de Tal',
             'email' => 'fulano@exemplo.test',
             'phone' => '48999999999',
+            'association_partner_id' => $association === null ? null : 2,
+            'association_snapshot' => $association === null ? null : json_encode($association),
         ]);
         $adhesions->saveOrFail($adhesion);
         $id = (int)$adhesion->id;
@@ -194,5 +197,50 @@ class PdfGeneratorComponentTest extends TestCase
         $this->assertNull($this->healthQuestionnaire($html));
         $this->assertStringContainsString('Não se aplica', $html);
         $this->assertStringContainsString('NÃO CONTRATADO', $html);
+    }
+
+    private function instituteHeader(string $html): string
+    {
+        $start = strpos($html, 'CNPJ do Plano');
+
+        return substr($html, $start, strpos($html, 'Nº da Proposta', $start) - $start);
+    }
+
+    public function testWithoutAssociationTheHeaderKeepsCeprevData(): void
+    {
+        $header = $this->instituteHeader($this->pdf->applicationFormHtml($this->createAdhesion(withStatement: true)));
+
+        $this->assertStringContainsString('48.307.525/0001-09', $header);
+        $this->assertStringContainsString('009', $header);
+        $this->assertStringContainsString('CEPREV', $header);
+    }
+
+    public function testAssociationReplacesTheHeaderWithTheAssociationData(): void
+    {
+        $header = $this->instituteHeader($this->pdf->applicationFormHtml($this->createAdhesion(
+            withStatement: true,
+            association: [
+                'companyName' => 'Sindicato do Comércio Varejista Exemplo',
+                'companyCnpj' => '12.345.678/0001-99',
+                'institutionNumber' => '017',
+            ]
+        )));
+
+        $this->assertStringContainsString('12.345.678/0001-99', $header);
+        $this->assertStringContainsString('017', $header);
+        $this->assertStringContainsString('Sindicato do Comércio Varejista Exemplo', $header);
+        $this->assertStringNotContainsString('CEPREV', $header);
+        $this->assertStringNotContainsString('48.307.525/0001-09', $header);
+    }
+
+    public function testLegacySnapshotWithoutInstitutionNumberKeepsCeprevData(): void
+    {
+        $header = $this->instituteHeader($this->pdf->applicationFormHtml($this->createAdhesion(
+            withStatement: true,
+            association: ['companyName' => 'Sindicato do Comércio Varejista Exemplo', 'companyCnpj' => '12.345.678/0001-99']
+        )));
+
+        $this->assertStringContainsString('CEPREV', $header);
+        $this->assertStringContainsString('48.307.525/0001-09', $header);
     }
 }

@@ -28,6 +28,7 @@ class PartnersFixture extends TestFixture
                 'is_association' => true,
                 'company_name' => 'Sindicato do Comércio Varejista Exemplo',
                 'company_cnpj' => '12.345.678/0001-99',
+                'institution_number' => '017',
                 'created' => '2026-01-01 00:00:00',
                 'modified' => '2026-01-01 00:00:00',
             ],
