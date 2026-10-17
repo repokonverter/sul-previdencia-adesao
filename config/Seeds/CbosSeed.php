@@ -31,14 +31,14 @@ class CbosSeed extends AbstractSeed
         }
 
         // Skip header (codigo,termo,tipo), which may start with a UTF-8 BOM
-        fgetcsv($handle);
+        fgetcsv($handle, null, ",", "\"", "");
 
         $data = [];
         $count = 0;
         $batchSize = 1000;
         $now = date('Y-m-d H:i:s');
 
-        while (($row = fgetcsv($handle)) !== false) {
+        while (($row = fgetcsv($handle, null, ",", "\"", "")) !== false) {
             // row[0] = codigo, row[1] = termo
             if (count($row) < 2) {
                 continue;
