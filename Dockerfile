@@ -66,6 +66,7 @@ COPY --from=builder /app/config /var/www/html/config
 COPY bin /var/www/html/bin
 COPY src /var/www/html/src
 COPY templates /var/www/html/templates
+COPY resources /var/www/html/resources
 
 # Cria e ajusta permissões para as pastas logs e tmp do CakePHP
 RUN mkdir -p /var/www/html/tmp \
