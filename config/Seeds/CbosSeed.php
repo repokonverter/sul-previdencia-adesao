@@ -18,25 +18,20 @@ class CbosSeed extends AbstractSeed
      */
     public function run(): void
     {
-        // Optional: Truncate table first to avoid duplicates if run multiple times
+        // Truncate first so re-running the seed doesn't duplicate rows
         $this->table('cbos')->truncate();
 
-        $url = 'https://raw.githubusercontent.com/datasets-br/cbo/master/data/lista.csv';
+        $file = ROOT . DS . 'resources' . DS . 'cbo2002_convertido.csv';
 
-        // Ensure we have SSL context options if needed, though default usually works
-        $context = stream_context_create([
-            'http' => [
-                'header' => "User-Agent: PHP\r\n"
-            ]
-        ]);
-
-        $handle = fopen($url, 'r', false, $context);
+        $handle = fopen($file, 'r');
         if ($handle === false) {
-            echo "Failed to download CBO list.\n";
+            echo "Failed to open CBO file: $file\n";
+
             return;
         }
 
-        $header = fgetcsv($handle); // Skip header: codigo,termo,tipo
+        // Skip header (codigo,termo,tipo), which may start with a UTF-8 BOM
+        fgetcsv($handle);
 
         $data = [];
         $count = 0;
