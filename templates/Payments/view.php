@@ -80,8 +80,8 @@ $logoAssetPath = 'logo_sul_transparente.png';
     }
 
     .payment-partner img {
-        max-height: 34px;
-        max-width: 130px;
+        max-height: 56px;
+        max-width: 220px;
         object-fit: contain;
     }
 

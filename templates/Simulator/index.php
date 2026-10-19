@@ -98,6 +98,19 @@ $createSecureCard = function ($data, $type)
             border: 1px solid #dee2e6;
         }
 
+        .partner-badge-logo {
+            max-height: 72px;
+            max-width: 260px;
+            object-fit: contain;
+        }
+
+        @media (max-width: 600px) {
+            .partner-badge-logo {
+                max-height: 52px;
+                max-width: 160px;
+            }
+        }
+
         .simulador-popup {
             max-width: 950px;
             margin: 48px auto;
@@ -600,7 +613,7 @@ $createSecureCard = function ($data, $type)
                     <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
                     <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 partner-badge rounded-pill px-3 py-1">
                         <span class="text-muted small me-2 d-none d-sm-inline">em parceria com</span>
-                        <img id="registerModalPartnerLogo" src="" alt="" class="d-none" style="max-height:46px;max-width:170px;object-fit:contain;">
+                        <img id="registerModalPartnerLogo" src="" alt="" class="d-none partner-badge-logo">
                         <span id="registerModalPartnerLabel" class="fw-semibold small"></span>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
