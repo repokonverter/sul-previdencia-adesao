@@ -98,6 +98,17 @@ $createSecureCard = function ($data, $type)
             border: 1px solid #dee2e6;
         }
 
+        /* O aviso abre por cima do modal de adesão: sem subir o z-index,
+           o segundo fundo escuro fica atrás do primeiro modal e não o
+           escurece. */
+        #beneficiaryWarningModal {
+            z-index: 1065;
+        }
+
+        .modal-backdrop.show ~ .modal-backdrop.show {
+            z-index: 1060;
+        }
+
         .partner-badge-logo {
             max-height: 72px;
             max-width: 260px;
@@ -1817,6 +1828,24 @@ $createSecureCard = function ($data, $type)
             </div>
         </div>
     </div>
+    <div class="modal fade" id="beneficiaryWarningModal" tabindex="-1" aria-labelledby="beneficiaryWarningModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="beneficiaryWarningModalLabel">Nenhum beneficiário indicado</h2>
+                </div>
+                <div class="modal-body">
+                    Caso não indique beneficiários, em caso de falecimento do participante, o saldo
+                    da previdência entrará no inventário e haverá incidência de ITCMD. Deseja
+                    continuar sem adicionar?
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-success" data-beneficiary-warning="add">Adicionar beneficiário</button>
+                    <button type="button" class="btn btn-outline-secondary" data-beneficiary-warning="continue">Continuar sem adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         const isDebug = <?= Configure::read('debug') ? 'true' : 'false' ?>;
         /**
@@ -1850,7 +1879,9 @@ $createSecureCard = function ($data, $type)
          *   validate()       soma-se à validação do HTML; false marca o
          *                    formulário como was-validated
          *   afterValidate()  roda depois do portão de validação; false
-         *                    aborta (para quem já mostra o próprio aviso)
+         *                    aborta (para quem já mostra o próprio aviso).
+         *                    Pode devolver uma Promise, para perguntar algo
+         *                    à pessoa antes de seguir
          * ------------------------------------------------------------- */
         const registerPages = [{
                 title: 'Dados iniciais',
@@ -1873,7 +1904,10 @@ $createSecureCard = function ($data, $type)
             {
                 title: 'Beneficiário(s)',
                 id: 'dependents',
-                afterValidate: () => {
+                afterValidate: async () => {
+                    if ($('#listDependents .dependentDiv').length === 0)
+                        return await confirmNoBeneficiaries();
+
                     if (checkDependents())
                         return true;
 
@@ -2654,7 +2688,7 @@ $createSecureCard = function ($data, $type)
                 return;
             }
 
-            if (step.afterValidate && !step.afterValidate())
+            if (step.afterValidate && !(await step.afterValidate()))
                 return;
 
             btnPrimary.disabled = true;
@@ -3310,6 +3344,39 @@ $createSecureCard = function ($data, $type)
 
             $('#directDebitType').slideUp();
         }
+
+        /**
+         * Sem beneficiário indicado, o saldo vai para o inventário e paga
+         * ITCMD: a pessoa pode seguir assim, mas tem que ser uma escolha
+         * dela, não um passo pulado sem ler. Resolve true para seguir;
+         * "Adicionar beneficiário" já abre a primeira linha e fica no passo.
+         */
+        const confirmNoBeneficiaries = () => new Promise((resolve) => {
+            const el = document.getElementById('beneficiaryWarningModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(el);
+            let choice = null;
+
+            el.querySelectorAll('[data-beneficiary-warning]').forEach((button) => {
+                button.onclick = () => {
+                    choice = button.dataset.beneficiaryWarning;
+                    modal.hide();
+                };
+            });
+
+            el.addEventListener('hidden.bs.modal', () => {
+                // Fechar um modal empilhado tira o "modal-open" do <body>
+                // mesmo com o de adesão ainda aberto, e a página de trás
+                // volta a rolar.
+                document.body.classList.add('modal-open');
+
+                if (choice === 'add')
+                    addDependent();
+
+                resolve(choice === 'continue');
+            }, { once: true });
+
+            modal.show();
+        });
 
         const checkDependents = () => {
             let total = 0;
