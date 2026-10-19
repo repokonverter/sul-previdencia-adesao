@@ -304,19 +304,17 @@
                         <input type="text" class="form-control money fw-bold" id="planTotalContribution"
                                <?= $canRecalculate ? '' : 'readonly' ?>>
                         <button type="button" class="btn btn-outline-primary" id="btnRecalculatePlan"
-                                data-adhesion-id="<?= $adhesion->id ?>"
-                                data-storage-uuid="<?= h($adhesion->storage_uuid) ?>"
+                                data-minimum="<?= h((string)($minimumMonthlyContribution ?? 0)) ?>"
                                 <?= $canRecalculate ? '' : 'disabled' ?>>
                             <i class="bi bi-arrow-repeat"></i> Recalcular
                         </button>
                     </div>
                     <div class="form-text">
                         <?php if ($canRecalculate): ?>
-                            É a soma das três contribuições, mas dá para editar: digite
-                            um novo total e clique em "Recalcular" para redistribuir —
-                            roda a mesma fórmula do simulador. Usa os riscos como estão
-                            <strong>salvos</strong>: se você acabou de desmarcar um aqui
-                            em cima, salve antes de recalcular, senão ele volta.
+                            É a soma das três contribuições, mas dá para editar.
+                            "Recalcular" mantém as contribuições de risco como estão,
+                            recalcula o capital segurado só dos riscos marcados e manda
+                            para a aposentadoria a diferença entre o total e os riscos.
                         <?php else: ?>
                             Recalcular exige a data de nascimento preenchida na aba
                             "Dados Pessoais"<?= empty($economicallyLocked) ? '' : ', e esta adesão está com os valores travados' ?>.

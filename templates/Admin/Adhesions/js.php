@@ -291,12 +291,44 @@
         $(form).on('input change', '.plan-contribution-field', updatePlanTotalContribution);
 
         /**
-         * Capital segurado a partir da contribuição de risco como está no
-         * campo, sem redistribuir nada -- diferente do "Recalcular" abaixo,
-         * que parte do total e reescreve as três contribuições pelas taxas
-         * padrão. Isto é o que mantém "Capital segurado pensão por morte" e
-         * "...invalidez" em dia quando o admin ajusta só a contribuição de
-         * um risco à mão (SimulatorController::recalculateRiskCapital).
+         * Capital segurado a partir das contribuições de risco como estão nos
+         * campos (SimulatorController::recalculateRiskCapital). Risco
+         * desmarcado vai como zero: é o checkbox que diz se o risco existe,
+         * não o banco -- o admin pode ter acabado de desmarcar e ainda não
+         * salvou.
+         */
+        const RISK_CONTRIBUTION_INPUTS = {
+            has_survivors_pension: 'input[name="adhesion_plan[monthly_survivors_pension_contribution]"]',
+            has_disability_retirement: 'input[name="adhesion_plan[monthly_disability_retirement_contribution]"]',
+        };
+
+        const contractedRiskContribution = (checkboxId) => {
+            const checkbox = document.getElementById(checkboxId);
+
+            if (checkbox && !checkbox.checked) return 0;
+
+            return parseMoneyValue($(RISK_CONTRIBUTION_INPUTS[checkboxId]).val());
+        };
+
+        const fetchRiskCapital = (birthDate, survivorsPensionContribution, disabilityRetirementContribution) => $.ajax({
+            type: 'GET',
+            url: <?= json_encode($this->Url->build([
+                'controller' => 'Simulator',
+                'action' => 'recalculateRiskCapital',
+                'prefix' => false,
+            ])) ?>,
+            data: {
+                date: birthDate,
+                survivorsPensionContribution,
+                disabilityRetirementContribution,
+            },
+            dataType: 'json',
+        });
+
+        /**
+         * Mantém "Capital segurado pensão por morte" e "...invalidez" em dia
+         * enquanto o admin digita a contribuição de um risco, sem esperar o
+         * "Recalcular".
          */
         let riskCapitalTimeout;
 
@@ -305,36 +337,26 @@
 
             if (!birthDate) return;
 
-            const $survivorsContribution = $('input[name="adhesion_plan[monthly_survivors_pension_contribution]"]');
-            const $disabilityContribution = $('input[name="adhesion_plan[monthly_disability_retirement_contribution]"]');
+            const $survivorsContribution = $(RISK_CONTRIBUTION_INPUTS.has_survivors_pension);
+            const $disabilityContribution = $(RISK_CONTRIBUTION_INPUTS.has_disability_retirement);
 
-            $.ajax({
-                type: 'GET',
-                url: <?= json_encode($this->Url->build([
-                    'controller' => 'Simulator',
-                    'action' => 'recalculateRiskCapital',
-                    'prefix' => false,
-                ])) ?>,
-                data: {
-                    date: birthDate,
-                    survivorsPensionContribution: parseMoneyValue($survivorsContribution.val()),
-                    disabilityRetirementContribution: parseMoneyValue($disabilityContribution.val()),
-                },
-                dataType: 'json',
-                success: (response) => {
-                    if (!response.success) return;
+            fetchRiskCapital(
+                birthDate,
+                parseMoneyValue($survivorsContribution.val()),
+                parseMoneyValue($disabilityContribution.val())
+            ).done((response) => {
+                if (!response.success) return;
 
-                    // Readonly (risco desmarcado) fica de fora: o capital já
-                    // está travado em zero por handleRiskToggle, e não é
-                    // este campo que decidiu a contribuição zerada.
-                    if (!$survivorsContribution.prop('readOnly')) {
-                        $('input[name="adhesion_plan[survivors_pension_insured_capital]"]').val(formatMoneyValue(response.survivorsPensionInsuredCapital));
-                    }
+                // Readonly (risco desmarcado) fica de fora: o capital já
+                // está travado em zero por handleRiskToggle, e não é
+                // este campo que decidiu a contribuição zerada.
+                if (!$survivorsContribution.prop('readOnly')) {
+                    $('input[name="adhesion_plan[survivors_pension_insured_capital]"]').val(formatMoneyValue(response.survivorsPensionInsuredCapital));
+                }
 
-                    if (!$disabilityContribution.prop('readOnly')) {
-                        $('input[name="adhesion_plan[disability_retirement_insured_capital]"]').val(formatMoneyValue(response.disabilityRetirementInsuredCapital));
-                    }
-                },
+                if (!$disabilityContribution.prop('readOnly')) {
+                    $('input[name="adhesion_plan[disability_retirement_insured_capital]"]').val(formatMoneyValue(response.disabilityRetirementInsuredCapital));
+                }
             });
         };
 
@@ -344,10 +366,18 @@
         });
 
         /**
-         * "Recalcular": mesmo endpoint que o formulário público usa no passo
-         * Plano (SimulatorController::recalculate), reaproveitado aqui para
-         * não duplicar a fórmula atuarial. Ele lê os riscos como estão
-         * salvos no banco -- o aviso ao lado do botão existe por causa disso.
+         * "Recalcular": parte do que está na tela e não mexe no que o admin
+         * digitou nos riscos. Recalcula o capital só dos riscos marcados e
+         * põe na aposentadoria a diferença entre o total e esses riscos --
+         * se o admin digitou cada contribuição, o total já é a soma e a
+         * aposentadoria fica como está; se digitou um total novo, a diferença
+         * vai para ela.
+         *
+         * Antes reaproveitava o recálculo do formulário público
+         * (SimulatorController::recalculate), que lê os riscos gravados no
+         * banco e redistribui tudo pelas taxas padrão: um risco desmarcado e
+         * ainda não salvo voltava para a conta, e os valores digitados eram
+         * sobrescritos.
          */
         const recalcButton = document.getElementById('btnRecalculatePlan');
 
@@ -355,56 +385,55 @@
             recalcButton.addEventListener('click', function() {
                 const errorDiv = document.getElementById('planRecalculateError');
                 const birthDate = $('input[name="adhesion_personal_data[birth_date]"]').val();
-                const value = parseMoneyValue(document.getElementById('planTotalContribution').value);
+                const total = parseMoneyValue(document.getElementById('planTotalContribution').value);
+                const minimum = parseFloat(recalcButton.dataset.minimum) || 0;
+                const survivorsPensionContribution = contractedRiskContribution('has_survivors_pension');
+                const disabilityRetirementContribution = contractedRiskContribution('has_disability_retirement');
+                const retirementContribution = Math.round((total - survivorsPensionContribution - disabilityRetirementContribution) * 100) / 100;
+
+                const showError = (message) => {
+                    errorDiv.textContent = message;
+                    errorDiv.style.display = 'block';
+                };
 
                 errorDiv.style.display = 'none';
 
                 if (!birthDate) {
-                    errorDiv.textContent = 'Preencha a data de nascimento em "Dados Pessoais" antes de recalcular.';
-                    errorDiv.style.display = 'block';
+                    showError('Preencha a data de nascimento em "Dados Pessoais" antes de recalcular.');
+                    return;
+                }
+
+                if (total < minimum) {
+                    showError(`A contribuição total mínima é de R$ ${formatMoneyValue(minimum)}.`);
+                    return;
+                }
+
+                if (retirementContribution < 0) {
+                    showError('A contribuição total é menor que a soma das contribuições de risco.');
                     return;
                 }
 
                 recalcButton.disabled = true;
 
-                $.ajax({
-                    type: 'GET',
-                    url: <?= json_encode($this->Url->build([
-                        'controller' => 'Simulator',
-                        'action' => 'recalculate',
-                        'prefix' => false,
-                    ])) ?>,
-                    data: {
-                        date: birthDate,
-                        value: value,
-                        initialDataId: recalcButton.dataset.adhesionId,
-                        storageUuid: recalcButton.dataset.storageUuid,
-                    },
-                    dataType: 'json',
-                    success: (response) => {
+                fetchRiskCapital(birthDate, survivorsPensionContribution, disabilityRetirementContribution)
+                    .done((response) => {
                         if (!response.success) {
-                            errorDiv.textContent = response.message || 'Não foi possível recalcular o plano.';
-                            errorDiv.style.display = 'block';
+                            showError(response.message || 'Não foi possível recalcular o plano.');
                             return;
                         }
 
-                        $('input[name="adhesion_plan[benefit_entry_age]"]').val(response.benefitEntryAge);
-                        $('input[name="adhesion_plan[monthly_retirement_contribution]"]').val(formatMoneyValue(response.monthlyRetirementContribution));
-                        $('input[name="adhesion_plan[monthly_survivors_pension_contribution]"]').val(formatMoneyValue(response.monthlySurvivorsPensionContribution));
+                        $('input[name="adhesion_plan[monthly_retirement_contribution]"]').val(formatMoneyValue(retirementContribution));
+                        $(RISK_CONTRIBUTION_INPUTS.has_survivors_pension).val(formatMoneyValue(survivorsPensionContribution));
                         $('input[name="adhesion_plan[survivors_pension_insured_capital]"]').val(formatMoneyValue(response.survivorsPensionInsuredCapital));
-                        $('input[name="adhesion_plan[monthly_disability_retirement_contribution]"]').val(formatMoneyValue(response.monthlyDisabilityRetirementContribution));
+                        $(RISK_CONTRIBUTION_INPUTS.has_disability_retirement).val(formatMoneyValue(disabilityRetirementContribution));
                         $('input[name="adhesion_plan[disability_retirement_insured_capital]"]').val(formatMoneyValue(response.disabilityRetirementInsuredCapital));
 
                         updatePlanTotalContribution();
-                    },
-                    error: () => {
-                        errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';
-                        errorDiv.style.display = 'block';
-                    },
-                    complete: () => {
+                    })
+                    .fail(() => showError('Não foi possível recalcular o plano. Tente novamente.'))
+                    .always(() => {
                         recalcButton.disabled = false;
-                    },
-                });
+                    });
             });
         }
 

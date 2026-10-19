@@ -498,7 +498,11 @@ class AdhesionsController extends AppController
             $this->flashValidationErrors($adhesion);
         }
 
-        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason'));
+        // O "Recalcular" da aba Plano recusa um total abaixo do mínimo do
+        // plano, o mesmo piso que o simulador público aplica.
+        $minimumMonthlyContribution = $this->fetchTable('PlanParameters')->current()->minimumMonthlyContribution();
+
+        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'minimumMonthlyContribution'));
     }
 
     /**
