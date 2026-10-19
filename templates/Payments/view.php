@@ -12,7 +12,7 @@
 
 $this->assign('title', 'Sul Previdência - Pagamento da Adesão');
 
-$logoAssetPath = 'logo_sul_transparente.png';
+$logoAssetPath = 'logo_sul_recortada.png';
 ?>
 <style>
     :root {
@@ -62,7 +62,7 @@ $logoAssetPath = 'logo_sul_transparente.png';
     }
 
     .payment-logo {
-        height: 80px;
+        height: 90px;
         margin-bottom: 24px;
     }
 

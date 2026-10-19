@@ -10,7 +10,7 @@ use Cake\Core\Configure;
 $this->assign('title', 'Sul Previdência - Simulador');
 
 $csrfToken = $this->request->getAttribute('csrfToken');
-$logoAssetPath = 'logo_sul_transparente.png';
+$logoAssetPath = 'logo_sul_recortada.png';
 
 // Closures, e não declarações: esta tela passou a ser renderizada também pelo
 // link de retomada, e dois render no mesmo processo redeclarariam a função.
@@ -177,7 +177,7 @@ $createSecureCard = function ($data, $type)
         }
 
         .logo-sul-prev {
-            height: 100px;
+            height: 110px;
         }
 
         .simulador-form {

@@ -14,7 +14,7 @@ class EmailTemplates
      */
     public static function resumeProposal(string $customerName, string $resumeUrl, string $stepLabel, int $days): string
     {
-        $logoUrl = Router::url('/img/logo_sul_transparente.png', true);
+        $logoUrl = Router::url('/img/logo_sul_recortada.png', true);
 
         return self::wrap($logoUrl, '
             <h1 style="margin:0 0 16px;font-size:22px;color:#333333;">Sua proposta está guardada, ' . h($customerName) . '</h1>
@@ -44,7 +44,7 @@ class EmailTemplates
 
     public static function paymentLink(string $customerName, string $paymentUrl): string
     {
-        $logoUrl = Router::url('/img/logo_sul_transparente.png', true);
+        $logoUrl = Router::url('/img/logo_sul_recortada.png', true);
 
         return self::wrap($logoUrl, '
             <h1 style="margin:0 0 16px;font-size:22px;color:#333333;">Falta pouco, ' . h($customerName) . '!</h1>
@@ -92,7 +92,7 @@ class EmailTemplates
     private static function wrap(?string $logoUrl, string $bodyHtml): string
     {
         $logoHtml = $logoUrl
-            ? '<img src="' . h($logoUrl) . '" alt="Sul Previdência" style="height:48px;margin-bottom:24px;">'
+            ? '<img src="' . h($logoUrl) . '" alt="Sul Previdência" style="height:64px;margin-bottom:24px;">'
             : '<div style="font-size:16px;font-weight:bold;color:#333333;margin-bottom:24px;">Sul Previdência</div>';
 
         return '

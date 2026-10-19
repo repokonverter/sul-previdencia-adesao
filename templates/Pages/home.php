@@ -1038,7 +1038,7 @@ echo $this->Html->css('application');
     }
 
     .fintech-logo-right {
-        height: 100px;
+        height: 110px;
         position: absolute;
         top: 16px;
         right: 48px;
@@ -1047,6 +1047,22 @@ echo $this->Html->css('application');
 
     .fintech-header {
         position: relative;
+    }
+
+    /* Absoluta no canto, a logo cai em cima do título no celular: a
+       margem transparente do arquivo antigo escondia a sobreposição, o
+       recortado não. Aqui ela entra no fluxo, centralizada acima do texto. */
+    @media (max-width: 900px) {
+        .fintech-header {
+            display: flex;
+            justify-content: center;
+            padding-top: 16px;
+        }
+
+        .fintech-logo-right {
+            position: static;
+            height: 90px;
+        }
     }
 
     .app-nav {
@@ -1169,7 +1185,7 @@ echo $this->Html->css('application');
 
 <div class="app-container" style="background: #fff !important;">
     <div class="fintech-header">
-        <?= $this->Html->image('logo_sul_transparente.png', ['alt' => 'Sul Previdência', 'class' => 'fintech-logo-right']) ?>
+        <?= $this->Html->image('logo_sul_recortada.png', ['alt' => 'Sul Previdência', 'class' => 'fintech-logo-right']) ?>
     </div>
 
     <div class="app-content">
