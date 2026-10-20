@@ -73,7 +73,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
         gap: 10px;
         margin: -12px 0 24px;
         padding: 4px 14px;
-        border-radius: 999px;
+        border-radius: 12px;
         border: 1px solid var(--partner-color, #ddd);
         font-size: 0.85rem;
         color: #666;

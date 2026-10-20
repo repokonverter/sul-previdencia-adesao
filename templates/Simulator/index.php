@@ -94,8 +94,12 @@ $createSecureCard = function ($data, $type)
         /* Border própria, não a utilitária ".border" do Bootstrap: ela vem
            com "!important", e sempre vence a cor do parceiro que o JS seta
            via style.borderColor. */
+        /* Cantos de 12px, não pílula: com a logo a 72px o arredondamento
+           total cresce junto e os cantos de uma logo retangular com fundo
+           passam por cima do contorno. */
         .partner-badge {
             border: 1px solid #dee2e6;
+            border-radius: 12px;
         }
 
         /* O aviso abre por cima do modal de adesão: sem subir o z-index,
@@ -622,7 +626,7 @@ $createSecureCard = function ($data, $type)
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
-                    <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 partner-badge rounded-pill px-3 py-1">
+                    <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 partner-badge px-3 py-1">
                         <span class="text-muted small me-2 d-none d-sm-inline">em parceria com</span>
                         <img id="registerModalPartnerLogo" src="" alt="" class="d-none partner-badge-logo">
                         <span id="registerModalPartnerLabel" class="fw-semibold small"></span>
