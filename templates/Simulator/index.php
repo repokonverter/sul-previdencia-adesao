@@ -100,6 +100,15 @@ $createSecureCard = function ($data, $type)
         .partner-badge {
             border: 1px solid #dee2e6;
             border-radius: 12px;
+            padding: 2px 10px;
+        }
+
+        /* Com o selo à mostra, o cabeçalho perde parte do respiro vertical:
+           a logo já dá a altura, e o padding padrão de 1rem somado a ela
+           deixava a barra alta demais. */
+        #registerModal .modal-header:has(#registerModalPartner.d-flex) {
+            padding-top: 6px;
+            padding-bottom: 6px;
         }
 
         /* O aviso abre por cima do modal de adesão: sem subir o z-index,
@@ -626,7 +635,7 @@ $createSecureCard = function ($data, $type)
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="registerModalLabel">Adesão</h1>
-                    <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 partner-badge px-3 py-1">
+                    <div id="registerModalPartner" class="d-none align-items-center ms-auto me-3 partner-badge">
                         <span class="text-muted small me-2 d-none d-sm-inline">em parceria com</span>
                         <img id="registerModalPartnerLogo" src="" alt="" class="d-none partner-badge-logo">
                         <span id="registerModalPartnerLabel" class="fw-semibold small"></span>
