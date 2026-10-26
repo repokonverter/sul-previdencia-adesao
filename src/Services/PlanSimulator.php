@@ -134,6 +134,28 @@ class PlanSimulator
     }
 
     /**
+     * Quantos meses de contribuição a procedure capitaliza até os 65 anos.
+     *
+     * O gráfico do simulador precisa do mesmo prazo do card, ou a curva não
+     * termina no saldo que a tela mostra ao lado. A expressão é copiada da
+     * procedure e roda no Postgres de propósito: refeita em PHP, divergiria
+     * no "hoje" (CURRENT_DATE do banco) e no fim de mês de AGE() -- quem nasceu
+     * num dia 31 ou em 29/02 ganharia ou perderia um mês.
+     */
+    public function monthsUntilRetirement(string $birthDate): int
+    {
+        $row = $this->connection
+            ->execute(
+                "SELECT EXTRACT(YEAR FROM AGE(CAST(:date AS date) + INTERVAL '65 years', CURRENT_DATE)) * 12
+                    + EXTRACT(MONTH FROM AGE(CAST(:date AS date) + INTERVAL '65 years', CURRENT_DATE)) - 1 AS months",
+                ['date' => $birthDate],
+            )
+            ->fetch('assoc');
+
+        return max(0, (int)$row['months']);
+    }
+
+    /**
      * O capital segurado correspondente a uma contribuição de risco já
      * decidida -- não uma fatia recalculada do total, a contribuição exata
      * que o admin digitou. A procedure aplica a mesma fórmula (custo

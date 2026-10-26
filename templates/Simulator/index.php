@@ -3410,37 +3410,19 @@ $createSecureCard = function ($data, $type)
             return true;
         }
 
-        function calculateMonthsDifference(date1, date2) {
-            let months;
-            months = (date2.getFullYear() - date1.getFullYear()) * 12;
-            months -= date1.getMonth();
-            months += date2.getMonth();
-
-            if (date2.getDate() < date1.getDate())
-                months--;
-
-            return months >= 0 ? months : 0;
-        }
-
+        // Tudo vem do card de 8%: prazo, taxa e contribuição são os que a
+        // procedure usou, e o ponto dos 65 é o próprio saldo do card. Refeito
+        // aqui com 74% fixo e meses contados no navegador, a curva terminava
+        // aos 64 e num valor que não era o da tela.
         const simulationChart = () => {
-            const ANNUAL_RATE = 0.0803;
-            const MONTHLY_RATE = Math.pow(1 + ANNUAL_RATE, 1.0 / 12) - 1;
             const RETIREMENT_AGE = 65;
-            const RETIREMENT_ALLOCATION = 0.74;
-            const dateBirth = $('.simulador-form-group input[name="dateBirth"]').val();
-            const contribution = parseFloat(<?= h($simulationValue) ?>);
+            const totalMonths = <?= json_encode((int)$monthsUntilRetirement) ?>;
+            const annualRate = <?= json_encode((float)$simulations[1]['taxa_rentabilidade_anual']) ?>;
+            const contribution = <?= json_encode((float)$simulations[1]['contribuicao_aposentadoria']) ?>;
+            const finalBalance = <?= json_encode((float)$simulations[1]['saldo_acumulado']) ?>;
+            const monthlyRate = Math.pow(1 + annualRate, 1.0 / 12) - 1;
 
-            if (!dateBirth || contribution <= 0) {
-                alert('Por favor, insira uma data de nascimento e uma contribuição mensal válidas.');
-                return;
-            }
-
-            const birthDate = new Date(dateBirth);
-            const currentAge = calculateAge(dateBirth);
-            const today = new Date();
-            const retirementDate = new Date(birthDate.getFullYear() + RETIREMENT_AGE, birthDate.getMonth(), birthDate.getDate());
-
-            if (currentAge >= RETIREMENT_AGE) {
+            if (totalMonths <= 0) {
                 alert('A idade atual é igual ou superior à idade de aposentadoria (65 anos). Não há projeção futura.');
                 return;
             }
@@ -3449,47 +3431,17 @@ $createSecureCard = function ($data, $type)
             const pureData = [];
             const compoundedData = [];
 
-            const contribuicaoAposentadoria = contribution * RETIREMENT_ALLOCATION;
-
-            let currentSaldoAcumulado = 0;
-            let totalContribuicaoPura = 0;
-            let totalMonthsContributed = 0;
-
-            for (let age = currentAge + 1; age <= RETIREMENT_AGE; age++) {
-                let monthsInCycle = 0;
-                let nextAnniversaryDate = new Date(birthDate.getFullYear() + age + 1, birthDate.getMonth(), birthDate.getDate());
-
-                if (age === currentAge) {
-                    monthsInCycle = calculateMonthsDifference(today, nextAnniversaryDate);
-                } else if (age < RETIREMENT_AGE) {
-                    monthsInCycle = 12;
-
-                } else if (age === RETIREMENT_AGE) {
-                    monthsInCycle = calculateMonthsDifference(nextAnniversaryDate, retirementDate);
-
-                    if (monthsInCycle <= 0) break;
-                } else {
-                    break;
-                }
-
-                if (totalMonthsContributed + monthsInCycle > calculateMonthsDifference(today, retirementDate)) {
-                    monthsInCycle = calculateMonthsDifference(today, retirementDate) - totalMonthsContributed;
-                }
-
-                if (monthsInCycle > 0) {
-                    for (let month = 0; month < monthsInCycle; month++) {
-                        currentSaldoAcumulado = currentSaldoAcumulado * (1 + MONTHLY_RATE) + contribuicaoAposentadoria;
-                    }
-
-                    totalContribuicaoPura += contribuicaoAposentadoria * monthsInCycle;
-                    totalMonthsContributed += monthsInCycle;
-                }
+            // Cada idade fica 12 meses antes da seguinte, contando para trás a
+            // partir dos 65; idades sem nenhum mês de contribuição ficam fora.
+            for (let age = RETIREMENT_AGE - Math.floor((totalMonths - 1) / 12); age <= RETIREMENT_AGE; age++) {
+                const months = totalMonths - 12 * (RETIREMENT_AGE - age);
+                const balance = age === RETIREMENT_AGE
+                    ? finalBalance
+                    : contribution * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
 
                 labels.push(age);
-                pureData.push(Math.round(totalContribuicaoPura));
-                compoundedData.push(Math.round(currentSaldoAcumulado * 100) / 100);
-
-                if (age >= RETIREMENT_AGE) break;
+                pureData.push(Math.round(contribution * months));
+                compoundedData.push(Math.round(balance * 100) / 100);
             }
 
             renderChart(labels, pureData, compoundedData);

@@ -49,6 +49,7 @@ class SimulatorController extends AppController
         $this->set([
             'simulationDate' => $data['date'],
             'simulationValue' => $data['value'],
+            'monthsUntilRetirement' => $simulator->monthsUntilRetirement($data['date']),
         ]);
     }
 
@@ -110,6 +111,7 @@ class SimulatorController extends AppController
             'includeDisabilityRetirement' => $includeDisabilityRetirement,
             'simulationDate' => $birthDate,
             'simulationValue' => $value,
+            'monthsUntilRetirement' => $simulator->monthsUntilRetirement($birthDate),
             'resumed' => [
                 'initialDataId' => $adhesion->id,
                 'storageUuid' => $adhesion->storage_uuid,

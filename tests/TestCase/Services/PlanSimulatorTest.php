@@ -113,4 +113,35 @@ class PlanSimulatorTest extends TestCase
         $this->assertSame(65, $this->simulator->benefitEntryAge($this->yearsAgo(55)));
         $this->assertSame(70, $this->simulator->benefitEntryAge($this->yearsAgo(60)));
     }
+
+    /**
+     * Mesma regra da procedure: meses até os 65 menos um. Quem faz 30 hoje
+     * tem 35 anos inteiros pela frente, 420 meses, e a procedure capitaliza 419.
+     */
+    public function testMonthsUntilRetirementFollowsTheProcedure(): void
+    {
+        $this->assertSame(419, $this->simulator->monthsUntilRetirement($this->yearsAgo(30)));
+    }
+
+    public function testMonthsUntilRetirementIsZeroFromSixtyFiveOn(): void
+    {
+        $this->assertSame(0, $this->simulator->monthsUntilRetirement($this->yearsAgo(65)));
+        $this->assertSame(0, $this->simulator->monthsUntilRetirement($this->yearsAgo(70)));
+    }
+
+    /**
+     * O prazo do gráfico tem que fechar no saldo do card: capitalizando a
+     * contribuição pelos meses devolvidos, chega-se ao saldo_acumulado.
+     */
+    public function testMonthsUntilRetirementReproducesTheCardBalance(): void
+    {
+        $birthDate = '1990-03-15';
+        $row = $this->simulator->simulate($birthDate, 500.0)[1];
+        $months = $this->simulator->monthsUntilRetirement($birthDate);
+
+        $monthlyRate = (1 + (float)$row['taxa_rentabilidade_anual']) ** (1 / 12) - 1;
+        $balance = (float)$row['contribuicao_aposentadoria'] * (((1 + $monthlyRate) ** $months - 1) / $monthlyRate);
+
+        $this->assertEqualsWithDelta((float)$row['saldo_acumulado'], $balance, 0.01);
+    }
 }

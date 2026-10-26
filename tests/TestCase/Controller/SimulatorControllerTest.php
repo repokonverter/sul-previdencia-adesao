@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
+use App\Services\PlanSimulator;
+use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
@@ -77,6 +79,30 @@ class SimulatorControllerTest extends TestCase
         $this->assertTrue($result['hasSurvivorsPension']);
         $this->assertTrue($result['hasDisabilityRetirement']);
         $this->assertGreaterThan(0.0, $result['monthlySurvivorsPensionContribution']);
+    }
+
+    /**
+     * O gráfico termina no saldo do card de 8%, e para isso a tela precisa
+     * do mesmo prazo que a procedure capitalizou.
+     */
+    public function testTheChartGetsTheProcedureTerm(): void
+    {
+        // index() lê $_GET direto, que o IntegrationTestTrait não preenche.
+        $_GET = ['date' => '1990-03-15', 'value' => '500'];
+        try {
+            $this->get('/simulator?' . http_build_query($_GET));
+        } finally {
+            $_GET = [];
+        }
+
+        $this->assertResponseOk();
+        $this->assertSame(
+            (new PlanSimulator(
+                ConnectionManager::get('test'),
+                TableRegistry::getTableLocator()->get('PlanParameters')->current()
+            ))->monthsUntilRetirement('1990-03-15'),
+            $this->viewVariable('monthsUntilRetirement')
+        );
     }
 
     public function testWithoutAnIdentifiedAdhesionBothRisksExist(): void

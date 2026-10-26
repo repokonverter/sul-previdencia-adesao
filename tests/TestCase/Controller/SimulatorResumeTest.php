@@ -65,6 +65,7 @@ class SimulatorResumeTest extends TestCase
         $this->assertResponseContains('"step":"addressData"');
         $this->assertResponseContains('Fulano de Tal');
         $this->assertResponseContains('1985-03-10');
+        $this->assertGreaterThan(0, $this->viewVariable('monthsUntilRetirement'));
     }
 
     /**
