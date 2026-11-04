@@ -68,6 +68,69 @@ class SimulatorResumeTest extends TestCase
         $this->assertGreaterThan(0, $this->viewVariable('monthsUntilRetirement'));
     }
 
+    private function addPlan(int $adhesionId, string $retirement, string $survivorsPension, string $disabilityRetirement): \App\Model\Entity\AdhesionPlan
+    {
+        $plans = $this->table('AdhesionPlans');
+        $plan = $plans->newEntity([
+            'adhesion_initial_data_id' => $adhesionId,
+            'benefit_entry_age' => 65,
+            'monthly_retirement_contribution' => $retirement,
+            'monthly_survivors_pension_contribution' => $survivorsPension,
+            'survivors_pension_insured_capital' => '1000.00',
+            'monthly_disability_retirement_contribution' => $disabilityRetirement,
+            'disability_retirement_insured_capital' => '1000.00',
+        ]);
+
+        return $plans->saveOrFail($plan);
+    }
+
+    private function adminProjection(\App\Model\Entity\AdhesionPlan $plan): \App\Services\PlanProjection
+    {
+        return (new \App\Services\PlanSimulator(
+            \Cake\Datasource\ConnectionManager::get('test'),
+            $this->table('PlanParameters')->current()
+        ))->projectSavedPlan('1985-03-10', $plan);
+    }
+
+    /**
+     * Sem dados de pagamento, a retomada usava só a contribuição de
+     * aposentadoria como se fosse o total: os cenários de 6/8/10% saíam
+     * menores que os da aba Plano do admin para a mesma adesão.
+     */
+    public function testScenariosMatchTheAdminPlanTab(): void
+    {
+        $adhesion = $this->createAdhesion();
+        $plan = $this->addPlan($adhesion->id, '740.00', '160.00', '100.00');
+        $token = $this->table('AdhesionInitialDatas')->issueResumeToken($adhesion, 7, 'plan');
+
+        $this->get("/proposta/$token");
+
+        $this->assertResponseOk();
+        $this->assertEqualsWithDelta(1000.0, $this->viewVariable('totalMonthlyContributionPlan'), 0.001);
+        $this->assertSame(
+            array_column($this->adminProjection($plan)->scenarios, 'balance'),
+            array_map(fn(array $row): float => (float)$row['saldo_acumulado'], $this->viewVariable('simulations'))
+        );
+    }
+
+    /**
+     * Valor ajustado à mão pelo admin não segue a divisão 74/16/10: a
+     * retomada mostra o que foi gravado, não a fórmula reaplicada ao total.
+     */
+    public function testAnAdminAdjustedPlanIsShownAsSaved(): void
+    {
+        $adhesion = $this->createAdhesion();
+        $this->addPlan($adhesion->id, '850.00', '100.00', '50.00');
+        $token = $this->table('AdhesionInitialDatas')->issueResumeToken($adhesion, 7, 'plan');
+
+        $this->get("/proposta/$token");
+
+        $simulation = $this->viewVariable('simulations')[1];
+        $this->assertEqualsWithDelta(850.0, (float)$simulation['contribuicao_aposentadoria'], 0.001);
+        $this->assertEqualsWithDelta(100.0, (float)$simulation['contribuicao_morte'], 0.001);
+        $this->assertEqualsWithDelta(50.0, (float)$simulation['contribuicao_invalidez'], 0.001);
+    }
+
     /**
      * Expirado e inexistente dizem coisas diferentes: um existiu e o prazo
      * acabou, o outro nunca existiu. Um 404 seco faria a pessoa achar que o

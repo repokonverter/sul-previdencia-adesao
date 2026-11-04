@@ -4,13 +4,25 @@ declare(strict_types=1);
 
 namespace App\Controller\Component;
 
+use App\Services\PlanProjection;
 use Cake\Controller\Component;
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\TableRegistry;
 use DateTime;
 use Dompdf\Dompdf;
 
 class PdfGeneratorComponent extends Component
 {
+    /**
+     * A gestora do plano, no rodapé da proposta e da simulação.
+     */
+    public const PLAN_MANAGER = [
+        'planManager' => 'Sociedade de Previdência Complementar Sul Previdência',
+        'cnpjPlanManager' => '12.148.125/0001-42',
+        'address' => 'Rua Vidal Ramos nº 31 - Sala 1101 - Centro - Florianópolis - SC',
+        'site' => 'www.sulprevidencia.org.br',
+    ];
+
     protected $AdhesionInitialDatas;
 
     public function initialize(array $config): void
@@ -84,12 +96,7 @@ class PdfGeneratorComponent extends Component
                 'name' => 'Corretop Corretora de Seguros',
                 'code' => '202104784',
             ],
-            'footer' => [
-                'planManager' => 'Sociedade de Previdência Complementar Sul Previdência',
-                'cnpjPlanManager' => '12.148.125/0001-42',
-                'address' => 'Rua Vidal Ramos nº 31 - Sala 1101 - Centro - Florianópolis - SC',
-                'site' => 'www.sulprevidencia.org.br'
-            ]
+            'footer' => self::PLAN_MANAGER,
         ];
 
         // Vínculo associativo troca os dados do instituidor no topo da
@@ -219,5 +226,51 @@ class PdfGeneratorComponent extends Component
         return $dompdf->stream("declaracao-vinculo-associativo-$id.pdf", [
             "Attachment" => true
         ]);
+    }
+
+    /**
+     * A simulação do plano para o admin mandar ao cliente: valores gravados,
+     * cenários e o gráfico até os 65. Com vínculo associativo, a logo e a
+     * cor do parceiro entram como moldura, igual à declaração de vínculo.
+     *
+     * Devolve o binário em vez de usar stream(): quem responde é o
+     * controller, e assim a action pode ser testada como qualquer outra.
+     */
+    public function planSimulationPdf(EntityInterface $adhesion, PlanProjection $projection): string
+    {
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($this->planSimulationHtml($adhesion, $projection));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return (string)$dompdf->output();
+    }
+
+    public function planSimulationFileName(EntityInterface $adhesion): string
+    {
+        $name = (string)($adhesion->get('adhesion_personal_data')?->name ?? $adhesion->get('name'));
+        $slug = strtolower(trim((string)preg_replace('/[^A-Za-z0-9]+/', '-', (string)iconv('UTF-8', 'ASCII//TRANSLIT', $name)), '-'));
+
+        return 'simulacao-plano-' . ($slug !== '' ? $slug . '-' : '') . $adhesion->get('id') . '.pdf';
+    }
+
+    public function planSimulationHtml(EntityInterface $adhesion, PlanProjection $projection): string
+    {
+        $planManager = self::PLAN_MANAGER;
+
+        $controller = $this->getController();
+        $controller->set(compact('adhesion', 'projection', 'planManager'));
+
+        $builder = $controller->viewBuilder();
+        $oldLayout = $builder->getLayout();
+        $builder->disableAutoLayout();
+
+        $html = (string)$controller->render('/layout/pdf/pdf_plan_simulation')->getBody();
+
+        if ($oldLayout) {
+            $builder->setLayout($oldLayout);
+        }
+
+        return $html;
     }
 }

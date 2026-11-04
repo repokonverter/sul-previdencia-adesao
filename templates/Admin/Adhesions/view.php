@@ -203,16 +203,67 @@ $formatLogBody = function (?string $value): string
     <!-- PLANO -->
     <div id="plan" class="<?= $tabPaneClass('plan', $activeTab) ?>">
         <div class="card p-4 shadow-sm">
-            <h5 class="fw-bold mb-3 text-primary">Plano</h5>
-            <?php $pl = $adhesion->adhesion_plan; // Pode vir como collection ou single dependendo do contain
-            ?>
+            <?php $pl = $adhesion->adhesion_plan; ?>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h5 class="fw-bold mb-0 text-primary">Plano</h5>
+                <?php if (!empty($pl?->admin_overridden)): ?>
+                    <span class="badge rounded-pill text-bg-warning">
+                        <i class="bi bi-pencil"></i> Valores ajustados manualmente
+                        <?php if ($pl->admin_overridden_at): ?>
+                            em <?= $pl->admin_overridden_at->format('d/m/Y') ?>
+                        <?php endif; ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+
             <?php if ($pl): ?>
-                <p><strong>Idade entrada em benefício:</strong> <?= h($pl->benefit_entry_age) ?></p>
-                <p><strong>Contribuição mensal aposentadoria:</strong> R$ <?= number_format($pl->monthly_retirement_contribution, 2, ',', '.') ?></p>
-                <p><strong>Contribuição mensal pensão por morte:</strong> R$ <?= number_format($pl->monthly_survivors_pension_contribution, 2, ',', '.') ?></p>
-                <p><strong>Capital segurado pensão por morte:</strong> R$ <?= number_format($pl->survivors_pension_insured_capital, 2, ',', '.') ?></p>
-                <p><strong>Contribuição mensal invalidez:</strong> R$ <?= number_format($pl->monthly_disability_retirement_contribution, 2, ',', '.') ?></p>
-                <p><strong>Capital segurado invalidez:</strong> R$ <?= number_format($pl->disability_retirement_insured_capital, 2, ',', '.') ?></p>
+                <?php
+                $hasSurvivorsPension = $pl->has_survivors_pension !== false;
+                $hasDisabilityRetirement = $pl->has_disability_retirement !== false;
+                $survivorsPensionContribution = $hasSurvivorsPension ? (float)$pl->monthly_survivors_pension_contribution : 0.0;
+                $disabilityRetirementContribution = $hasDisabilityRetirement ? (float)$pl->monthly_disability_retirement_contribution : 0.0;
+                $totalContribution = (float)$pl->monthly_retirement_contribution + $survivorsPensionContribution + $disabilityRetirementContribution;
+                ?>
+                <div class="row g-3">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="plan-kpi plan-kpi-total">
+                            <div class="plan-kpi-label">Contribuição total mensal</div>
+                            <div class="plan-kpi-value"><?= $this->Utils->currency($totalContribution) ?></div>
+                            <div class="plan-kpi-sub">Entrada em benefício aos <?= h($pl->benefit_entry_age) ?> anos</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="plan-kpi">
+                            <div class="plan-kpi-label">Aposentadoria</div>
+                            <div class="plan-kpi-value"><?= $this->Utils->currency($pl->monthly_retirement_contribution) ?></div>
+                            <div class="plan-kpi-sub">Formação do saldo</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="plan-kpi">
+                            <div class="plan-kpi-label">Pensão por morte</div>
+                            <?php if ($hasSurvivorsPension): ?>
+                                <div class="plan-kpi-value"><?= $this->Utils->currency($survivorsPensionContribution) ?></div>
+                                <div class="plan-kpi-sub">Capital segurado <strong><?= $this->Utils->currency($pl->survivors_pension_insured_capital) ?></strong></div>
+                            <?php else: ?>
+                                <div class="plan-kpi-value text-muted">Não contratado</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="plan-kpi">
+                            <div class="plan-kpi-label">Aposentadoria por invalidez</div>
+                            <?php if ($hasDisabilityRetirement): ?>
+                                <div class="plan-kpi-value"><?= $this->Utils->currency($disabilityRetirementContribution) ?></div>
+                                <div class="plan-kpi-sub">Capital segurado <strong><?= $this->Utils->currency($pl->disability_retirement_insured_capital) ?></strong></div>
+                            <?php else: ?>
+                                <div class="plan-kpi-value text-muted">Não contratado</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <?= $this->element('../Admin/Adhesions/plan_projection') ?>
             <?php else: ?>
                 <p>Nenhum plano registrado.</p>
             <?php endif; ?>

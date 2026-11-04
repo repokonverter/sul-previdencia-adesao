@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Model\Entity\AdhesionPlan;
 use App\Model\Entity\PlanParameter;
 use Cake\Database\Connection;
 use DateTimeImmutable;
@@ -153,6 +154,90 @@ class PlanSimulator
             ->fetch('assoc');
 
         return max(0, (int)$row['months']);
+    }
+
+    /**
+     * As linhas da procedure para contribuições já decididas -- as gravadas
+     * na adesão, inclusive as ajustadas à mão pelo admin --, sem passar pela
+     * divisão padrão de riskContributions(). A procedure põe na aposentadoria
+     * o total menos os riscos, então mandar a soma dos três reproduz
+     * exatamente a contribuição de aposentadoria informada.
+     *
+     * @return array<int, array<string, mixed>> uma linha por taxa de rentabilidade
+     */
+    public function simulateContributions(
+        string $birthDate,
+        float $retirementContribution,
+        float $survivorsPensionContribution,
+        float $disabilityRetirementContribution,
+    ): array {
+        return $this->connection
+            ->execute(
+                'SELECT *
+                FROM simulacao_previdencia(:date, :value, :survivorsPension, :disabilityRetirement)',
+                [
+                    'date' => $birthDate,
+                    'value' => $retirementContribution + $survivorsPensionContribution + $disabilityRetirementContribution,
+                    'survivorsPension' => $survivorsPensionContribution,
+                    'disabilityRetirement' => $disabilityRetirementContribution,
+                ],
+                [
+                    'value' => 'decimal',
+                    'survivorsPension' => 'decimal',
+                    'disabilityRetirement' => 'decimal',
+                ],
+            )
+            ->fetchAll('assoc');
+    }
+
+    /**
+     * As contribuições do plano gravado. Risco desmarcado entra como zero
+     * mesmo que a coluna de contribuição tenha ficado com valor: é a flag
+     * que diz se o risco existe.
+     *
+     * @return array{0: float, 1: float, 2: float} [aposentadoria, morte, invalidez]
+     */
+    public static function savedPlanContributions(AdhesionPlan $plan): array
+    {
+        return [
+            (float)$plan->monthly_retirement_contribution,
+            $plan->has_survivors_pension === false ? 0.0 : (float)$plan->monthly_survivors_pension_contribution,
+            $plan->has_disability_retirement === false ? 0.0 : (float)$plan->monthly_disability_retirement_contribution,
+        ];
+    }
+
+    /**
+     * simulateContributions() com o plano gravado. É o que o link de
+     * retomada mostra: a mesma conta da aba Plano do admin, para as duas
+     * telas não divergirem.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function simulateSavedPlan(string $birthDate, AdhesionPlan $plan): array
+    {
+        return $this->simulateContributions($birthDate, ...static::savedPlanContributions($plan));
+    }
+
+    public function project(
+        string $birthDate,
+        float $retirementContribution,
+        float $survivorsPensionContribution,
+        float $disabilityRetirementContribution,
+    ): PlanProjection {
+        return PlanProjection::fromProcedureRows(
+            $this->simulateContributions(
+                $birthDate,
+                $retirementContribution,
+                $survivorsPensionContribution,
+                $disabilityRetirementContribution,
+            ),
+            $this->monthsUntilRetirement($birthDate),
+        );
+    }
+
+    public function projectSavedPlan(string $birthDate, AdhesionPlan $plan): PlanProjection
+    {
+        return $this->project($birthDate, ...static::savedPlanContributions($plan));
     }
 
     /**

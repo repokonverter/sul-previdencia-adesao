@@ -9,41 +9,8 @@
 $associationPartner = $adhesion->association_partner;
 $color = $associationPartner?->color ?? \App\Model\Entity\Partner::DEFAULT_COLOR;
 
-// A cor do parceiro entra só como acento (linhas e bordas), nunca como fundo
-// cheio: um vermelho claro atrás da logo deixava o topo todo vermelho. Para o
-// fundo da caixa da declaração vai um tom bem claro dela, misturado com
-// branco aqui mesmo porque o dompdf não entende color-mix().
-$tint = function (string $hex, float $amount): string {
-    $hex = ltrim($hex, '#');
-
-    if (strlen($hex) === 3) {
-        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
-    }
-
-    if (!ctype_xdigit($hex) || strlen($hex) !== 6) {
-        return '#fafafa';
-    }
-
-    $channels = array_map(
-        fn(string $channel): int => (int)round(255 - (255 - hexdec($channel)) * $amount),
-        str_split($hex, 2)
-    );
-
-    return vsprintf('#%02x%02x%02x', $channels);
-};
-$softColor = $tint($color, 0.06);
-
-$logoDataUri = null;
-
-if ($associationPartner !== null && $associationPartner->has_logo) {
-    $logoData = $associationPartner->logo_data;
-
-    if (is_resource($logoData)) {
-        $logoData = stream_get_contents($logoData);
-    }
-
-    $logoDataUri = 'data:' . $associationPartner->logo_mime_type . ';base64,' . base64_encode((string)$logoData);
-}
+$softColor = \App\Model\Entity\Partner::tint($color, 0.06);
+$logoDataUri = $associationPartner?->logoDataUri();
 
 $clientName = $adhesion->adhesion_personal_data->name ?? $adhesion->name ?? '';
 $clientCpf = $adhesion->adhesion_personal_data->cpf ?? '';

@@ -47,6 +47,7 @@ class AppView extends View
         $this->loadHelper('Authentication.Identity');
         $this->addHelper('Bank');
         $this->addHelper('Utils');
+        $this->addHelper('PlanChart');
 
         $this->initializeUI(['layout' => false]);
     }

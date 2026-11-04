@@ -323,6 +323,10 @@
                     <div id="planRecalculateError" class="alert alert-danger py-2 mt-2 small" style="display:none;"></div>
                 </div>
             </div>
+
+            <hr class="my-4">
+
+            <?= $this->element('../Admin/Adhesions/plan_projection') ?>
         </div>
     </div>
 

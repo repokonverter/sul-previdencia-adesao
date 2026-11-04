@@ -14,8 +14,11 @@ use App\Services\AdhesionAuditor;
 use App\Services\AdhesionSteps;
 use App\Services\ClicksignService;
 use App\Services\PixPaymentService;
+use App\Services\PlanProjection;
+use App\Services\PlanSimulator;
 use App\Services\SicoobService;
 use App\Utility\Money;
+use Cake\Datasource\ConnectionManager;
 
 class AdhesionsController extends AppController
 {
@@ -145,6 +148,7 @@ class AdhesionsController extends AppController
             'resumeSteps' => $resume['steps'],
             'suggestedStep' => $resume['suggestedStep'],
             'resumeUrl' => $resume['url'],
+            'planProjection' => $this->planProjectionFor($adhesion),
         ]);
     }
 
@@ -502,7 +506,65 @@ class AdhesionsController extends AppController
         // plano, o mesmo piso que o simulador público aplica.
         $minimumMonthlyContribution = $this->fetchTable('PlanParameters')->current()->minimumMonthlyContribution();
 
-        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'minimumMonthlyContribution'));
+        $planProjection = $this->planProjectionFor($adhesion);
+
+        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'minimumMonthlyContribution', 'planProjection'));
+    }
+
+    /**
+     * A projeção do plano como está gravado. Nula enquanto a adesão não tem
+     * plano ou data de nascimento: sem idade não há prazo até os 65.
+     */
+    private function planProjectionFor(\Cake\Datasource\EntityInterface $adhesion): ?PlanProjection
+    {
+        $birthDate = $adhesion->get('adhesion_personal_data')?->birth_date?->format('Y-m-d');
+        $plan = $adhesion->get('adhesion_plan');
+
+        if ($birthDate === null || $plan === null) {
+            return null;
+        }
+
+        return $this->planSimulator()->projectSavedPlan($birthDate, $plan);
+    }
+
+    private function planSimulator(): PlanSimulator
+    {
+        return new PlanSimulator(
+            ConnectionManager::get('default'),
+            $this->fetchTable('PlanParameters')->current()
+        );
+    }
+
+    /**
+     * Projeção das contribuições que estão na tela de edição, ainda não
+     * salvas, para o gráfico da aba Plano acompanhar o "Recalcular". Só
+     * leitura: não grava nada e não depende de uma adesão.
+     */
+    public function planProjection()
+    {
+        $this->request->allowMethod(['get']);
+        $this->autoRender = false;
+
+        $date = (string)$this->request->getQuery('date');
+        $amount = fn(string $key): float => max(0.0, (float)$this->request->getQuery($key));
+
+        if ($date === '' || strtotime($date) === false) {
+            return $this->response->withType('application/json')
+                ->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Data de nascimento é obrigatória.',
+                ]));
+        }
+
+        $projection = $this->planSimulator()->project(
+            $date,
+            $amount('retirementContribution'),
+            $amount('survivorsPensionContribution'),
+            $amount('disabilityRetirementContribution'),
+        );
+
+        return $this->response->withType('application/json')
+            ->withStringBody(json_encode(['success' => true] + $projection->toArray()));
     }
 
     /**
@@ -905,5 +967,30 @@ class AdhesionsController extends AppController
     public function generateAssociationDeclarationPdf($id)
     {
         return $this->PdfGenerator->generateAssociationDeclarationPdf($id);
+    }
+
+    /**
+     * A simulação do plano para enviar ao cliente, com os valores salvos.
+     * Não é documento contratual: não entra no envelope da Clicksign.
+     */
+    public function planPdf($id)
+    {
+        $adhesion = $this->AdhesionInitialDatas->get($id, contain: [
+            'AdhesionPersonalDatas',
+            'AdhesionPlans',
+            'AssociationPartners',
+        ]);
+        $projection = $this->planProjectionFor($adhesion);
+
+        if ($projection === null) {
+            $this->Flash->error('A simulação exige o plano e a data de nascimento preenchidos.');
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'plan']]);
+        }
+
+        return $this->response
+            ->withType('pdf')
+            ->withDownload($this->PdfGenerator->planSimulationFileName($adhesion))
+            ->withStringBody($this->PdfGenerator->planSimulationPdf($adhesion, $projection));
     }
 }

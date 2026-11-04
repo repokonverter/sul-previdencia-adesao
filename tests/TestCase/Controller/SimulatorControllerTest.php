@@ -64,6 +64,33 @@ class SimulatorControllerTest extends TestCase
     }
 
     /**
+     * A data dos Dados Pessoais pode não ser a simulada na home: o recálculo
+     * devolve os cards e o gráfico da data nova, para a página mostrar a
+     * projeção do plano que vai ser gravado.
+     */
+    public function testRecalculateRedrawsTheResultsForTheNewBirthDate(): void
+    {
+        $home = $this->recalculate(['date' => '1991-01-27', 'value' => '1000']);
+        $modal = $this->recalculate(['date' => '1995-07-24', 'value' => '1000']);
+
+        $simulator = new \App\Services\PlanSimulator(
+            \Cake\Datasource\ConnectionManager::get('test'),
+            TableRegistry::getTableLocator()->get('PlanParameters')->current()
+        );
+        $expected = $simulator->simulate('1995-07-24', 1000.0);
+
+        $this->assertStringContainsString('id="patrimonio-cenarios"', $modal['resultsHtml']);
+        $this->assertStringContainsString(
+            number_format((float)$expected[1]['saldo_acumulado'], 2, ',', '.'),
+            $modal['resultsHtml']
+        );
+        $this->assertSame((float)$expected[1]['saldo_acumulado'], $modal['chart']['finalBalance']);
+        $this->assertSame($simulator->monthsUntilRetirement('1995-07-24'), $modal['chart']['monthsUntilRetirement']);
+        $this->assertNotSame($home['chart']['finalBalance'], $modal['chart']['finalBalance']);
+        $this->assertNotSame($home['survivorsPensionInsuredCapital'], $modal['survivorsPensionInsuredCapital']);
+    }
+
+    /**
      * O campo saiu do formulário faz tempo, e aceitar a flag deixaria
      * qualquer um tirar risco montando a URL à mão.
      */

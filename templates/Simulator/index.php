@@ -11,57 +11,6 @@ $this->assign('title', 'Sul Previdência - Simulador');
 
 $csrfToken = $this->request->getAttribute('csrfToken');
 $logoAssetPath = 'logo_sul_recortada.png';
-
-// Closures, e não declarações: esta tela passou a ser renderizada também pelo
-// link de retomada, e dois render no mesmo processo redeclarariam a função.
-$createScenario = function ($data, $type)
-{
-    $annualProfitabilityRate = floor($data['taxa_rentabilidade_anual'] * 100);
-
-    switch ($type) {
-        case 'death':
-            $mainValue = $data['cobertura_morte'];
-            $incomeValue = $data['renda_morte_mensal'];
-            break;
-        case 'disability':
-            $mainValue = $data['cobertura_invalidez'];
-            $incomeValue = $data['renda_invalidez_mensal'];
-            break;
-        default:
-            $mainValue = $data['saldo_acumulado'];
-            $incomeValue = $data['beneficio_mensal'];
-            break;
-    }
-
-    return '
-        <div class="cenario-item rentabilidade-' . $annualProfitabilityRate . '">
-            <div class="cenario-titulo">Rentabilidade ' . $annualProfitabilityRate . '%</div>
-            <div class="cenario-valor ' . ($type === 'property' ? '' : 'verde') . '">' . $this->Utils->currency($mainValue) . '</div>
-            <div class="cenario-renda">Renda Mensal: ' . $this->Utils->currency($incomeValue) . '</div>
-        </div>
-    ';
-};
-
-$createSecureCard = function ($data, $type)
-{
-    switch ($type) {
-        case 'death':
-            $mainValue = $data['cobertura_morte'];
-            $incomeValue = $data['renda_morte_mensal'];
-            break;
-        case 'disability':
-            $mainValue = $data['cobertura_invalidez'];
-            $incomeValue = $data['renda_invalidez_mensal'];
-            break;
-    }
-
-    return '
-        <div style="text-align: center; padding: 16px 0;">
-            <div style="font-size: 1.8rem; font-weight: bold; color: #3B7A3B; margin-bottom: 12px;">' . $this->Utils->currency($mainValue) . '</div>
-            <div style="font-size: 1rem; color: #6c757d;">Renda Mensal: ' . $this->Utils->currency($incomeValue) . '</div>
-        </div>
-    ';
-};
 ?>
 <!DOCTYPE html>
 <html>
@@ -118,7 +67,7 @@ $createSecureCard = function ($data, $type)
             z-index: 1065;
         }
 
-        .modal-backdrop.show ~ .modal-backdrop.show {
+        .modal-backdrop.show~.modal-backdrop.show {
             z-index: 1060;
         }
 
@@ -570,51 +519,8 @@ $createSecureCard = function ($data, $type)
                 Simular novamente
             </button>
             <div class="simulador-projeto-label">Resultado</div>
-            <div class="simulador-main-row">
-                <div class="simulador-resultados-row">
-                    <div class="card-simulador">
-                        <div class="card-header azul">
-                            Patrimônio | Previdência
-                        </div>
-                        <div class="card-body">
-                            <div class="cenarios-container" id="patrimonio-cenarios">
-                                <?php
-                                foreach ($simulations as $simulation) {
-                                    echo $createScenario($simulation, 'property');
-                                }
-                                ?>
-                            </div>
-                            <div class="descricao-secundaria" id="patrimonio-contribuicao">
-                                Contribuição Mensal<br>
-                                <?= $this->Utils->currency($simulations[1]['contribuicao_aposentadoria']); ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-simulador">
-                        <div class="card-header verde">
-                            Pensão por Morte
-                        </div>
-                        <div class="card-body">
-                            <div class="cenarios-container" id="seguro-morte-cenarios"><?= $createSecureCard($simulations[1], 'death'); ?></div>
-                            <div class="descricao-secundaria" id="seguro-morte-contribuicao">
-                                Contribuição Mensal<br>
-                                <?= $this->Utils->currency($simulations[1]['contribuicao_morte']); ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-simulador">
-                        <div class="card-header verde">
-                            Aposentadoria por Invalidez
-                        </div>
-                        <div class="card-body">
-                            <div class="cenarios-container" id="seguro-invalidez-cenarios"><?= $createSecureCard($simulations[1], 'disability'); ?></div>
-                            <div class="descricao-secundaria" id="seguro-invalidez-contribuicao">
-                                Contribuição Mensal<br>
-                                <?= $this->Utils->currency($simulations[1]['contribuicao_invalidez']); ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="simulador-main-row" id="simulador-resultados">
+                <?= $this->element('Simulator/results', ['simulations' => $simulations]) ?>
             </div>
             <div class="simulador-projeto-label">Evolução Comparativa das Contribuições</div>
             <div class="simulador-grafico-centralizado">
@@ -624,6 +530,7 @@ $createSecureCard = function ($data, $type)
             </div>
             <div class="simulador-obs">
                 <p><strong>*Os valores acima são apenas estimativas de capital acumulado aos 65 anos e não garantem nenhum direito antecipado.</strong></p>
+                <p><strong>**O tipo de benefício escolhido para esse plano é o Prazo Definido de 60 meses</strong></p>
             </div>
             <button class="simulador-btn" id="simulador-continuar">
                 Gostei, quero continuar <span style="font-size:1.3em;vertical-align:middle;">→</span>
@@ -684,8 +591,7 @@ $createSecureCard = function ($data, $type)
                                                 <option
                                                     value="<?= h($association->id) ?>"
                                                     data-color="<?= h($association->color) ?>"
-                                                    data-logo-url="<?= $association->has_logo ? h($this->Url->build(['controller' => 'Partners', 'action' => 'logo', $association->id])) : '' ?>"
-                                                ><?= h($association->name) ?></option>
+                                                    data-logo-url="<?= $association->has_logo ? h($this->Url->build(['controller' => 'Partners', 'action' => 'logo', $association->id])) : '' ?>"><?= h($association->name) ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                         <div class="invalid-feedback">Selecione seu vínculo.</div>
@@ -2001,21 +1907,26 @@ $createSecureCard = function ($data, $type)
                     document.getElementById('btnRefreshPlan')
                         .classList.toggle('d-none', initialDataId === null);
 
-                    // Busca automática ao abrir o passo: o caso comum é o
-                    // proponente ao telefone enquanto o admin mexe, e ele não
-                    // tem por que saber que existe um botão.
-                    refreshPlanFromServer();
+                    // Uma troca de data de nascimento tem que ser recalculada (e
+                    // gravada) antes da busca abaixo: o plano gravado ainda é o
+                    // da idade antiga, e voltaria para a tela por cima.
+                    Promise.resolve(pendingPlanRecalculation ?? syncPlanWithBirthDate()).then(() => {
+                        // Busca automática ao abrir o passo: o caso comum é o
+                        // proponente ao telefone enquanto o admin mexe, e ele não
+                        // tem por que saber que existe um botão.
+                        refreshPlanFromServer();
 
-                    // Grava os valores padrão assim que a etapa abre: se o
-                    // cliente parar aqui e nunca clicar em avançar, a base não
-                    // pode ficar sem nenhum dado de plano (ver
-                    // RegistrationsController::save, que preserva um plano já
-                    // ajustado pelo admin mesmo que este save reenvie os
-                    // valores calculados). Silencioso porque é conveniência, e
-                    // não uma ação da pessoa -- uma falha de rede aqui não
-                    // deve interromper nada; o próximo avanço de etapa tenta
-                    // salvar de novo.
-                    saveForm('plan').catch(() => {});
+                        // Grava os valores padrão assim que a etapa abre: se o
+                        // cliente parar aqui e nunca clicar em avançar, a base não
+                        // pode ficar sem nenhum dado de plano (ver
+                        // RegistrationsController::save, que preserva um plano já
+                        // ajustado pelo admin mesmo que este save reenvie os
+                        // valores calculados). Silencioso porque é conveniência, e
+                        // não uma ação da pessoa -- uma falha de rede aqui não
+                        // deve interromper nada; o próximo avanço de etapa tenta
+                        // salvar de novo.
+                        saveForm('plan').catch(() => {});
+                    });
                 },
             },
             {
@@ -2061,7 +1972,9 @@ $createSecureCard = function ($data, $type)
             initPromotionalCode();
             initResumedProposal();
 
-            simulationChart();
+            $('#registerModal input[name="personalData[birthDate]"]').on('change', syncPlanWithBirthDate);
+
+            simulationChart(<?= json_encode($chart) ?>);
         });
 
         /**
@@ -2220,7 +2133,13 @@ $createSecureCard = function ($data, $type)
         const promoDebounceMs = 500;
         const promoMinLength = 3;
 
-        let promoState = { status: 'empty', code: null, partnerName: null, logoUrl: null, color: null };
+        let promoState = {
+            status: 'empty',
+            code: null,
+            partnerName: null,
+            logoUrl: null,
+            color: null
+        };
         let promoDebounceTimer = null;
         let promoAbortController = null;
 
@@ -2274,7 +2193,12 @@ $createSecureCard = function ($data, $type)
         const setAssociationAnswer = (isYes, partnerId = '') => {
             if (!hasAssociationQuestion) return;
 
-            const { yesRadio, noRadio, selectGroup, select } = associationEls();
+            const {
+                yesRadio,
+                noRadio,
+                selectGroup,
+                select
+            } = associationEls();
 
             yesRadio.checked = isYes;
             noRadio.checked = !isYes;
@@ -2296,7 +2220,9 @@ $createSecureCard = function ($data, $type)
         const appendAssociationEscapeHatch = (feedback) => {
             if (!isAssociationYes()) return;
 
-            const { select } = associationEls();
+            const {
+                select
+            } = associationEls();
             const option = select.options[select.selectedIndex];
             const partnerName = option && option.value ? option.textContent : 'seu vínculo';
 
@@ -2312,14 +2238,20 @@ $createSecureCard = function ($data, $type)
         const initAssociationQuestion = () => {
             if (!hasAssociationQuestion) return;
 
-            const { yesRadio, noRadio, select } = associationEls();
+            const {
+                yesRadio,
+                noRadio,
+                select
+            } = associationEls();
 
             // Trocar a resposta ou o vínculo selecionado revalida o código já
             // digitado: ele pode não pertencer ao vínculo escolhido agora.
             [yesRadio, noRadio].forEach((radio) => radio.addEventListener('change', () => {
                 setAssociationAnswer(yesRadio.checked);
 
-                const { input } = promoEls();
+                const {
+                    input
+                } = promoEls();
 
                 if (input.value) lookupPromoCode(input.value);
             }));
@@ -2327,7 +2259,9 @@ $createSecureCard = function ($data, $type)
             select.addEventListener('change', () => {
                 updatePartnerHeader();
 
-                const { input } = promoEls();
+                const {
+                    input
+                } = promoEls();
 
                 if (input.value) lookupPromoCode(input.value);
             });
@@ -2344,7 +2278,11 @@ $createSecureCard = function ($data, $type)
          */
         const selectedPartnerInfo = () => {
             if (promoState.status === 'valid') {
-                return { name: promoState.partnerName, logoUrl: promoState.logoUrl, color: promoState.color };
+                return {
+                    name: promoState.partnerName,
+                    logoUrl: promoState.logoUrl,
+                    color: promoState.color
+                };
             }
 
             if (!isAssociationYes()) return null;
@@ -2353,7 +2291,11 @@ $createSecureCard = function ($data, $type)
 
             if (!option || !option.value) return null;
 
-            return { name: option.textContent, logoUrl: option.dataset.logoUrl || null, color: option.dataset.color || null };
+            return {
+                name: option.textContent,
+                logoUrl: option.dataset.logoUrl || null,
+                color: option.dataset.color || null
+            };
         };
 
         const updatePartnerHeader = () => {
@@ -2403,7 +2345,12 @@ $createSecureCard = function ($data, $type)
                 color: data.color ?? null,
             };
 
-            const { input, spinner, remove, feedback } = promoEls();
+            const {
+                input,
+                spinner,
+                remove,
+                feedback
+            } = promoEls();
 
             input.classList.remove('is-valid', 'is-invalid', 'border-warning');
             spinner.classList.add('d-none');
@@ -2444,7 +2391,9 @@ $createSecureCard = function ($data, $type)
         };
 
         const clearPromoCode = () => {
-            const { input } = promoEls();
+            const {
+                input
+            } = promoEls();
 
             if (promoAbortController) promoAbortController.abort();
             clearTimeout(promoDebounceTimer);
@@ -2479,7 +2428,10 @@ $createSecureCard = function ($data, $type)
                     (associationId ? '&associationId=' + encodeURIComponent(associationId) : '');
 
                 const response = await fetch(url, {
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     signal: promoAbortController.signal,
                 });
 
@@ -2504,7 +2456,10 @@ $createSecureCard = function ($data, $type)
         };
 
         const initPromotionalCode = () => {
-            const { input, remove } = promoEls();
+            const {
+                input,
+                remove
+            } = promoEls();
 
             input.addEventListener('input', () => {
                 const normalized = promoNormalize(input.value);
@@ -2575,6 +2530,12 @@ $createSecureCard = function ($data, $type)
          */
         let planLocked = false;
 
+        // A data de nascimento para a qual os campos do passo Plano -- e os
+        // cards da página -- foram calculados. Começa na data simulada na
+        // home (ou na gravada, na retomada) e acompanha cada recálculo.
+        let planBirthDate = <?= json_encode($simulationDate) ?>;
+        let pendingPlanRecalculation = null;
+
         const applyPlanLock = () => {
             document.getElementById('planLockedNotice').classList.toggle('d-none', !planLocked);
             document.getElementById('planMonthlyInvestment').disabled = planLocked;
@@ -2640,7 +2601,9 @@ $createSecureCard = function ($data, $type)
             // Vínculo associativo exige que o vínculo esteja selecionado,
             // mas o código promocional em si continua opcional.
             if (isAssociationYes()) {
-                const { select } = associationEls();
+                const {
+                    select
+                } = associationEls();
 
                 if (!select.value) {
                     select.focus();
@@ -2766,10 +2729,10 @@ $createSecureCard = function ($data, $type)
                     headers: {
                         'X-CSRF-Token': '<?= $this->request->getAttribute('csrfToken') ?>'
                     },
-                    data: formElements.serialize()
-                        + `&currentStepId=${encodeURIComponent(id)}`
-                        + (storageUuid !== null ? `&storageUuid=${encodeURIComponent(storageUuid)}` : '')
-                        + (initialDataId !== null ? `&initialDataId=${initialDataId}` : ''),
+                    data: formElements.serialize() +
+                        `&currentStepId=${encodeURIComponent(id)}` +
+                        (storageUuid !== null ? `&storageUuid=${encodeURIComponent(storageUuid)}` : '') +
+                        (initialDataId !== null ? `&initialDataId=${initialDataId}` : ''),
                     dataType: 'json',
                     beforeSend: () => {},
                     success: (response) => {
@@ -2786,7 +2749,9 @@ $createSecureCard = function ($data, $type)
                         resolve(response);
                     },
                     error: () => {
-                        reject({ message: 'Não foi possível se comunicar com o servidor. Verifique sua conexão e tente novamente.' });
+                        reject({
+                            message: 'Não foi possível se comunicar com o servidor. Verifique sua conexão e tente novamente.'
+                        });
                     }
                 })
             })
@@ -2918,7 +2883,9 @@ $createSecureCard = function ($data, $type)
                 } else if (type === 'email') {
                     value = fakeEmail();
                 } else if (type === 'date') {
-                    value = name === 'personalData[birthDate]' ? fakeDateISO(25, 70) : fakeDateISO(1, 60);
+                    // A data de nascimento fica a simulada: sorteada, ela gravava
+                    // um plano de outra idade e a página e o admin divergiam.
+                    value = name === 'personalData[birthDate]' ? (planBirthDate || fakeDateISO(25, 70)) : fakeDateISO(1, 60);
                 } else if ($input.hasClass('phone')) {
                     value = fakePhone();
                 } else if (name === 'proponentStatement[weight]') {
@@ -2998,7 +2965,10 @@ $createSecureCard = function ($data, $type)
             $.ajax({
                 type: 'GET',
                 url: `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'planState']) ?>`,
-                data: { initialDataId, storageUuid },
+                data: {
+                    initialDataId,
+                    storageUuid
+                },
                 dataType: 'json',
                 success: (response) => {
                     if (!response.success) return;
@@ -3017,7 +2987,10 @@ $createSecureCard = function ($data, $type)
          * propósito: a tela não precisa saber qual dos dois falou.
          */
         const applyPlanResponse = (response) => {
-            const formatMoney = (num) => num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const formatMoney = (num) => num.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
 
             $('#registerModal input[name="plans[benefitEntryAge]"]').val(response.benefitEntryAge);
             $('#registerModal input[name="plans[monthly_retirement_contribution]"]').val(formatMoney(response.monthlyRetirementContribution));
@@ -3047,7 +3020,49 @@ $createSecureCard = function ($data, $type)
                 applyPlanLock();
             }
 
+            // Só o recálculo manda: o plano gravado (planState) não muda a
+            // simulação mostrada na página.
+            if (response.resultsHtml !== undefined) {
+                document.getElementById('simulador-resultados').innerHTML = response.resultsHtml;
+                simulationChart(response.chart);
+            }
+
             updateRiskVisibility();
+        };
+
+        /**
+         * Data de nascimento trocada nos Dados Pessoais: o plano e os cards da
+         * página eram da data simulada na home, e o plano seria gravado com
+         * contribuições e capitais de outra idade. Recalcula com a data nova
+         * e grava o plano já recalculado.
+         *
+         * @returns {Promise|null} null quando não há o que recalcular
+         */
+        const syncPlanWithBirthDate = () => {
+            const birthDate = $('#registerModal input[name="personalData[birthDate]"]').val();
+            const year = parseInt((birthDate || '').slice(0, 4), 10);
+
+            // O input de data dispara change enquanto o ano ainda está sendo
+            // digitado ("0002"): só data com ano plausível entra.
+            if (!birthDate || !(year >= 1900) || birthDate === planBirthDate || planLocked)
+                return null;
+
+            pendingPlanRecalculation = new Promise((resolve) => {
+                recalculatePlan()
+                    .done((response) => {
+                        if (!response.success || initialDataId === null) {
+                            resolve();
+                            return;
+                        }
+
+                        saveForm('plan').catch(() => {}).finally(resolve);
+                    })
+                    .fail(() => resolve());
+            }).finally(() => {
+                pendingPlanRecalculation = null;
+            });
+
+            return pendingPlanRecalculation;
         };
 
         const recalculatePlan = () => {
@@ -3060,7 +3075,7 @@ $createSecureCard = function ($data, $type)
             errorDiv.style.display = 'none';
             btn.disabled = true;
 
-            $.ajax({
+            return $.ajax({
                 type: 'GET',
                 url: `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'recalculate']) ?>`,
                 data: {
@@ -3083,6 +3098,15 @@ $createSecureCard = function ($data, $type)
                     // plano está travado: a tela se realinha ao que veio, que é
                     // como ela fica sabendo de uma mudança feita no admin.
                     applyPlanResponse(response);
+
+                    // O formulário do topo passa a dizer o que os cards mostram,
+                    // e "Simular novamente" parte daí.
+                    planBirthDate = birthDate;
+                    $('#simulador-form input[name="dateBirth"]').val(birthDate);
+                    $('#simulador-form input[name="monthlyInvestment"]').val(response.totalMonthlyContribution.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }));
                 },
                 error: () => {
                     errorDiv.textContent = 'Não foi possível recalcular o plano. Tente novamente.';
@@ -3386,7 +3410,9 @@ $createSecureCard = function ($data, $type)
                     addDependent();
 
                 resolve(choice === 'continue');
-            }, { once: true });
+            }, {
+                once: true
+            });
 
             modal.show();
         });
@@ -3414,12 +3440,17 @@ $createSecureCard = function ($data, $type)
         // procedure usou, e o ponto dos 65 é o próprio saldo do card. Refeito
         // aqui com 74% fixo e meses contados no navegador, a curva terminava
         // aos 64 e num valor que não era o da tela.
-        const simulationChart = () => {
+        //
+        // Recebe os parâmetros em vez de lê-los do PHP: o recalculate() devolve
+        // outros quando a data ou o valor mudam no modal (ver
+        // SimulatorController::chartParameters()).
+        const simulationChart = ({
+            monthsUntilRetirement: totalMonths,
+            annualRate,
+            contribution,
+            finalBalance
+        }) => {
             const RETIREMENT_AGE = 65;
-            const totalMonths = <?= json_encode((int)$monthsUntilRetirement) ?>;
-            const annualRate = <?= json_encode((float)$simulations[1]['taxa_rentabilidade_anual']) ?>;
-            const contribution = <?= json_encode((float)$simulations[1]['contribuicao_aposentadoria']) ?>;
-            const finalBalance = <?= json_encode((float)$simulations[1]['saldo_acumulado']) ?>;
             const monthlyRate = Math.pow(1 + annualRate, 1.0 / 12) - 1;
 
             if (totalMonths <= 0) {
@@ -3435,9 +3466,9 @@ $createSecureCard = function ($data, $type)
             // partir dos 65; idades sem nenhum mês de contribuição ficam fora.
             for (let age = RETIREMENT_AGE - Math.floor((totalMonths - 1) / 12); age <= RETIREMENT_AGE; age++) {
                 const months = totalMonths - 12 * (RETIREMENT_AGE - age);
-                const balance = age === RETIREMENT_AGE
-                    ? finalBalance
-                    : contribution * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+                const balance = age === RETIREMENT_AGE ?
+                    finalBalance :
+                    contribution * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
 
                 labels.push(age);
                 pureData.push(Math.round(contribution * months));
@@ -3447,11 +3478,16 @@ $createSecureCard = function ($data, $type)
             renderChart(labels, pureData, compoundedData);
         }
 
+        let simulatorChart = null;
+
         const renderChart = (labels, pureData, compoundedData) => {
-            let chartInstance = null;
             const ctx = document.getElementById('simulador-chart').getContext('2d');
 
-            chartInstance = new Chart(ctx, {
+            // Redesenhar no mesmo canvas exige destruir o anterior: o Chart.js
+            // recusa um segundo gráfico num canvas que já tem um.
+            if (simulatorChart) simulatorChart.destroy();
+
+            simulatorChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,

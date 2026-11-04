@@ -144,4 +144,39 @@ class PlanSimulatorTest extends TestCase
 
         $this->assertEqualsWithDelta((float)$row['saldo_acumulado'], $balance, 0.01);
     }
+
+    /**
+     * O plano gravado pode ter sido ajustado à mão e não seguir a divisão
+     * padrão: a projeção tem que usar exatamente a aposentadoria informada.
+     */
+    public function testProjectUsesTheExactContributions(): void
+    {
+        $birthDate = $this->yearsAgo(35);
+        $projection = $this->simulator->project($birthDate, 2220.0, 480.0, 300.0);
+
+        $this->assertSame(2220.0, $projection->retirementContribution);
+        $this->assertSame($this->simulator->monthsUntilRetirement($birthDate), $projection->monthsUntilRetirement);
+        $this->assertCount(3, $projection->scenarios);
+
+        $series = $projection->series();
+        $this->assertSame($projection->chartScenario()['balance'], end($series['compounded']));
+    }
+
+    public function testProjectSavedPlanIgnoresTheContributionOfARemovedRisk(): void
+    {
+        $plan = TableRegistry::getTableLocator()->get('AdhesionPlans')->newEntity([
+            'monthly_retirement_contribution' => '740.00',
+            'monthly_survivors_pension_contribution' => '160.00',
+            'monthly_disability_retirement_contribution' => '100.00',
+            'has_survivors_pension' => false,
+            'has_disability_retirement' => true,
+        ]);
+
+        $birthDate = $this->yearsAgo(35);
+
+        $this->assertEquals(
+            $this->simulator->project($birthDate, 740.0, 0.0, 100.0),
+            $this->simulator->projectSavedPlan($birthDate, $plan)
+        );
+    }
 }

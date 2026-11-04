@@ -44,12 +44,15 @@ class SimulatorController extends AppController
             'includeDisabilityRetirement'
         ));
 
+        $monthsUntilRetirement = $simulator->monthsUntilRetirement($data['date']);
+
         // A tela lia $_GET direto em quatro pontos, o que a amarrava à home:
         // a retomada não passa por lá e quebrava o script inteiro.
         $this->set([
             'simulationDate' => $data['date'],
             'simulationValue' => $data['value'],
-            'monthsUntilRetirement' => $simulator->monthsUntilRetirement($data['date']),
+            'monthsUntilRetirement' => $monthsUntilRetirement,
+            'chart' => $this->chartParameters($simulations, $monthsUntilRetirement),
         ]);
     }
 
@@ -79,11 +82,7 @@ class SimulatorController extends AppController
 
         $simulator = $this->planSimulator();
         $birthDate = $adhesion->adhesion_personal_data?->birth_date?->format('Y-m-d');
-        $value = (float)(
-            $adhesion->adhesion_payment_detail?->total_contribution
-                ?? $adhesion->adhesion_plan?->monthly_retirement_contribution
-                ?? $simulator->parameters()->minimumMonthlyContribution()
-        );
+        $plan = $adhesion->adhesion_plan;
 
         // Sem data de nascimento não há o que simular: a proposta parou antes
         // dos dados pessoais, e retomar equivale a começar.
@@ -93,17 +92,37 @@ class SimulatorController extends AppController
 
         [$includeSurvivorsPension, $includeDisabilityRetirement] = $simulator->effectiveRisks(
             $birthDate,
-            $adhesion->adhesion_plan->has_survivors_pension ?? true,
-            $adhesion->adhesion_plan->has_disability_retirement ?? true
+            $plan->has_survivors_pension ?? true,
+            $plan->has_disability_retirement ?? true
         );
 
-        $this->set([
-            'simulations' => $simulator->simulate(
+        // Com plano gravado, a simulação sai das contribuições gravadas, a
+        // mesma conta da aba Plano do admin. Antes, sem dados de pagamento, o
+        // total caía para monthly_retirement_contribution -- só a fatia da
+        // aposentadoria --, e a procedure tirava os riscos dela de novo: os
+        // cenários saíam ~26% menores que os do admin. Ajuste manual do admin
+        // também se perdia, redistribuído pela fórmula.
+        if ($plan !== null) {
+            $contributions = PlanSimulator::savedPlanContributions($plan);
+            $value = round(array_sum($contributions), 2);
+            $simulations = $simulator->simulateSavedPlan($birthDate, $plan);
+        } else {
+            $value = (float)(
+                $adhesion->adhesion_payment_detail?->total_contribution
+                    ?? $simulator->parameters()->minimumMonthlyContribution()
+            );
+            $simulations = $simulator->simulate(
                 $birthDate,
                 $value,
                 $includeSurvivorsPension,
                 $includeDisabilityRetirement
-            ),
+            );
+        }
+
+        $monthsUntilRetirement = $simulator->monthsUntilRetirement($birthDate);
+
+        $this->set([
+            'simulations' => $simulations,
             'totalMonthlyContributionPlan' => $value,
             'age' => PlanSimulator::ageOn($birthDate),
             'associations' => $this->activeAssociations(),
@@ -111,7 +130,8 @@ class SimulatorController extends AppController
             'includeDisabilityRetirement' => $includeDisabilityRetirement,
             'simulationDate' => $birthDate,
             'simulationValue' => $value,
-            'monthsUntilRetirement' => $simulator->monthsUntilRetirement($birthDate),
+            'monthsUntilRetirement' => $monthsUntilRetirement,
+            'chart' => $this->chartParameters($simulations, $monthsUntilRetirement),
             'resumed' => [
                 'initialDataId' => $adhesion->id,
                 'storageUuid' => $adhesion->storage_uuid,
@@ -175,7 +195,30 @@ class SimulatorController extends AppController
                 // para o cliente não desfazer, com um clique em "Recalcular",
                 // o que foi combinado por telefone.
                 'planLocked' => $planLocked,
+                // Os cards e o gráfico da página, refeitos para esta data e
+                // este valor: a data dos Dados Pessoais pode não ser a que foi
+                // simulada na home, e a tela tem que mostrar a projeção do
+                // plano que vai ser gravado, não a da home.
+                'resultsHtml' => $this->createView()->element('Simulator/results', ['simulations' => $simulations]),
+                'chart' => $this->chartParameters($simulations, $simulator->monthsUntilRetirement($date)),
             ]));
+    }
+
+    /**
+     * O que o gráfico da página precisa: tudo do cenário do meio, o mesmo
+     * dos cards, para a curva terminar no saldo que o card mostra.
+     *
+     * @param array<int, array<string, mixed>> $simulations
+     * @return array{monthsUntilRetirement: int, annualRate: float, contribution: float, finalBalance: float}
+     */
+    private function chartParameters(array $simulations, int $monthsUntilRetirement): array
+    {
+        return [
+            'monthsUntilRetirement' => $monthsUntilRetirement,
+            'annualRate' => (float)$simulations[1]['taxa_rentabilidade_anual'],
+            'contribution' => (float)$simulations[1]['contribuicao_aposentadoria'],
+            'finalBalance' => (float)$simulations[1]['saldo_acumulado'],
+        ];
     }
 
     /**

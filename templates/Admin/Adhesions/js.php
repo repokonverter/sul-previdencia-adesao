@@ -379,6 +379,40 @@
          * ainda não salvo voltava para a conta, e os valores digitados eram
          * sobrescritos.
          */
+        /**
+         * Gráfico e cenários da aba Plano com as contribuições que estão na
+         * tela, ainda não salvas (AdhesionsController::planProjection).
+         * Risco desmarcado vai como zero, pelo mesmo motivo do capital.
+         */
+        let planProjectionTimeout;
+
+        const updatePlanProjection = () => {
+            const birthDate = $('input[name="adhesion_personal_data[birth_date]"]').val();
+
+            if (!birthDate || !window.PlanProjectionView) return;
+
+            $.ajax({
+                type: 'GET',
+                url: <?= json_encode($this->Url->build(['action' => 'planProjection'])) ?>,
+                data: {
+                    date: birthDate,
+                    retirementContribution: parseMoneyValue($('input[name="adhesion_plan[monthly_retirement_contribution]"]').val()),
+                    survivorsPensionContribution: contractedRiskContribution('has_survivors_pension'),
+                    disabilityRetirementContribution: contractedRiskContribution('has_disability_retirement'),
+                },
+                dataType: 'json',
+            }).done((response) => {
+                if (response.success) window.PlanProjectionView.render(response);
+            });
+        };
+
+        const schedulePlanProjection = () => {
+            clearTimeout(planProjectionTimeout);
+            planProjectionTimeout = setTimeout(updatePlanProjection, 600);
+        };
+
+        $(form).on('input change', '.plan-contribution-field, #has_survivors_pension, #has_disability_retirement', schedulePlanProjection);
+
         const recalcButton = document.getElementById('btnRecalculatePlan');
 
         if (recalcButton) {
@@ -429,6 +463,7 @@
                         $('input[name="adhesion_plan[disability_retirement_insured_capital]"]').val(formatMoneyValue(response.disabilityRetirementInsuredCapital));
 
                         updatePlanTotalContribution();
+                        updatePlanProjection();
                     })
                     .fail(() => showError('Não foi possível recalcular o plano. Tente novamente.'))
                     .always(() => {
