@@ -110,7 +110,7 @@ class AdhesionsPlanSimulationTest extends TestCase
 
         $this->assertResponseOk();
         $this->assertResponseContains('id="planProjectionChart"');
-        $this->assertResponseContains('adhesions\\/plan-projection');
+        $this->assertResponseContains('simulations\\/projection');
     }
 
     public function testPlanPdfDownloadsTheSimulation(): void
@@ -133,33 +133,6 @@ class AdhesionsPlanSimulationTest extends TestCase
 
         $this->assertRedirect(['action' => 'view', $id, '?' => ['tab' => 'plan']]);
         $this->assertFlashMessage('A simulação exige o plano e a data de nascimento preenchidos.');
-    }
-
-    public function testPlanProjectionProjectsTheValuesOnScreen(): void
-    {
-        $this->get('/admin/adhesions/plan-projection?' . http_build_query([
-            'date' => $this->yearsAgo(35),
-            'retirementContribution' => '2220',
-            'survivorsPensionContribution' => '480',
-            'disabilityRetirementContribution' => '300',
-        ]));
-
-        $this->assertResponseOk();
-        $body = json_decode((string)$this->_response->getBody(), true);
-
-        $this->assertTrue($body['success']);
-        $this->assertTrue($body['hasProjection']);
-        $this->assertEqualsWithDelta(2220.0, $body['retirementContribution'], 0.001);
-        $this->assertCount(3, $body['scenarios']);
-        $this->assertSame(65, end($body['series']['ages']));
-    }
-
-    public function testPlanProjectionRequiresTheBirthDate(): void
-    {
-        $this->get('/admin/adhesions/plan-projection?retirementContribution=500');
-
-        $this->assertResponseOk();
-        $this->assertFalse(json_decode((string)$this->_response->getBody(), true)['success']);
     }
 
     public function testPlanPdfRequiresLogin(): void

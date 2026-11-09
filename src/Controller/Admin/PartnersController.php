@@ -24,6 +24,8 @@ class PartnersController extends AppController
      */
     protected bool $isAssociationScope = false;
 
+    protected array $userActions = ['index', 'view'];
+
     public function initialize(): void
     {
         parent::initialize();

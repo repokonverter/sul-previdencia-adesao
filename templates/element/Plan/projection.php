@@ -2,21 +2,27 @@
 
 /**
  * Cenários de rentabilidade, gráfico até os 65 e o botão do PDF da
- * simulação. Usado pela aba Plano do "Visualizar" e do "Editar": no editar,
- * js.php chama window.PlanProjectionView.render() com a projeção dos valores
- * da tela depois do "Recalcular".
+ * simulação. Usado pela aba Plano do "Visualizar" e do "Editar" da adesão e
+ * pela simulação avulsa: nas telas com Element/Plan/editor, o
+ * plan-editor.js chama window.PlanProjectionView.render() com a projeção dos
+ * valores da tela.
  *
  * @var \App\View\AppView $this
- * @var \App\Model\Entity\AdhesionInitialData $adhesion
  * @var \App\Services\PlanProjection|null $planProjection
+ * @var \App\Model\Entity\Partner|null $partner vínculo associativo, moldura da projeção
+ * @var string|null $pdfUrl link do PDF; sem ele, não há botão
+ * @var bool $pdfSubmit o botão envia o formulário da página em vez de seguir um link
+ * @var bool $warnUnsavedChanges avisa que o PDF sai do que está gravado
  */
 
 use App\Services\PlanProjection;
 use App\View\Helper\PlanChartHelper;
 
 $planProjection ??= null;
-$partner = $adhesion->association_partner ?? null;
-$canDownloadPdf = !$adhesion->isNew() && $planProjection !== null;
+$partner ??= null;
+$pdfUrl ??= null;
+$pdfSubmit ??= false;
+$warnUnsavedChanges ??= false;
 ?>
 <style>
     .plan-kpi {
@@ -159,10 +165,14 @@ $canDownloadPdf = !$adhesion->isNew() && $planProjection !== null;
                 </span>
             <?php endif; ?>
 
-            <?php if ($canDownloadPdf): ?>
+            <?php if ($pdfSubmit): ?>
+                <button type="submit" class="btn btn-primary" id="btnPlanPdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Gerar PDF do plano
+                </button>
+            <?php elseif ($pdfUrl !== null): ?>
                 <?= $this->Html->link(
                     '<i class="bi bi-file-earmark-pdf"></i> Gerar PDF do plano',
-                    ['action' => 'planPdf', $adhesion->id],
+                    $pdfUrl,
                     ['escape' => false, 'class' => 'btn btn-primary', 'id' => 'btnPlanPdf']
                 ) ?>
             <?php endif; ?>
@@ -378,6 +388,7 @@ $canDownloadPdf = !$adhesion->isNew() && $planProjection !== null;
 
     window.PlanProjectionView.render(<?= json_encode($planProjection?->toArray()) ?>);
 
+    <?php if ($warnUnsavedChanges): ?>
     // No editar, o PDF sai do que está gravado: com alteração ainda não
     // salva, o documento não bateria com o que está na tela.
     (() => {
@@ -398,4 +409,5 @@ $canDownloadPdf = !$adhesion->isNew() && $planProjection !== null;
             }
         });
     })();
+    <?php endif; ?>
 </script>

@@ -11,19 +11,17 @@ use Cake\ORM\TableRegistry;
 class AdhesionPlansTable extends AppTable
 {
     /**
-     * Os dois riscos, com o campo da contribuição de cada um e o parâmetro
-     * que guarda o seu piso.
+     * Os dois riscos, com o campo da contribuição de cada um e a chave do seu
+     * piso em PlanParameter.
      */
     private const RISKS = [
         'has_survivors_pension' => [
             'contribution' => 'monthly_survivors_pension_contribution',
-            'floor' => 'survivors_pension_floor',
-            'label' => 'pensão por morte',
+            'risk' => 'survivors_pension',
         ],
         'has_disability_retirement' => [
             'contribution' => 'monthly_disability_retirement_contribution',
-            'floor' => 'disability_retirement_floor',
-            'label' => 'aposentadoria por invalidez',
+            'risk' => 'disability_retirement',
         ],
     ];
 
@@ -86,16 +84,13 @@ class AdhesionPlansTable extends AppTable
                 continue;
             }
 
-            $floor = (float)$parameters->get($risk['floor']);
+            $error = $parameters->riskFloorError($risk['risk'], (float)$contribution);
 
-            if ((float)$contribution >= $floor) {
+            if ($error === null) {
                 continue;
             }
 
-            $plan->setError($risk['contribution'], [
-                'aboveFloor' => 'A contribuição de ' . $risk['label'] . ' não pode ser menor que R$ '
-                    . number_format($floor, 2, ',', '.') . '.',
-            ]);
+            $plan->setError($risk['contribution'], ['aboveFloor' => $error]);
 
             $withinFloor = false;
         }

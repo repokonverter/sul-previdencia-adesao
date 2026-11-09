@@ -16,7 +16,9 @@ declare(strict_types=1);
  */
 namespace App\Controller;
 
+use App\Services\PlanSimulator;
 use Cake\Controller\Controller;
+use Cake\Datasource\ConnectionManager;
 
 /**
  * Application Controller
@@ -49,5 +51,17 @@ class AppController extends Controller
          * see https://book.cakephp.org/5/en/controllers/components/form-protection.html
          */
         //$this->loadComponent('FormProtection');
+    }
+
+    /**
+     * O simulador com os parâmetros vigentes do plano. Usado pelo simulador
+     * público, pela aba Plano da adesão e pela simulação avulsa do admin.
+     */
+    protected function planSimulator(): PlanSimulator
+    {
+        return new PlanSimulator(
+            ConnectionManager::get('default'),
+            $this->fetchTable('PlanParameters')->current()
+        );
     }
 }

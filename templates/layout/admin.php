@@ -65,9 +65,15 @@
             <a href="<?= $this->Url->build('/admin') ?>" class="d-inline-flex bg-white rounded-4 p-1 me-2" style="min-width: 77px; min-height: 77px;">
                 <?= $this->Html->image('logo_sul_transparente.png', ['alt' => 'Sul Previdência', 'height' => '69', 'width' => '69']); ?>
             </a>
+            <?php $isAdmin ??= false; ?>
             <ul class="navbar-nav ms-auto">
+                <?php if ($isAdmin): ?>
                 <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/users') ?>">Usuários</a>
+                </li>
+                <?php endif; ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= $this->Url->build('/admin/simulations') ?>">Simulação</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/adhesions') ?>">Adesões</a>
@@ -81,9 +87,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/plan-parameters/edit') ?>">Parâmetros do Plano</a>
                 </li>
+                <?php if ($isAdmin): ?>
                 <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/clicksign-webhooks') ?>">Webhook Clicksign</a>
                 </li>
+                <?php endif; ?>
                 <!-- <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/integration-logs') ?>">Logs de Integração</a>
                 </li> -->

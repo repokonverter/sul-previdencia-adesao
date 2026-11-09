@@ -231,102 +231,40 @@
                 proposta sairia com as perguntas de saúde respondidas por ninguém.
             </p>
 
-            <?php $hasStatement = !empty($adhesion->adhesion_proponent_statement); ?>
+            <?php
+            $hasStatement = !empty($adhesion->adhesion_proponent_statement);
+            $planBirthDate = $adhesion->adhesion_personal_data?->birth_date;
+            ?>
 
-            <div class="row mb-3">
-                <?php foreach ([
-                    'has_survivors_pension' => 'Pensão por morte',
-                    'has_disability_retirement' => 'Aposentadoria por invalidez',
-                ] as $field => $label): ?>
-                    <?php $contracted = $adhesion->adhesion_plan?->get($field) ?? true; ?>
-                    <div class="col-md-6">
-                        <div class="form-check form-switch">
-                            <?= $this->Form->checkbox("adhesion_plan.$field", [
-                                'class' => 'form-check-input',
-                                'id' => $field,
-                                'checked' => $contracted,
-                                'disabled' => !empty($economicallyLocked) ||
-                                    // Sem declaração de saúde, um risco já removido
-                                    // não volta pela tela; o servidor recusa de
-                                    // todo jeito (AdhesionPlansTable::buildRules).
-                                    (!$contracted && !$hasStatement),
-                            ]) ?>
-                            <label class="form-check-label" for="<?= $field ?>"><?= $label ?></label>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-
-            <?php if (!$hasStatement): ?>
-                <div class="alert alert-info py-2 small">
-                    <i class="bi bi-info-circle"></i>
-                    Esta adesão não tem Declaração Pessoal de Saúde. Para incluir um
-                    risco removido, mande o link de retomada apontando para a etapa
-                    de declarações, ou preencha-a na aba "Declarações do Proponente".
-                </div>
-            <?php endif; ?>
-
-            <hr class="my-3">
-
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <?= $this->Form->control('adhesion_plan.benefit_entry_age', ['label' => 'Idade para entrada em benefício', 'class' => 'form-control', 'type' => 'number']) ?>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <?= $this->Form->control('adhesion_plan.monthly_retirement_contribution', ['label' => 'Contribuição mensal aposentadoria', 'class' => 'form-control money plan-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_plan.monthly_survivors_pension_contribution', ['label' => 'Contribuição mensal pensão por morte', 'class' => 'form-control money plan-contribution-field plan-risk-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_plan.survivors_pension_insured_capital', ['label' => 'Capital segurado pensão por morte', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_plan.monthly_disability_retirement_contribution', ['label' => 'Contribuição mensal aposentadoria por invalidez', 'class' => 'form-control money plan-contribution-field plan-risk-contribution-field', 'prepend' => 'R$', 'type' => 'text']) ?>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_plan.disability_retirement_insured_capital', ['label' => 'Capital segurado aposentadoria por invalidez', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
-                </div>
-            </div>
-
-            <hr class="my-3">
-
-            <?php $canRecalculate = ($adhesion->adhesion_personal_data?->birth_date !== null) && empty($economicallyLocked); ?>
-            <div class="row">
-                <div class="col-md-4">
-                    <label for="planTotalContribution" class="form-label fw-bold">Contribuição total mensal</label>
-                    <div class="input-group">
-                        <span class="input-group-text">R$</span>
-                        <input type="text" class="form-control money fw-bold" id="planTotalContribution"
-                               <?= $canRecalculate ? '' : 'readonly' ?>>
-                        <button type="button" class="btn btn-outline-primary" id="btnRecalculatePlan"
-                                data-minimum="<?= h((string)($minimumMonthlyContribution ?? 0)) ?>"
-                                <?= $canRecalculate ? '' : 'disabled' ?>>
-                            <i class="bi bi-arrow-repeat"></i> Recalcular
-                        </button>
-                    </div>
-                    <div class="form-text">
-                        <?php if ($canRecalculate): ?>
-                            É a soma das três contribuições, mas dá para editar.
-                            "Recalcular" mantém as contribuições de risco como estão,
-                            recalcula o capital segurado só dos riscos marcados e manda
-                            para a aposentadoria a diferença entre o total e os riscos.
-                        <?php else: ?>
-                            Recalcular exige a data de nascimento preenchida na aba
-                            "Dados Pessoais"<?= empty($economicallyLocked) ? '' : ', e esta adesão está com os valores travados' ?>.
-                        <?php endif; ?>
-                    </div>
-                    <div id="planRecalculateError" class="alert alert-danger py-2 mt-2 small" style="display:none;"></div>
-                </div>
-            </div>
+            <?= $this->element('Plan/editor', [
+                'prefix' => 'adhesion_plan',
+                'locked' => !empty($economicallyLocked),
+                // Sem declaração de saúde, um risco já removido não volta pela
+                // tela; o servidor recusa de todo jeito
+                // (AdhesionPlansTable::buildRules).
+                'canRestoreRisk' => $hasStatement,
+                'riskNotice' => $hasStatement ? null : 'Esta adesão não tem Declaração Pessoal de Saúde. Para incluir um '
+                    . 'risco removido, mande o link de retomada apontando para a etapa de declarações, ou '
+                    . 'preencha-a na aba "Declarações do Proponente".',
+                'minimumEntryAge' => $planBirthDate === null
+                    ? null
+                    : \App\Services\PlanSimulator::ageOn($planBirthDate->format('Y-m-d')),
+                'recalculateBlockedReason' => match (true) {
+                    !empty($economicallyLocked) => 'Esta adesão está com os valores travados.',
+                    $planBirthDate === null => 'Recalcular exige a data de nascimento preenchida na aba "Dados Pessoais".',
+                    default => null,
+                },
+            ]) ?>
 
             <hr class="my-4">
 
-            <?= $this->element('../Admin/Adhesions/plan_projection') ?>
+            <?= $this->element('Plan/projection', [
+                'partner' => $adhesion->association_partner ?? null,
+                'pdfUrl' => $adhesion->isNew() || ($planProjection ?? null) === null
+                    ? null
+                    : $this->Url->build(['action' => 'planPdf', $adhesion->id]),
+                'warnUnsavedChanges' => true,
+            ]) ?>
         </div>
     </div>
 

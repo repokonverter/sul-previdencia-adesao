@@ -35,11 +35,13 @@ function getCodeValidityCell(\App\Model\Entity\PromotionalCode $code): string
     </h2>
 
     <div>
-        <?= $this->Html->link(
-            '<i class="bi bi-pencil-square"></i> Editar ' . h(mb_strtolower($entityLabelSingular)),
-            ['action' => 'edit', $partner->id],
-            ['escape' => false, 'class' => 'btn btn-secondary me-1']
-        ) ?>
+        <?php if ($isAdmin): ?>
+            <?= $this->Html->link(
+                '<i class="bi bi-pencil-square"></i> Editar ' . h(mb_strtolower($entityLabelSingular)),
+                ['action' => 'edit', $partner->id],
+                ['escape' => false, 'class' => 'btn btn-secondary me-1']
+            ) ?>
+        <?php endif; ?>
         <?= $this->Html->link(
             '<i class="bi bi-arrow-left"></i> Voltar',
             ['action' => 'index'],
@@ -61,11 +63,13 @@ function getCodeValidityCell(\App\Model\Entity\PromotionalCode $code): string
     <div class="card-body">
         <h5 class="card-title d-flex justify-content-between align-items-center">
             Códigos promocionais
-            <?= $this->Html->link(
-                '<i class="bi bi-plus-circle me-1"></i> Novo código',
-                ['action' => 'addCode', $partner->id],
-                ['escape' => false, 'class' => 'btn btn-sm btn-primary']
-            ) ?>
+            <?php if ($isAdmin): ?>
+                <?= $this->Html->link(
+                    '<i class="bi bi-plus-circle me-1"></i> Novo código',
+                    ['action' => 'addCode', $partner->id],
+                    ['escape' => false, 'class' => 'btn btn-sm btn-primary']
+                ) ?>
+            <?php endif; ?>
         </h5>
 
         <div class="table-responsive mt-3">
@@ -106,6 +110,7 @@ function getCodeValidityCell(\App\Model\Entity\PromotionalCode $code): string
                                     <i class="bi bi-link-45deg"></i>
                                 </button>
 
+                                <?php if ($isAdmin): ?>
                                 <?= $this->Html->link(
                                     '<i class="bi bi-pencil-square"></i>',
                                     ['action' => 'editCode', $code->id],
@@ -132,6 +137,7 @@ function getCodeValidityCell(\App\Model\Entity\PromotionalCode $code): string
                                         'title' => 'Remover',
                                     ]
                                 ) ?>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

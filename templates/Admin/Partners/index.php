@@ -12,11 +12,13 @@ $this->assign('title', $entityLabelPlural);
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary"><?= h($entityLabelPlural) ?></h2>
 
-    <?= $this->Html->link(
-        '<i class="bi bi-plus-circle me-1"></i> Novo(a) ' . h($entityLabelSingular),
-        ['action' => 'add'],
-        ['escape' => false, 'class' => 'btn btn-primary']
-    ) ?>
+    <?php if ($isAdmin): ?>
+        <?= $this->Html->link(
+            '<i class="bi bi-plus-circle me-1"></i> Novo(a) ' . h($entityLabelSingular),
+            ['action' => 'add'],
+            ['escape' => false, 'class' => 'btn btn-primary']
+        ) ?>
+    <?php endif; ?>
 </div>
 
 <div class="card mb-4 shadow-sm border-0">
@@ -83,6 +85,7 @@ $this->assign('title', $entityLabelPlural);
                                 ['escape' => false, 'class' => 'btn btn-sm btn-light me-1', 'title' => 'Visualizar']
                             ) ?>
 
+                            <?php if ($isAdmin): ?>
                             <?= $this->Html->link(
                                 '<i class="bi bi-pencil-square"></i>',
                                 ['action' => 'edit', $partner->id],
@@ -109,6 +112,7 @@ $this->assign('title', $entityLabelPlural);
                                     'title' => 'Remover',
                                 ]
                             ) ?>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

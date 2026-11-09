@@ -32,6 +32,15 @@ use Cake\ORM\Entity;
  */
 class PlanParameter extends Entity
 {
+    /**
+     * O nome de cada risco nas mensagens, pela chave que prefixa o seu piso
+     * (`survivors_pension_floor`, `disability_retirement_floor`).
+     */
+    public const RISK_LABELS = [
+        'survivors_pension' => 'pensão por morte',
+        'disability_retirement' => 'aposentadoria por invalidez',
+    ];
+
     protected array $_accessible = [
         'minimum_monthly_contribution' => true,
         'survivors_pension_percent' => true,
@@ -71,5 +80,32 @@ class PlanParameter extends Entity
     public function disabilityRetirementFloor(): float
     {
         return (float)$this->disability_retirement_floor;
+    }
+
+    /**
+     * Os pisos são conferidos em dois lugares, a gravação do plano
+     * (AdhesionPlansTable) e a simulação avulsa do admin
+     * (PlanSimulationForm), e as duas mensagens precisam ser a mesma.
+     */
+    public function riskFloorError(string $risk, float $contribution): ?string
+    {
+        $floor = (float)$this->get($risk . '_floor');
+
+        if ($contribution >= $floor) {
+            return null;
+        }
+
+        return 'A contribuição de ' . self::RISK_LABELS[$risk] . ' não pode ser menor que R$ '
+            . number_format($floor, 2, ',', '.') . '.';
+    }
+
+    public function minimumContributionError(float $totalContribution): ?string
+    {
+        if ($totalContribution >= $this->minimumMonthlyContribution()) {
+            return null;
+        }
+
+        return 'A contribuição total mínima é de R$ '
+            . number_format($this->minimumMonthlyContribution(), 2, ',', '.') . '.';
     }
 }

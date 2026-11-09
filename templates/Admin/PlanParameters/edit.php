@@ -12,8 +12,15 @@ $this->assign('title', 'Parâmetros do Plano');
 </div>
 
 <div class="container mt-4">
+    <?php if (!$isAdmin): ?>
+        <div class="alert alert-secondary">
+            <i class="bi bi-lock"></i> Somente leitura: só administradores alteram os parâmetros do plano.
+        </div>
+    <?php endif; ?>
+
     <?= $this->Form->create($planParameter, ['class' => 'card p-4 shadow-sm']) ?>
 
+    <fieldset<?= $isAdmin ? '' : ' disabled' ?>>
     <div class="row">
         <div class="col-md-4">
             <div class="mb-3">
@@ -105,9 +112,13 @@ $this->assign('title', 'Parâmetros do Plano');
         de lá que o PDF é gerado.
     </div>
 
-    <div class="text-end mt-3">
-        <?= $this->Form->button('Salvar', ['class' => 'btn btn-success']) ?>
-    </div>
+    </fieldset>
+
+    <?php if ($isAdmin): ?>
+        <div class="text-end mt-3">
+            <?= $this->Form->button('Salvar', ['class' => 'btn btn-success']) ?>
+        </div>
+    <?php endif; ?>
 
     <?= $this->Form->end() ?>
 </div>

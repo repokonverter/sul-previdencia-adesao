@@ -12,6 +12,8 @@ use App\Controller\Admin\AppController;
  */
 class UsersController extends AppController
 {
+    protected array $userActions = ['logout'];
+
     /**
      * Initialize controller
      *

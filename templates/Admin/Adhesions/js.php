@@ -1,3 +1,4 @@
+<?= $this->Html->script('admin/plan-editor') ?>
 <script>
     const planForHandle = (planFor) => {
         if (planFor.value === 'Dependente') {
@@ -102,12 +103,16 @@
      * validação nativa rodar -- só então o campo está visível e o balão
      * aparece no lugar certo.
      */
+    // Além dos obrigatórios, os de faixa: uma idade de entrada acima de 65
+    // numa aba oculta travaria o submit do mesmo jeito silencioso.
+    const VALIDATED_FIELDS = '[required], [min], [max]';
+
     const updateIncompleteBadges = () => {
         let totalPending = 0;
         const pendingTabs = [];
 
         document.querySelectorAll('.tab-pane').forEach((pane) => {
-            const fields = pane.querySelectorAll('[required]');
+            const fields = pane.querySelectorAll(VALIDATED_FIELDS);
             const seenRadioGroups = new Set();
             let missing = 0;
 
@@ -158,319 +163,29 @@
 
         const labels = pendingTabs.map(tabLabel).join(', ');
         $('#incompleteFieldsAlertText').text(
-            `Ainda faltam campos obrigatórios em: ${labels}. Corrija-os ou use ` +
+            `Ainda há campos obrigatórios ou fora da faixa em: ${labels}. Corrija-os ou use ` +
             `"Salvar Mesmo Incompleto" para gravar assim mesmo.`
         );
         $alert.removeClass('d-none');
-    };
-
-    /**
-     * Só exibição -- soma as três contribuições do plano (aposentadoria,
-     * pensão por morte, invalidez) para o admin ter noção do total sem
-     * somar de cabeça. Não é gravada: o campo não tem `name`.
-     */
-    /**
-     * Mesma regra de App\Utility\Money::parse() do lado do servidor: o campo
-     * carrega ponto decimal cru do banco até a máscara jQuery rodar (no
-     * carregamento da página) e vírgula pt-BR depois que o admin mexe nele.
-     * Tratar todo ponto como separador de milhar sem checar a vírgula inflava
-     * "2000.00" em 100x, virando "200000".
-     */
-    const parseMoneyValue = (value) => {
-        if (!value) return 0;
-
-        const str = String(value).trim();
-        const normalized = str.includes(',') ? str.replace(/\./g, '').replace(',', '.') : str;
-        const parsed = parseFloat(normalized);
-
-        return isNaN(parsed) ? 0 : parsed;
-    };
-
-    const updatePlanTotalContribution = () => {
-        const total = Array.from(document.querySelectorAll('.plan-contribution-field'))
-            .reduce((sum, field) => sum + parseMoneyValue(field.value), 0);
-
-        const $total = $('#planTotalContribution');
-        if ($total.length) $total.val(total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-    };
-
-    const formatMoneyValue = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-    /**
-     * Desmarcar um risco zera a contribuição dele e soma o que tinha na de
-     * aposentadoria -- "sem risco, o valor inteiro vai para aposentadoria".
-     * Marcar de volta devolve exatamente o que foi tirado, guardado no
-     * próprio checkbox enquanto ele fica desmarcado.
-     */
-    const RISK_FIELDS = {
-        has_survivors_pension: {
-            contribution: 'adhesion_plan[monthly_survivors_pension_contribution]',
-            capital: 'adhesion_plan[survivors_pension_insured_capital]',
-        },
-        has_disability_retirement: {
-            contribution: 'adhesion_plan[monthly_disability_retirement_contribution]',
-            capital: 'adhesion_plan[disability_retirement_insured_capital]',
-        },
-    };
-
-    const setRiskFieldsDisabled = (checkbox, disabled) => {
-        const fields = RISK_FIELDS[checkbox.id];
-        if (!fields) return;
-
-        // `readonly`, não `disabled`: um campo `disabled` não é enviado no
-        // submit, e o zero precisa chegar ao servidor tanto quanto o valor
-        // restaurado ao marcar de volta. `bg-body-secondary`/`text-muted` só
-        // para o campo não parecer editável como os outros -- sem isso a
-        // diferença visual entre "risco fora" e "risco dentro" era quase nula.
-        [`input[name="${fields.contribution}"]`, `input[name="${fields.capital}"]`].forEach((selector) => {
-            $(selector)
-                .prop('readOnly', disabled)
-                .toggleClass('bg-body-secondary text-muted', disabled);
-        });
-    };
-
-    const handleRiskToggle = function() {
-        const fields = RISK_FIELDS[this.id];
-        if (!fields) return;
-
-        const $contribution = $(`input[name="${fields.contribution}"]`);
-        const $capital = $(`input[name="${fields.capital}"]`);
-        const $retirement = $('input[name="adhesion_plan[monthly_retirement_contribution]"]');
-
-        if (!this.checked) {
-            $(this).data('lastContribution', parseMoneyValue($contribution.val()));
-            $(this).data('lastCapital', parseMoneyValue($capital.val()));
-
-            $retirement.val(formatMoneyValue(parseMoneyValue($retirement.val()) + parseMoneyValue($contribution.val())));
-            $contribution.val(formatMoneyValue(0));
-            $capital.val(formatMoneyValue(0));
-        } else {
-            const contributionValue = $(this).data('lastContribution') || 0;
-            const capitalValue = $(this).data('lastCapital') || 0;
-
-            $retirement.val(formatMoneyValue(Math.max(0, parseMoneyValue($retirement.val()) - contributionValue)));
-            $contribution.val(formatMoneyValue(contributionValue));
-            $capital.val(formatMoneyValue(capitalValue));
-
-            $(this).removeData('lastContribution').removeData('lastCapital');
-        }
-
-        setRiskFieldsDisabled(this, !this.checked);
-        updatePlanTotalContribution();
     };
 
     $(document).ready(function() {
         const form = document.querySelector('.adhesion-form-container form');
 
         updateIncompleteBadges();
-        updatePlanTotalContribution();
-
-        // Sem isso, clicar no meio do valor só posiciona o cursor ali --
-        // digitar por cima do texto existente produz um número errado em
-        // vez de substituir o total inteiro. setTimeout(0) porque a máscara
-        // jQuery (reverse:true) também mexe na posição do cursor no foco, e
-        // roda depois -- sem adiar, ela desfazia a seleção.
-        const planTotalField = document.getElementById('planTotalContribution');
-        ['focus', 'click'].forEach((eventName) => {
-            planTotalField?.addEventListener(eventName, function() {
-                setTimeout(() => this.select(), 0);
-            });
-        });
-
-        Object.keys(RISK_FIELDS).forEach((id) => {
-            const checkbox = document.getElementById(id);
-            if (!checkbox) return;
-
-            // Estado inicial só reflete o que já está marcado, sem mover valor.
-            setRiskFieldsDisabled(checkbox, !checkbox.checked);
-            checkbox.addEventListener('change', handleRiskToggle);
-        });
 
         // Delegado: cobre também os beneficiários adicionados dinamicamente.
         $(form).on('input change', updateIncompleteBadges);
-        $(form).on('input change', '.plan-contribution-field', updatePlanTotalContribution);
 
-        /**
-         * Capital segurado a partir das contribuições de risco como estão nos
-         * campos (SimulatorController::recalculateRiskCapital). Risco
-         * desmarcado vai como zero: é o checkbox que diz se o risco existe,
-         * não o banco -- o admin pode ter acabado de desmarcar e ainda não
-         * salvou.
-         */
-        const RISK_CONTRIBUTION_INPUTS = {
-            has_survivors_pension: 'input[name="adhesion_plan[monthly_survivors_pension_contribution]"]',
-            has_disability_retirement: 'input[name="adhesion_plan[monthly_disability_retirement_contribution]"]',
-        };
-
-        const contractedRiskContribution = (checkboxId) => {
-            const checkbox = document.getElementById(checkboxId);
-
-            if (checkbox && !checkbox.checked) return 0;
-
-            return parseMoneyValue($(RISK_CONTRIBUTION_INPUTS[checkboxId]).val());
-        };
-
-        const fetchRiskCapital = (birthDate, survivorsPensionContribution, disabilityRetirementContribution) => $.ajax({
-            type: 'GET',
-            url: <?= json_encode($this->Url->build([
-                'controller' => 'Simulator',
-                'action' => 'recalculateRiskCapital',
-                'prefix' => false,
-            ])) ?>,
-            data: {
-                date: birthDate,
-                survivorsPensionContribution,
-                disabilityRetirementContribution,
+        PlanEditor.init({
+            root: form.querySelector('[data-plan-editor]'),
+            birthDateInput: form.querySelector('input[name="adhesion_personal_data[birth_date]"]'),
+            urls: {
+                riskCapital: <?= json_encode($this->Url->build(['controller' => 'Simulator', 'action' => 'recalculateRiskCapital', 'prefix' => false])) ?>,
+                recalculate: <?= json_encode($this->Url->build(['controller' => 'Simulations', 'action' => 'recalculate'])) ?>,
+                projection: <?= json_encode($this->Url->build(['controller' => 'Simulations', 'action' => 'projection'])) ?>,
             },
-            dataType: 'json',
         });
-
-        /**
-         * Mantém "Capital segurado pensão por morte" e "...invalidez" em dia
-         * enquanto o admin digita a contribuição de um risco, sem esperar o
-         * "Recalcular".
-         */
-        let riskCapitalTimeout;
-
-        const recalculateRiskCapital = () => {
-            const birthDate = $('input[name="adhesion_personal_data[birth_date]"]').val();
-
-            if (!birthDate) return;
-
-            const $survivorsContribution = $(RISK_CONTRIBUTION_INPUTS.has_survivors_pension);
-            const $disabilityContribution = $(RISK_CONTRIBUTION_INPUTS.has_disability_retirement);
-
-            fetchRiskCapital(
-                birthDate,
-                parseMoneyValue($survivorsContribution.val()),
-                parseMoneyValue($disabilityContribution.val())
-            ).done((response) => {
-                if (!response.success) return;
-
-                // Readonly (risco desmarcado) fica de fora: o capital já
-                // está travado em zero por handleRiskToggle, e não é
-                // este campo que decidiu a contribuição zerada.
-                if (!$survivorsContribution.prop('readOnly')) {
-                    $('input[name="adhesion_plan[survivors_pension_insured_capital]"]').val(formatMoneyValue(response.survivorsPensionInsuredCapital));
-                }
-
-                if (!$disabilityContribution.prop('readOnly')) {
-                    $('input[name="adhesion_plan[disability_retirement_insured_capital]"]').val(formatMoneyValue(response.disabilityRetirementInsuredCapital));
-                }
-            });
-        };
-
-        $(form).on('input', '.plan-risk-contribution-field', function() {
-            clearTimeout(riskCapitalTimeout);
-            riskCapitalTimeout = setTimeout(recalculateRiskCapital, 500);
-        });
-
-        /**
-         * "Recalcular": parte do que está na tela e não mexe no que o admin
-         * digitou nos riscos. Recalcula o capital só dos riscos marcados e
-         * põe na aposentadoria a diferença entre o total e esses riscos --
-         * se o admin digitou cada contribuição, o total já é a soma e a
-         * aposentadoria fica como está; se digitou um total novo, a diferença
-         * vai para ela.
-         *
-         * Antes reaproveitava o recálculo do formulário público
-         * (SimulatorController::recalculate), que lê os riscos gravados no
-         * banco e redistribui tudo pelas taxas padrão: um risco desmarcado e
-         * ainda não salvo voltava para a conta, e os valores digitados eram
-         * sobrescritos.
-         */
-        /**
-         * Gráfico e cenários da aba Plano com as contribuições que estão na
-         * tela, ainda não salvas (AdhesionsController::planProjection).
-         * Risco desmarcado vai como zero, pelo mesmo motivo do capital.
-         */
-        let planProjectionTimeout;
-
-        const updatePlanProjection = () => {
-            const birthDate = $('input[name="adhesion_personal_data[birth_date]"]').val();
-
-            if (!birthDate || !window.PlanProjectionView) return;
-
-            $.ajax({
-                type: 'GET',
-                url: <?= json_encode($this->Url->build(['action' => 'planProjection'])) ?>,
-                data: {
-                    date: birthDate,
-                    retirementContribution: parseMoneyValue($('input[name="adhesion_plan[monthly_retirement_contribution]"]').val()),
-                    survivorsPensionContribution: contractedRiskContribution('has_survivors_pension'),
-                    disabilityRetirementContribution: contractedRiskContribution('has_disability_retirement'),
-                },
-                dataType: 'json',
-            }).done((response) => {
-                if (response.success) window.PlanProjectionView.render(response);
-            });
-        };
-
-        const schedulePlanProjection = () => {
-            clearTimeout(planProjectionTimeout);
-            planProjectionTimeout = setTimeout(updatePlanProjection, 600);
-        };
-
-        $(form).on('input change', '.plan-contribution-field, #has_survivors_pension, #has_disability_retirement', schedulePlanProjection);
-
-        const recalcButton = document.getElementById('btnRecalculatePlan');
-
-        if (recalcButton) {
-            recalcButton.addEventListener('click', function() {
-                const errorDiv = document.getElementById('planRecalculateError');
-                const birthDate = $('input[name="adhesion_personal_data[birth_date]"]').val();
-                const total = parseMoneyValue(document.getElementById('planTotalContribution').value);
-                const minimum = parseFloat(recalcButton.dataset.minimum) || 0;
-                const survivorsPensionContribution = contractedRiskContribution('has_survivors_pension');
-                const disabilityRetirementContribution = contractedRiskContribution('has_disability_retirement');
-                const retirementContribution = Math.round((total - survivorsPensionContribution - disabilityRetirementContribution) * 100) / 100;
-
-                const showError = (message) => {
-                    errorDiv.textContent = message;
-                    errorDiv.style.display = 'block';
-                };
-
-                errorDiv.style.display = 'none';
-
-                if (!birthDate) {
-                    showError('Preencha a data de nascimento em "Dados Pessoais" antes de recalcular.');
-                    return;
-                }
-
-                if (total < minimum) {
-                    showError(`A contribuição total mínima é de R$ ${formatMoneyValue(minimum)}.`);
-                    return;
-                }
-
-                if (retirementContribution < 0) {
-                    showError('A contribuição total é menor que a soma das contribuições de risco.');
-                    return;
-                }
-
-                recalcButton.disabled = true;
-
-                fetchRiskCapital(birthDate, survivorsPensionContribution, disabilityRetirementContribution)
-                    .done((response) => {
-                        if (!response.success) {
-                            showError(response.message || 'Não foi possível recalcular o plano.');
-                            return;
-                        }
-
-                        $('input[name="adhesion_plan[monthly_retirement_contribution]"]').val(formatMoneyValue(retirementContribution));
-                        $(RISK_CONTRIBUTION_INPUTS.has_survivors_pension).val(formatMoneyValue(survivorsPensionContribution));
-                        $('input[name="adhesion_plan[survivors_pension_insured_capital]"]').val(formatMoneyValue(response.survivorsPensionInsuredCapital));
-                        $(RISK_CONTRIBUTION_INPUTS.has_disability_retirement).val(formatMoneyValue(disabilityRetirementContribution));
-                        $('input[name="adhesion_plan[disability_retirement_insured_capital]"]').val(formatMoneyValue(response.disabilityRetirementInsuredCapital));
-
-                        updatePlanTotalContribution();
-                        updatePlanProjection();
-                    })
-                    .fail(() => showError('Não foi possível recalcular o plano. Tente novamente.'))
-                    .always(() => {
-                        recalcButton.disabled = false;
-                    });
-            });
-        }
 
         $(form).on('submit', function(e) {
             const submitter = e.originalEvent?.submitter;
@@ -500,7 +215,7 @@
             // submit nativo.
             setTimeout(() => {
                 const pane = document.getElementById(firstPaneId);
-                const invalidField = Array.from(pane.querySelectorAll('[required]'))
+                const invalidField = Array.from(pane.querySelectorAll(VALIDATED_FIELDS))
                     .find((field) => !field.checkValidity());
                 invalidField?.reportValidity();
                 invalidField?.focus();

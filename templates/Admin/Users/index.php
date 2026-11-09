@@ -43,6 +43,7 @@ $this->assign('title', 'Usuários');
                     <th><?= $this->Paginator->sort('id', 'ID') ?></th>
                     <th><?= $this->Paginator->sort('name', 'Nome') ?></th>
                     <th><?= $this->Paginator->sort('email', 'E-mail') ?></th>
+                    <th><?= $this->Paginator->sort('role', 'Perfil') ?></th>
                     <th class="text-end">Ações</th>
                 </tr>
             </thead>
@@ -52,6 +53,7 @@ $this->assign('title', 'Usuários');
                         <td><?= h($user->id) ?></td>
                         <td class="fw-semibold"><?= h($user->name) ?></td>
                         <td><?= h($user->email) ?></td>
+                        <td><?= h($user->roleLabel()) ?></td>
                         <td class="text-end">
                             <?= $this->Html->link(
                                 '<i class="bi bi-eye"></i>',

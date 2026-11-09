@@ -18,6 +18,12 @@ class PlanParametersController extends AppController
 {
     protected PlanParametersTable $PlanParameters;
 
+    /**
+     * `edit` também é a tela de consulta: o perfil `user` abre, mas o POST
+     * é recusado em edit().
+     */
+    protected array $userActions = ['edit'];
+
     public function initialize(): void
     {
         parent::initialize();
@@ -30,6 +36,10 @@ class PlanParametersController extends AppController
         $planParameter = $this->PlanParameters->current();
 
         if ($this->request->is(['patch', 'post', 'put'])) {
+            if (!$this->isAdmin()) {
+                return $this->denyAccess();
+            }
+
             $planParameter = $this->PlanParameters->patchEntity(
                 $planParameter,
                 $this->normalizeNumericFields($this->request->getData())

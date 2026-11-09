@@ -179,4 +179,40 @@ class PlanSimulatorTest extends TestCase
             $this->simulator->projectSavedPlan($birthDate, $plan)
         );
     }
+
+    public function testRebalanceGivesTheDefaultShareToContractedRisksStillAtZero(): void
+    {
+        $this->assertSame(
+            [740.0, 160.0, 100.0],
+            $this->simulator->rebalance($this->yearsAgo(35), 1000.0, true, 0.0, true, 0.0)
+        );
+    }
+
+    public function testRebalanceKeepsTheTypedRisksAndSendsTheRestToRetirement(): void
+    {
+        $this->assertSame(
+            [1300.0, 50.0, 150.0],
+            $this->simulator->rebalance($this->yearsAgo(35), 1500.0, true, 50.0, true, 0.0)
+        );
+    }
+
+    public function testRebalanceZeroesUncheckedRisks(): void
+    {
+        $this->assertSame(
+            [1000.0, 0.0, 0.0],
+            $this->simulator->rebalance($this->yearsAgo(35), 1000.0, false, 160.0, false, 100.0)
+        );
+    }
+
+    /**
+     * Quem recusa é o chamador: o resto negativo diz que os riscos digitados
+     * passam do total.
+     */
+    public function testRebalanceLeavesANegativeRestForTheCallerToRefuse(): void
+    {
+        [$retirement] = $this->simulator->rebalance($this->yearsAgo(35), 100.0, true, 300.0, false, 0.0);
+
+        $this->assertSame(-200.0, $retirement);
+    }
 }
+

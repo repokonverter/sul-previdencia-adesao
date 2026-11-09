@@ -17,7 +17,7 @@
         <?= $this->Form->control('role', [
             'label' => 'Perfil',
             'class' => 'form-select',
-            'options' => ['admin' => 'Administrador', 'user' => 'Usuário']
+            'options' => \App\Model\Entity\User::ROLES
         ]) ?>
     </div>
 

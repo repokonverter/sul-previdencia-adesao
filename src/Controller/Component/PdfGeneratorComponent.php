@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controller\Component;
 
 use App\Services\PlanProjection;
+use App\Services\PlanQuote;
 use Cake\Controller\Component;
-use Cake\Datasource\EntityInterface;
 use Cake\ORM\TableRegistry;
 use DateTime;
 use Dompdf\Dompdf;
@@ -229,37 +229,39 @@ class PdfGeneratorComponent extends Component
     }
 
     /**
-     * A simulação do plano para o admin mandar ao cliente: valores gravados,
-     * cenários e o gráfico até os 65. Com vínculo associativo, a logo e a
-     * cor do parceiro entram como moldura, igual à declaração de vínculo.
+     * A simulação do plano para o admin mandar ao cliente: contribuições,
+     * cenários e o gráfico até os 65. Serve à aba Plano da adesão e à
+     * simulação avulsa, que não grava nada -- por isso recebe um PlanQuote
+     * e não a adesão. Com vínculo associativo, a logo e a cor do parceiro
+     * entram como moldura, igual à declaração de vínculo.
      *
      * Devolve o binário em vez de usar stream(): quem responde é o
      * controller, e assim a action pode ser testada como qualquer outra.
      */
-    public function planSimulationPdf(EntityInterface $adhesion, PlanProjection $projection): string
+    public function planSimulationPdf(PlanQuote $quote, PlanProjection $projection): string
     {
         $dompdf = new Dompdf();
-        $dompdf->loadHtml($this->planSimulationHtml($adhesion, $projection));
+        $dompdf->loadHtml($this->planSimulationHtml($quote, $projection));
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
         return (string)$dompdf->output();
     }
 
-    public function planSimulationFileName(EntityInterface $adhesion): string
+    public function planSimulationFileName(PlanQuote $quote): string
     {
-        $name = (string)($adhesion->get('adhesion_personal_data')?->name ?? $adhesion->get('name'));
-        $slug = strtolower(trim((string)preg_replace('/[^A-Za-z0-9]+/', '-', (string)iconv('UTF-8', 'ASCII//TRANSLIT', $name)), '-'));
+        $slug = strtolower(trim((string)preg_replace('/[^A-Za-z0-9]+/', '-', (string)iconv('UTF-8', 'ASCII//TRANSLIT', $quote->clientName)), '-'));
+        $parts = array_filter([$slug, $quote->adhesionId], fn($part): bool => $part !== '' && $part !== null);
 
-        return 'simulacao-plano-' . ($slug !== '' ? $slug . '-' : '') . $adhesion->get('id') . '.pdf';
+        return implode('-', ['simulacao-plano', ...$parts]) . '.pdf';
     }
 
-    public function planSimulationHtml(EntityInterface $adhesion, PlanProjection $projection): string
+    public function planSimulationHtml(PlanQuote $quote, PlanProjection $projection): string
     {
         $planManager = self::PLAN_MANAGER;
 
         $controller = $this->getController();
-        $controller->set(compact('adhesion', 'projection', 'planManager'));
+        $controller->set(compact('quote', 'projection', 'planManager'));
 
         $builder = $controller->viewBuilder();
         $oldLayout = $builder->getLayout();

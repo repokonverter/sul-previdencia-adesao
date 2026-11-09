@@ -240,6 +240,58 @@ class PlanSimulator
         return $this->project($birthDate, ...static::savedPlanContributions($plan));
     }
 
+    public function projectQuote(PlanQuote $quote): PlanProjection
+    {
+        return $this->project(
+            $quote->birthDate,
+            $quote->retirementContribution,
+            $quote->survivorsPensionContribution,
+            $quote->disabilityRetirementContribution,
+        );
+    }
+
+    /**
+     * O "Recalcular" do admin, no editar da adesão e na simulação avulsa:
+     * reparte um total novo sem desfazer o que o admin digitou.
+     *
+     * Risco contratado com contribuição já preenchida fica como está; risco
+     * contratado ainda em zero recebe a fatia padrão de riskContributions();
+     * risco desmarcado fica em zero. A aposentadoria leva o resto -- negativa
+     * quando os riscos passam do total, e cabe ao chamador recusar.
+     *
+     * @return array{0: float, 1: float, 2: float} [aposentadoria, morte, invalidez]
+     */
+    public function rebalance(
+        string $birthDate,
+        float $totalContribution,
+        bool $hasSurvivorsPension,
+        float $survivorsPensionContribution,
+        bool $hasDisabilityRetirement,
+        float $disabilityRetirementContribution,
+    ): array {
+        [$defaultSurvivorsPension, $defaultDisabilityRetirement] = $this->riskContributions(
+            $birthDate,
+            $totalContribution,
+            $hasSurvivorsPension,
+            $hasDisabilityRetirement,
+        );
+
+        $keepOrDefault = fn(bool $contracted, float $typed, float $default): float => match (true) {
+            !$contracted => 0.0,
+            $typed > 0 => round($typed, 2),
+            default => $default,
+        };
+
+        $survivorsPension = $keepOrDefault($hasSurvivorsPension, $survivorsPensionContribution, $defaultSurvivorsPension);
+        $disabilityRetirement = $keepOrDefault($hasDisabilityRetirement, $disabilityRetirementContribution, $defaultDisabilityRetirement);
+
+        return [
+            round($totalContribution - $survivorsPension - $disabilityRetirement, 2),
+            $survivorsPension,
+            $disabilityRetirement,
+        ];
+    }
+
     /**
      * O capital segurado correspondente a uma contribuição de risco já
      * decidida -- não uma fatia recalculada do total, a contribuição exata

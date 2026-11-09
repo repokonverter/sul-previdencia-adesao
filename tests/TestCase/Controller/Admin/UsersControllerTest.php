@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Controller\Admin;
 
 use App\Controller\Admin\UsersController;
+use Cake\ORM\TableRegistry;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
@@ -24,6 +25,50 @@ class UsersControllerTest extends TestCase
     protected array $fixtures = [
         'app.Users',
     ];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->enableCsrfToken();
+        $this->session([
+            'Auth' => TableRegistry::getTableLocator()->get('Users')->get(1),
+        ]);
+
+        // A fixture grava ids fixos sem avançar a sequence; o próximo INSERT
+        // tentaria o id 1.
+        TableRegistry::getTableLocator()->get('Users')->getConnection()
+            ->execute("SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users))");
+    }
+
+    public function testAddSavesTheRole(): void
+    {
+        $this->post('/admin/users/add', [
+            'name' => 'Nova Consulta',
+            'email' => 'nova@exemplo.test',
+            'password' => 'segredo123',
+            'role' => 'user',
+        ]);
+
+        $this->assertRedirect(['action' => 'index']);
+        $user = TableRegistry::getTableLocator()->get('Users')->findByEmail('nova@exemplo.test')->firstOrFail();
+        $this->assertSame('user', $user->role);
+        $this->assertFalse($user->isAdmin());
+    }
+
+    public function testAddRejectsAnUnknownRole(): void
+    {
+        $this->post('/admin/users/add', [
+            'name' => 'Nova Consulta',
+            'email' => 'nova@exemplo.test',
+            'password' => 'segredo123',
+            'role' => 'root',
+        ]);
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Perfil inválido.');
+        $this->assertFalse(TableRegistry::getTableLocator()->get('Users')->exists(['email' => 'nova@exemplo.test']));
+    }
 
     /**
      * Test index method

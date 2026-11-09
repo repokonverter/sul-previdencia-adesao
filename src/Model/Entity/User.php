@@ -13,11 +13,33 @@ use Cake\ORM\Entity;
  * @property string $name
  * @property string $email
  * @property string $password
+ * @property string $role
  * @property \Cake\I18n\DateTime $created
  * @property \Cake\I18n\DateTime $modified
  */
 class User extends Entity
 {
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER = 'user';
+
+    /**
+     * @var array<string, string>
+     */
+    public const ROLES = [
+        self::ROLE_ADMIN => 'Administrador',
+        self::ROLE_USER => 'Usuário',
+    ];
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function roleLabel(): string
+    {
+        return self::ROLES[$this->role] ?? (string)$this->role;
+    }
+
     protected function _setPassword(string $password): string
     {
         return (new DefaultPasswordHasher())->hash($password);
@@ -36,6 +58,7 @@ class User extends Entity
         'name' => true,
         'email' => true,
         'password' => true,
+        'role' => true,
         'created' => true,
         'modified' => true,
     ];

@@ -41,7 +41,7 @@ class AdhesionsControllerEditTest extends TestCase
     /**
      * @return array{0: int, 1: int} [adhesionId, planId]
      */
-    private function createAdhesion(): array
+    private function createAdhesion(int $benefitEntryAge = 65): array
     {
         $adhesions = $this->table('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
@@ -67,7 +67,7 @@ class AdhesionsControllerEditTest extends TestCase
         $plans = $this->table('AdhesionPlans');
         $plan = $plans->newEntity([
             'adhesion_initial_data_id' => $adhesion->id,
-            'benefit_entry_age' => 65,
+            'benefit_entry_age' => $benefitEntryAge,
             'monthly_retirement_contribution' => '740.00',
             'monthly_survivors_pension_contribution' => '160.00',
             'survivors_pension_insured_capital' => '1000.00',
@@ -368,5 +368,66 @@ class AdhesionsControllerEditTest extends TestCase
         $this->assertArrayHasKey('adhesion_plan.monthly_survivors_pension_contribution', $snapshot);
         $this->assertArrayHasKey('adhesion_plan.has_survivors_pension', $snapshot);
         $this->assertArrayHasKey('adhesion_dependents.total', $snapshot);
+    }
+
+    public function testBenefitEntryAgeAboveSixtyFiveIsRejected(): void
+    {
+        [$adhesionId, $planId] = $this->createAdhesion();
+
+        $this->post("/admin/adhesions/edit/$adhesionId", [
+            'adhesion_plan' => ['id' => $planId, 'benefit_entry_age' => 66],
+        ]);
+
+        $this->assertNoRedirect();
+        $this->assertResponseContains('A idade para entrada em benefício deve ser no máximo 65 anos.');
+        $this->assertSame(65, $this->table('AdhesionPlans')->get($planId)->benefit_entry_age);
+    }
+
+    public function testBenefitEntryAgeBelowTheCurrentAgeIsRejected(): void
+    {
+        [$adhesionId, $planId] = $this->createAdhesion();
+        $age = \App\Services\PlanSimulator::ageOn('1985-03-10');
+
+        $this->post("/admin/adhesions/edit/$adhesionId", [
+            'adhesion_plan' => ['id' => $planId, 'benefit_entry_age' => $age - 1],
+        ]);
+
+        $this->assertNoRedirect();
+        $this->assertResponseContains("A idade para entrada em benefício não pode ser menor que a idade atual ($age anos).");
+    }
+
+    /**
+     * O fluxo público grava idade + 10 para quem passou dos 55. Uma adesão
+     * assim não salva pelo admin, nem para corrigir outro campo, até alguém
+     * ajustar a idade de entrada -- corrigir sozinho mudaria o plano sem
+     * ninguém ver.
+     */
+    public function testAStoredAgeAboveSixtyFiveBlocksAnyEditUntilFixed(): void
+    {
+        [$adhesionId, $planId] = $this->createAdhesion(benefitEntryAge: 70);
+
+        $this->post("/admin/adhesions/edit/$adhesionId", ['phone' => '48988888888']);
+
+        $this->assertNoRedirect();
+        $this->assertSame('48999999999', $this->table('AdhesionInitialDatas')->get($adhesionId)->phone);
+
+        $this->post("/admin/adhesions/edit/$adhesionId", [
+            'phone' => '48988888888',
+            'adhesion_plan' => ['id' => $planId, 'benefit_entry_age' => 65],
+        ]);
+
+        $this->assertRedirect(['action' => 'view', $adhesionId]);
+    }
+
+    public function testTheEditFormCapsTheBenefitEntryAge(): void
+    {
+        [$adhesionId] = $this->createAdhesion();
+
+        $this->get("/admin/adhesions/edit/$adhesionId");
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('name="adhesion_plan[benefit_entry_age]"');
+        $this->assertResponseContains('max="65"');
+        $this->assertResponseContains('simulations\\/recalculate');
     }
 }

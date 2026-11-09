@@ -15,10 +15,9 @@ use App\Services\AdhesionSteps;
 use App\Services\ClicksignService;
 use App\Services\PixPaymentService;
 use App\Services\PlanProjection;
-use App\Services\PlanSimulator;
+use App\Services\PlanQuote;
 use App\Services\SicoobService;
 use App\Utility\Money;
-use Cake\Datasource\ConnectionManager;
 
 class AdhesionsController extends AppController
 {
@@ -26,6 +25,23 @@ class AdhesionsController extends AppController
     protected AdhesionPensionSchemesTable $AdhesionPensionSchemes;
     protected PartnersTable $Partners;
     protected AdhesionAuditor $auditor;
+
+    /**
+     * O perfil `user` só visualiza: lista, detalhe, PDFs e as consultas de
+     * status Pix/Clicksign (que só atualizam o que a integração já decidiu).
+     */
+    protected array $userActions = [
+        'index',
+        'view',
+        'deletions',
+        'generatePdf',
+        'generateFormPdf',
+        'generateAssociationDeclarationPdf',
+        'planPdf',
+        'downloadSignedDocument',
+        'checkPixPayment',
+        'checkClicksignStatus',
+    ];
 
     public function initialize(): void
     {
@@ -409,7 +425,7 @@ class AdhesionsController extends AppController
                 $adhesion->storage_uuid = \Cake\Utility\Text::uuid();
             }
 
-            if ($this->AdhesionInitialDatas->save($adhesion)) {
+            if ($this->AdhesionInitialDatas->save($adhesion, [AdhesionInitialDatasTable::CHECK_BENEFIT_ENTRY_AGE => true])) {
                 $this->savePensionSchemes($adhesion->id, $this->request->getData());
 
                 // Sem diff: numa criação todo campo "mudou", e listar os
@@ -491,7 +507,7 @@ class AdhesionsController extends AppController
                 ]
             );
 
-            if ($this->AdhesionInitialDatas->save($adhesion)) {
+            if ($this->AdhesionInitialDatas->save($adhesion, [AdhesionInitialDatasTable::CHECK_BENEFIT_ENTRY_AGE => true])) {
                 $this->savePensionSchemes($id, $this->request->getData());
                 $this->recordEdit((int)$id, $before);
 
@@ -517,54 +533,9 @@ class AdhesionsController extends AppController
      */
     private function planProjectionFor(\Cake\Datasource\EntityInterface $adhesion): ?PlanProjection
     {
-        $birthDate = $adhesion->get('adhesion_personal_data')?->birth_date?->format('Y-m-d');
-        $plan = $adhesion->get('adhesion_plan');
+        $quote = PlanQuote::fromAdhesion($adhesion);
 
-        if ($birthDate === null || $plan === null) {
-            return null;
-        }
-
-        return $this->planSimulator()->projectSavedPlan($birthDate, $plan);
-    }
-
-    private function planSimulator(): PlanSimulator
-    {
-        return new PlanSimulator(
-            ConnectionManager::get('default'),
-            $this->fetchTable('PlanParameters')->current()
-        );
-    }
-
-    /**
-     * Projeção das contribuições que estão na tela de edição, ainda não
-     * salvas, para o gráfico da aba Plano acompanhar o "Recalcular". Só
-     * leitura: não grava nada e não depende de uma adesão.
-     */
-    public function planProjection()
-    {
-        $this->request->allowMethod(['get']);
-        $this->autoRender = false;
-
-        $date = (string)$this->request->getQuery('date');
-        $amount = fn(string $key): float => max(0.0, (float)$this->request->getQuery($key));
-
-        if ($date === '' || strtotime($date) === false) {
-            return $this->response->withType('application/json')
-                ->withStringBody(json_encode([
-                    'success' => false,
-                    'message' => 'Data de nascimento é obrigatória.',
-                ]));
-        }
-
-        $projection = $this->planSimulator()->project(
-            $date,
-            $amount('retirementContribution'),
-            $amount('survivorsPensionContribution'),
-            $amount('disabilityRetirementContribution'),
-        );
-
-        return $this->response->withType('application/json')
-            ->withStringBody(json_encode(['success' => true] + $projection->toArray()));
+        return $quote === null ? null : $this->planSimulator()->projectQuote($quote);
     }
 
     /**
@@ -980,9 +951,9 @@ class AdhesionsController extends AppController
             'AdhesionPlans',
             'AssociationPartners',
         ]);
-        $projection = $this->planProjectionFor($adhesion);
+        $quote = PlanQuote::fromAdhesion($adhesion);
 
-        if ($projection === null) {
+        if ($quote === null) {
             $this->Flash->error('A simulação exige o plano e a data de nascimento preenchidos.');
 
             return $this->redirect(['action' => 'view', $id, '?' => ['tab' => 'plan']]);
@@ -990,7 +961,7 @@ class AdhesionsController extends AppController
 
         return $this->response
             ->withType('pdf')
-            ->withDownload($this->PdfGenerator->planSimulationFileName($adhesion))
-            ->withStringBody($this->PdfGenerator->planSimulationPdf($adhesion, $projection));
+            ->withDownload($this->PdfGenerator->planSimulationFileName($quote))
+            ->withStringBody($this->PdfGenerator->planSimulationPdf($quote, $this->planSimulator()->projectQuote($quote)));
     }
 }

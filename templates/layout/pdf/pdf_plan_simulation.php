@@ -2,23 +2,20 @@
 
 /**
  * @var \App\View\AppView $this
- * @var \App\Model\Entity\AdhesionInitialData $adhesion
+ * @var \App\Services\PlanQuote $quote
  * @var \App\Services\PlanProjection $projection
  * @var array<string, string> $planManager
  */
 
 use App\Model\Entity\Partner;
 use App\Services\PlanProjection;
-use App\Services\PlanSimulator;
 use App\View\Helper\PlanChartHelper;
 
 $brandOrange = '#f37c20';
 $brandNavy = '#20446E';
 $brandGreen = '#3B7A3B';
 
-$plan = $adhesion->adhesion_plan;
-$personalData = $adhesion->adhesion_personal_data;
-$partner = $adhesion->association_partner;
+$partner = $quote->partner;
 
 // Com vínculo, a cor do parceiro vira o acento do documento (filetes e
 // bordas); o fundo da faixa de parceria leva só um tom bem claro dela.
@@ -29,15 +26,7 @@ $partnerLogo = $partner?->logoDataUri();
 $sulLogoPath = WWW_ROOT . 'img' . DS . 'logo_sul_recortada.png';
 $sulLogo = is_file($sulLogoPath) ? 'data:image/png;base64,' . base64_encode((string)file_get_contents($sulLogoPath)) : null;
 
-$clientName = $personalData->name ?? $adhesion->name ?? '';
-$age = PlanSimulator::ageOn($personalData->birth_date->format('Y-m-d'));
-
-$hasSurvivorsPension = $plan->has_survivors_pension !== false;
-$hasDisabilityRetirement = $plan->has_disability_retirement !== false;
-$survivorsPensionContribution = $hasSurvivorsPension ? (float)$plan->monthly_survivors_pension_contribution : 0.0;
-$disabilityRetirementContribution = $hasDisabilityRetirement ? (float)$plan->monthly_disability_retirement_contribution : 0.0;
-$retirementContribution = (float)$plan->monthly_retirement_contribution;
-$totalContribution = $retirementContribution + $survivorsPensionContribution + $disabilityRetirementContribution;
+$age = $quote->age();
 
 $chart = $projection->hasProjection() ? $this->PlanChart->dataUri($projection) : null;
 $chartScenario = $projection->chartScenario();
@@ -407,7 +396,7 @@ $ratePercent = fn(float $rate): string => (string)floor($rate * 100);
 
         <div class="client">
             <div class="label">Preparado para</div>
-            <div class="name"><?= h($clientName) ?></div>
+            <div class="name"><?= h($quote->clientName) ?></div>
         </div>
 
         <table class="facts">
@@ -418,7 +407,7 @@ $ratePercent = fn(float $rate): string => (string)floor($rate * 100);
                 </td>
                 <td>
                     <div class="fact-label">Entrada em benefício</div>
-                    <div class="fact-value"><?= h((string)$plan->benefit_entry_age) ?> anos</div>
+                    <div class="fact-value"><?= h((string)$quote->benefitEntryAge) ?> anos</div>
                 </td>
                 <td>
                     <div class="fact-label">Tipo de benefício</div>
@@ -434,7 +423,7 @@ $ratePercent = fn(float $rate): string => (string)floor($rate * 100);
                 <td style="width: 30%;">
                     <div class="total-box">
                         <div class="label">Total mensal</div>
-                        <div class="value"><?= $this->Utils->currency($totalContribution) ?></div>
+                        <div class="value"><?= $this->Utils->currency($quote->totalContribution()) ?></div>
                         <div class="hint">Aposentadoria + coberturas de risco</div>
                     </div>
                 </td>
@@ -443,23 +432,23 @@ $ratePercent = fn(float $rate): string => (string)floor($rate * 100);
                         <tr>
                             <td style="width: 33.33%;">
                                 <div class="item-label">Aposentadoria</div>
-                                <div class="item-value"><?= $this->Utils->currency($retirementContribution) ?></div>
+                                <div class="item-value"><?= $this->Utils->currency($quote->retirementContribution) ?></div>
                                 <div class="item-sub">Formação do saldo</div>
                             </td>
                             <td style="width: 33.33%;">
                                 <div class="item-label">Pensão por morte</div>
-                                <?php if ($hasSurvivorsPension): ?>
-                                    <div class="item-value"><?= $this->Utils->currency($survivorsPensionContribution) ?></div>
-                                    <div class="item-sub">Capital segurado <strong><?= $this->Utils->currency($plan->survivors_pension_insured_capital) ?></strong></div>
+                                <?php if ($quote->hasSurvivorsPension): ?>
+                                    <div class="item-value"><?= $this->Utils->currency($quote->survivorsPensionContribution) ?></div>
+                                    <div class="item-sub">Capital segurado <strong><?= $this->Utils->currency($quote->survivorsPensionInsuredCapital) ?></strong></div>
                                 <?php else: ?>
                                     <div class="item-value muted">Não contratado</div>
                                 <?php endif; ?>
                             </td>
                             <td style="width: 33.33%;">
                                 <div class="item-label">Aposentadoria por invalidez</div>
-                                <?php if ($hasDisabilityRetirement): ?>
-                                    <div class="item-value"><?= $this->Utils->currency($disabilityRetirementContribution) ?></div>
-                                    <div class="item-sub">Capital segurado <strong><?= $this->Utils->currency($plan->disability_retirement_insured_capital) ?></strong></div>
+                                <?php if ($quote->hasDisabilityRetirement): ?>
+                                    <div class="item-value"><?= $this->Utils->currency($quote->disabilityRetirementContribution) ?></div>
+                                    <div class="item-sub">Capital segurado <strong><?= $this->Utils->currency($quote->disabilityRetirementInsuredCapital) ?></strong></div>
                                 <?php else: ?>
                                     <div class="item-value muted">Não contratado</div>
                                 <?php endif; ?>

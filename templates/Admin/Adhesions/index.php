@@ -101,11 +101,13 @@ $getSignatureStatusBadge = function ($adhesion)
             ['action' => 'deletions'],
             ['escape' => false, 'class' => 'btn btn-outline-secondary me-2']
         ) ?>
-        <?= $this->Html->link(
-            '<i class="bi bi-plus-circle me-1"></i> Nova Adesão',
-            ['action' => 'add'],
-            ['escape' => false, 'class' => 'btn btn-primary']
-        ) ?>
+        <?php if ($isAdmin): ?>
+            <?= $this->Html->link(
+                '<i class="bi bi-plus-circle me-1"></i> Nova Adesão',
+                ['action' => 'add'],
+                ['escape' => false, 'class' => 'btn btn-primary']
+            ) ?>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -226,6 +228,7 @@ $getSignatureStatusBadge = function ($adhesion)
                                             ['escape' => false, 'class' => 'dropdown-item']
                                         ) ?>
                                     </li>
+                                    <?php if ($isAdmin): ?>
                                     <li>
                                         <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#resumeLinkModal-<?= $adhesion->id ?>">
                                             <i class="bi bi-link-45deg me-2"></i>Link de retomada
@@ -250,6 +253,7 @@ $getSignatureStatusBadge = function ($adhesion)
                                             ]
                                         ) ?>
                                     </li>
+                                    <?php endif; ?>
                                 </ul>
                             </div>
                         </td>
@@ -259,12 +263,14 @@ $getSignatureStatusBadge = function ($adhesion)
                     // filho direto de <tbody> -- o navegador o realocaria para
                     // fora da tabela de qualquer jeito, então ele já nasce
                     // depois dela, sem depender desse comportamento.
-                    $resumeModals .= $this->element('../Admin/Adhesions/resume_modal', [
-                        'adhesion' => $adhesion,
-                        'resumeSteps' => $resumeInfo[$adhesion->id]['steps'],
-                        'suggestedStep' => $resumeInfo[$adhesion->id]['suggestedStep'],
-                        'resumeUrl' => $resumeInfo[$adhesion->id]['url'],
-                    ]);
+                    if ($isAdmin) {
+                        $resumeModals .= $this->element('../Admin/Adhesions/resume_modal', [
+                            'adhesion' => $adhesion,
+                            'resumeSteps' => $resumeInfo[$adhesion->id]['steps'],
+                            'suggestedStep' => $resumeInfo[$adhesion->id]['suggestedStep'],
+                            'resumeUrl' => $resumeInfo[$adhesion->id]['url'],
+                        ]);
+                    }
                     ?>
                 <?php endforeach; ?>
             </tbody>

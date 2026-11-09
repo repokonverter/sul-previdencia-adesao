@@ -7,7 +7,6 @@ namespace App\Controller;
 use App\Controller\AppController;
 use App\Services\AdhesionFormMap;
 use App\Services\PlanSimulator;
-use Cake\Datasource\ConnectionManager;
 
 class SimulatorController extends AppController
 {
@@ -349,14 +348,6 @@ class SimulatorController extends AppController
         }
 
         return $adhesion;
-    }
-
-    private function planSimulator(): PlanSimulator
-    {
-        return new PlanSimulator(
-            ConnectionManager::get('default'),
-            $this->fetchTable('PlanParameters')->current()
-        );
     }
 
     /**

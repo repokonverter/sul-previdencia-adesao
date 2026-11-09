@@ -6,8 +6,13 @@ namespace App\Model\Table;
 
 use App\Model\Entity\AdhesionInitialData;
 use App\Services\AdhesionAuditor;
+use App\Services\BenefitEntryAge;
+use Cake\Chronos\ChronosDate;
+use Cake\Datasource\EntityInterface;
 use Cake\I18n\DateTime;
+use Cake\ORM\RulesChecker;
 use Cake\Validation\Validator;
+use DateTimeInterface;
 
 class AdhesionInitialDatasTable extends AppTable
 {
@@ -92,6 +97,55 @@ class AdhesionInitialDatasTable extends AppTable
             ->notEmptyString('name');
 
         return $validator;
+    }
+
+    /**
+     * Opção de save() com que o admin pede a faixa de BenefitEntryAge. O
+     * fluxo público não a passa: lá a idade de entrada vem da regra de
+     * PlanSimulator::benefitEntryAge(), que passa dos 65 para quem tem mais
+     * de 55 anos.
+     */
+    public const CHECK_BENEFIT_ENTRY_AGE = 'checkBenefitEntryAge';
+
+    public function buildRules(RulesChecker $rules): RulesChecker
+    {
+        // Regra na raiz, e não no AdhesionPlansTable: o piso depende da data
+        // de nascimento, que mora em outra tabela.
+        $rules->add(
+            fn(EntityInterface $adhesion, array $options): bool => empty($options[self::CHECK_BENEFIT_ENTRY_AGE])
+                || $this->benefitEntryAgeWithinRange($adhesion),
+            'benefitEntryAgeWithinRange'
+        );
+
+        return $rules;
+    }
+
+    /**
+     * O erro vai para o campo do plano, onde o FormHelper o mostra. Uma
+     * adesão já gravada fora da faixa também é recusada, até o admin ajustar
+     * o valor: corrigir sozinho mudaria o plano sem ninguém ver.
+     */
+    private function benefitEntryAgeWithinRange(EntityInterface $adhesion): bool
+    {
+        $plan = $adhesion->get('adhesion_plan');
+
+        if ($plan === null) {
+            return true;
+        }
+
+        $birthDate = $adhesion->get('adhesion_personal_data')?->get('birth_date');
+        $error = BenefitEntryAge::error(
+            $plan->get('benefit_entry_age'),
+            $birthDate instanceof ChronosDate || $birthDate instanceof DateTimeInterface ? $birthDate->format('Y-m-d') : null
+        );
+
+        if ($error === null) {
+            return true;
+        }
+
+        $plan->setError('benefit_entry_age', ['withinRange' => $error]);
+
+        return false;
     }
 
     /**

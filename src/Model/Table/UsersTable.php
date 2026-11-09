@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\Entity\User;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\Validation\Validator;
@@ -68,6 +69,10 @@ class UsersTable extends AppTable
             ->maxLength('password', 255)
             ->requirePresence('password', 'create')
             ->notEmptyString('password');
+
+        $validator
+            ->inList('role', array_keys(User::ROLES), 'Perfil inválido.')
+            ->notEmptyString('role');
 
         return $validator;
     }

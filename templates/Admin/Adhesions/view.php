@@ -81,10 +81,12 @@ $formatLogBody = function (?string $value): string
             <?= $this->Html->link(' Proposta PDF', ['action' => 'generatePdf', $adhesion->id], ['class' => 'btn btn-primary']) ?>
             <?= $this->Html->link(' Inscrição PDF', ['action' => 'generateFormPdf', $adhesion->id], ['class' => 'btn btn-primary']) ?>
         <?php endif; ?>
-        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#resumeLinkModal-<?= $adhesion->id ?>">
-            <i class="bi bi-link-45deg"></i> Link de retomada
-        </button>
-        <?= $this->Html->link('<i class="bi bi-pencil"></i> Editar', ['action' => 'edit', $adhesion->id], ['escape' => false, 'class' => 'btn btn-warning']) ?>
+        <?php if ($isAdmin): ?>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#resumeLinkModal-<?= $adhesion->id ?>">
+                <i class="bi bi-link-45deg"></i> Link de retomada
+            </button>
+            <?= $this->Html->link('<i class="bi bi-pencil"></i> Editar', ['action' => 'edit', $adhesion->id], ['escape' => false, 'class' => 'btn btn-warning']) ?>
+        <?php endif; ?>
         <?= $this->Html->link('<i class="bi bi-arrow-left"></i> Voltar', ['action' => 'index'], ['escape' => false, 'class' => 'btn btn-outline-secondary']) ?>
     </div>
 </div>
@@ -263,7 +265,10 @@ $formatLogBody = function (?string $value): string
                     </div>
                 </div>
 
-                <?= $this->element('../Admin/Adhesions/plan_projection') ?>
+                <?= $this->element('Plan/projection', [
+                    'partner' => $adhesion->association_partner,
+                    'pdfUrl' => $planProjection === null ? null : $this->Url->build(['action' => 'planPdf', $adhesion->id]),
+                ]) ?>
             <?php else: ?>
                 <p>Nenhum plano registrado.</p>
             <?php endif; ?>
@@ -474,6 +479,7 @@ $formatLogBody = function (?string $value): string
                     <strong><?= $envelope->created->format('d/m/Y H:i') ?></strong>.
                     O que o proponente tem para assinar não reflete o que está gravado.
                 </p>
+                <?php if ($isAdmin): ?>
                 <?= $this->Form->postLink(
                     '<i class="bi bi-arrow-repeat"></i> Regerar documentos e reenviar para assinatura',
                     ['action' => 'regenerateDocuments', $adhesion->id],
@@ -484,6 +490,7 @@ $formatLogBody = function (?string $value): string
                             . 'pedindo que assine os documentos novos. Continuar?',
                     ]
                 ) ?>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 
@@ -671,16 +678,18 @@ $formatLogBody = function (?string $value): string
     </div>
 </div>
 
+<?php if ($isAdmin): ?>
 <?= $this->element('../Admin/Adhesions/resume_modal', [
     'adhesion' => $adhesion,
     'resumeSteps' => $resumeSteps,
     'suggestedStep' => $suggestedStep,
     'resumeUrl' => $resumeUrl,
 ]) ?>
+<?php endif; ?>
 
 <script>
     $(document).ready(function() {
-        <?php if ($this->request->getQuery('openResumeModal')): ?>
+        <?php if ($isAdmin && $this->request->getQuery('openResumeModal')): ?>
             bootstrap.Modal.getOrCreateInstance(document.getElementById('resumeLinkModal-<?= $adhesion->id ?>')).show();
         <?php endif; ?>
 
