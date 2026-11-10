@@ -6,6 +6,7 @@ namespace App\Test\TestCase;
 
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\TestCase;
+use DateTimeImmutable;
 
 /**
  * Cobre a stored procedure simulacao_previdencia diretamente.
@@ -91,6 +92,43 @@ class SimulacaoPrevidenciaFunctionTest extends TestCase
             (float)$double[0]['cobertura_morte'],
             0.02
         );
+    }
+
+    /**
+     * Nascido há $age anos e dois meses: a procedure olha a idade de hoje, e
+     * uma data fixa mudaria de faixa no aniversário.
+     */
+    private function birthDateForAge(int $age): string
+    {
+        return (new DateTimeImmutable('today'))->modify("-$age years -2 months")->format('Y-m-d');
+    }
+
+    /**
+     * O caso que o cliente conferiu na planilha (Simulador_Sul Previdencia_PlenoPrev):
+     * R$ 100,00 em cada risco aos 41 anos. Com o custo cortado em 9 casas o
+     * simulador dava 255.318,93 e 940.645,28.
+     */
+    public function testCoverageMatchesTheClientSpreadsheet(): void
+    {
+        $rows = $this->simulate($this->birthDateForAge(41), 200.0, 100.0, 100.0);
+
+        $this->assertSame('255319.15', $rows[0]['cobertura_morte']);
+        $this->assertSame('940649.50', $rows[0]['cobertura_invalidez']);
+    }
+
+    /**
+     * Os tetos que divergiam da planilha: aos 63 eram R$ 5.000.000 (um zero a
+     * mais) e a invalidez aos 61 era R$ 500.000.
+     */
+    public function testCoverageIsCappedByTheSpreadsheetLimits(): void
+    {
+        $at63 = $this->simulate($this->birthDateForAge(63), 4000.0, 2000.0, 2000.0);
+        $at61 = $this->simulate($this->birthDateForAge(61), 4000.0, 2000.0, 2000.0);
+
+        $this->assertSame('500000.00', $at63[0]['cobertura_morte']);
+        $this->assertSame('500000.00', $at63[0]['cobertura_invalidez']);
+        $this->assertSame('600000.00', $at61[0]['cobertura_morte']);
+        $this->assertSame('600000.00', $at61[0]['cobertura_invalidez']);
     }
 
     /**

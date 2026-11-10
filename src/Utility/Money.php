@@ -8,10 +8,10 @@ namespace App\Utility;
  * Converte o dinheiro que vem do formulário para o formato que o banco aceita.
  *
  * O formulário produz duas grafias para o mesmo valor, e essa é a razão de
- * existir desta classe. O template renderiza a carga inicial com
- * number_format($x, 2, '.', ''), que dá "370.00"; o recálculo reescreve os
- * mesmos campos com toLocaleString('pt-BR'), que dá "370,00" — e "1.234,56"
- * quando passa de mil.
+ * existir desta classe. Os templates abrem os campos em pt-BR ("1.234,56"),
+ * como o recálculo os reescreve com toLocaleString('pt-BR'); mas campo que o
+ * template não formata -- ou cliente com a página antiga em cache -- ainda
+ * manda o decimal cru do banco, "370.00".
  *
  * Assumir só a grafia brasileira, como se fazia, apagava os pontos de
  * "370.00" e gravava 37000: cem vezes o valor, sem erro nenhum para denunciar.

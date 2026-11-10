@@ -29,6 +29,29 @@ class UtilsHelperTest extends TestCase
     $this->assertSame('R$ 0,00', $format(null));
   }
 
+  public function testMoneyInputOpensInBrazilianFormatFromEitherSpelling(): void
+  {
+    $this->assertSame('1.234,50', $this->Utils->moneyInput('1234.50'));
+    $this->assertSame('1.234,50', $this->Utils->moneyInput('1.234,50'));
+    $this->assertSame('370,00', $this->Utils->moneyInput('370.00'));
+    $this->assertSame('100,00', $this->Utils->moneyInput(100));
+    $this->assertNull($this->Utils->moneyInput(null));
+    $this->assertNull($this->Utils->moneyInput(''));
+  }
+
+  public function testDecimalInputHasNoThousandsSeparatorAndDropsThePercentSign(): void
+  {
+    $this->assertSame('1,75', $this->Utils->decimalInput('1.75'));
+    $this->assertSame('1234,50', $this->Utils->decimalInput('1234.50'));
+    $this->assertSame('16,00', $this->Utils->decimalInput('16,00%'));
+    $this->assertNull($this->Utils->decimalInput(null));
+  }
+
+  public function testUnparseableInputIsGivenBackAsTyped(): void
+  {
+    $this->assertSame('abc', $this->Utils->moneyInput('abc'));
+  }
+
   public function testFormatCpf(): void
   {
     $this->assertEquals('123.456.789-01', $this->Utils->formatCpf('12345678901'));

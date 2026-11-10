@@ -443,7 +443,7 @@
                     ]) ?>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <?= $this->Form->control('adhesion_other_information.monthly_income', ['label' => 'Renda mensal bruta*', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_other_information.monthly_income', ['label' => 'Renda mensal bruta*', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text', 'value' => $this->Utils->moneyInput($this->Form->getSourceValue('adhesion_other_information.monthly_income'))]) ?>
                 </div>
                 <div class="col-md-4 mb-3">
                     <?= $this->Form->control('adhesion_other_information.company', ['label' => 'Empresa*', 'class' => 'form-control']) ?>
@@ -518,10 +518,10 @@
             <?php endforeach; ?>
             <div class="row mt-3">
                 <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_proponent_statement.weight', ['label' => 'Peso (Kg)', 'class' => 'form-control money', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_proponent_statement.weight', ['label' => 'Peso (Kg)', 'class' => 'form-control money', 'type' => 'text', 'value' => $this->Utils->decimalInput($this->Form->getSourceValue('adhesion_proponent_statement.weight'))]) ?>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <?= $this->Form->control('adhesion_proponent_statement.height', ['label' => 'Altura (m)', 'class' => 'form-control money', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_proponent_statement.height', ['label' => 'Altura (m)', 'class' => 'form-control money', 'type' => 'text', 'value' => $this->Utils->decimalInput($this->Form->getSourceValue('adhesion_proponent_statement.height'))]) ?>
                 </div>
             </div>
         </div>
@@ -581,7 +581,7 @@
                     <?= $this->Form->control('adhesion_payment_detail.due_date', ['label' => 'Dia do vencimento', 'class' => 'form-control', 'readonly' => true, 'value' => '10']) ?>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <?= $this->Form->control('adhesion_payment_detail.total_contribution', ['label' => 'Total da contribuição', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text']) ?>
+                    <?= $this->Form->control('adhesion_payment_detail.total_contribution', ['label' => 'Total da contribuição', 'class' => 'form-control money', 'prepend' => 'R$', 'type' => 'text', 'value' => $this->Utils->moneyInput($this->Form->getSourceValue('adhesion_payment_detail.total_contribution'))]) ?>
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Meio de pagamento*</label><br>

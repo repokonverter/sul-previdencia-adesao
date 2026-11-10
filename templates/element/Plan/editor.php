@@ -35,6 +35,7 @@ $money = fn(string $field, string $label, string $role, array $options = []): st
         'prepend' => 'R$',
         'type' => 'text',
         'data-plan-field' => $role,
+        'value' => $this->Utils->moneyInput($this->Form->getSourceValue($path($field))),
     ]
 );
 ?>

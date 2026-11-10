@@ -286,13 +286,16 @@ class SimulatorControllerTest extends TestCase
         ]);
 
         $this->assertTrue($result['success']);
-        $this->assertEqualsWithDelta(485550.03, $result['survivorsPensionInsuredCapital'], 0.01);
-        $this->assertEqualsWithDelta(694213.04, $result['disabilityRetirementInsuredCapital'], 0.01);
+        // 100 / (0.00173 / 12 / 0.7) e 50 / (0.000605 / 12 / 0.7): custos dos
+        // 30 anos na planilha do cliente.
+        $this->assertEqualsWithDelta(485549.13, $result['survivorsPensionInsuredCapital'], 0.01);
+        $this->assertEqualsWithDelta(694214.88, $result['disabilityRetirementInsuredCapital'], 0.01);
     }
 
     /**
      * Acima do teto da faixa etária, o capital para no teto em vez de seguir
-     * a contribuição -- mesma regra que a procedure aplica na proposta.
+     * a contribuição -- mesma regra que a procedure aplica na proposta. Aos 61
+     * a planilha do cliente põe os dois tetos em R$ 600.000.
      */
     public function testRiskCapitalIsCappedByTheAgeLimit(): void
     {
@@ -306,7 +309,7 @@ class SimulatorControllerTest extends TestCase
 
         $this->assertTrue($result['success']);
         $this->assertEqualsWithDelta(600000.0, $result['survivorsPensionInsuredCapital'], 0.01);
-        $this->assertEqualsWithDelta(500000.0, $result['disabilityRetirementInsuredCapital'], 0.01);
+        $this->assertEqualsWithDelta(600000.0, $result['disabilityRetirementInsuredCapital'], 0.01);
     }
 
     public function testRiskCapitalRequiresABirthDate(): void

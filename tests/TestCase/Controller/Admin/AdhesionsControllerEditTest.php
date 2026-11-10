@@ -194,6 +194,45 @@ class AdhesionsControllerEditTest extends TestCase
         $this->assertResponseContains('name="adhesion_plan[has_survivors_pension]" value="0"');
     }
 
+    /**
+     * O decimal da entidade ("1000.00") abre em pt-BR, como o recálculo
+     * reescreve o campo -- e não no formato do banco.
+     */
+    public function testThePlanMoneyFieldsOpenInBrazilianFormat(): void
+    {
+        [$adhesionId] = $this->createAdhesion();
+
+        $this->get("/admin/adhesions/edit/$adhesionId");
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('value="1.000,00"');
+        $this->assertResponseContains('value="740,00"');
+        $this->assertResponseNotContains('value="1000.00"');
+    }
+
+    public function testTheOtherMoneyFieldsOpenInBrazilianFormat(): void
+    {
+        [$adhesionId] = $this->createAdhesion();
+
+        foreach ([
+            'AdhesionOtherInformations' => ['monthly_income' => '12345.60', 'category' => 'Outros'],
+            'AdhesionProponentStatements' => ['weight' => '75.50', 'height' => '1.80'],
+            'AdhesionPaymentDetails' => ['total_contribution' => '1234.00', 'payment_type' => 'Boleto bancário'],
+        ] as $table => $data) {
+            $entity = $this->table($table)->newEmptyEntity();
+            $entity->patch($data + ['adhesion_initial_data_id' => $adhesionId]);
+            $this->table($table)->saveOrFail($entity, ['checkRules' => false]);
+        }
+
+        $this->get("/admin/adhesions/edit/$adhesionId");
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('value="12.345,60"');
+        $this->assertResponseContains('value="75,50"');
+        $this->assertResponseContains('value="1,80"');
+        $this->assertResponseContains('value="1.234,00"');
+    }
+
     public function testUncheckingARiskSwitchRemovesIt(): void
     {
         [$adhesionId, $planId] = $this->createAdhesion();

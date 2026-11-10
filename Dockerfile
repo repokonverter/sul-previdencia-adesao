@@ -29,7 +29,9 @@ FROM php:8.4-fpm-alpine AS app
 
 # Instala o Nginx, icu-libs e a biblioteca de runtime do PostgreSQL (libpq)
 RUN apk add --no-cache nginx \
-    && apk add --no-cache icu-libs \
+    # icu-libs sozinho traz só o icu-data-en: sem os dados de pt_BR, o
+    # Number::currency(..., 'pt_BR') cai no formato inglês (R$ 100,000.00).
+    && apk add --no-cache icu-libs icu-data-full \
     # 👇 ADICIONADO: libpq para o runtime do pdo_pgsql
     && apk add --no-cache libpq \
     # 👇 GD runtime dependencies

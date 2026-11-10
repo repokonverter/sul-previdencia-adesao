@@ -54,8 +54,11 @@ class PlanParametersControllerTest extends TestCase
         $this->get('/admin/plan-parameters/edit');
 
         $this->assertResponseOk();
-        $this->assertResponseContains('16.00');
         $this->assertResponseContains('Parâmetros do Plano');
+        // Em pt-BR, e não no formato do banco ("100.00").
+        $this->assertResponseContains('value="100,00"');
+        $this->assertResponseContains('value="16,00"');
+        $this->assertResponseNotContains('value="16.00"');
     }
 
     public function testSavesNewValues(): void

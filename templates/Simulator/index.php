@@ -861,7 +861,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                         <label for="planMonthlyInvestment" class="form-label">Investimento mensal <small class="text-muted">(mínimo R$ 100,00)</small></label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" id="planMonthlyInvestment" value="<?= number_format($totalMonthlyContributionPlan, 2, '.', ''); ?>">
+                                            <input type="text" class="form-control money" id="planMonthlyInvestment" value="<?= number_format((float)$totalMonthlyContributionPlan, 2, ',', '.'); ?>">
                                             <button type="button" class="btn btn-outline-primary" id="btnRecalculatePlan" onclick="recalculatePlan();">Recalcular</button>
                                             <button type="button" class="btn btn-outline-secondary d-none" id="btnRefreshPlan" onclick="refreshPlanFromServer();" title="Traz os valores que a Sul Previdência gravou">Atualizar</button>
                                         </div>
@@ -875,7 +875,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                         <label for="monthly_retirement_contribution" class="form-label">Contribuição mensal aposentadoria</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[monthly_retirement_contribution]" value="<?= number_format($simulations[1]['contribuicao_aposentadoria'], 2, '.', ''); ?>" readonly>
+                                            <input type="text" class="form-control money" name="plans[monthly_retirement_contribution]" value="<?= number_format((float)$simulations[1]['contribuicao_aposentadoria'], 2, ',', '.'); ?>" readonly>
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -889,7 +889,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                         <label for="monthly_survivors_pension_contribution" class="form-label">Contribuição mensal pensão por morte</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[monthly_survivors_pension_contribution]" value="<?= number_format($simulations[1]['contribuicao_morte'], 2, '.', ''); ?>" readonly>
+                                            <input type="text" class="form-control money" name="plans[monthly_survivors_pension_contribution]" value="<?= number_format((float)$simulations[1]['contribuicao_morte'], 2, ',', '.'); ?>" readonly>
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -901,7 +901,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                         <label for="survivors_pension_insured_capital" class="form-label">Capital segurado pensão por morte</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[survivors_pension_insured_capital]" value="<?= number_format($simulations[1]['cobertura_morte'], 2, '.', ''); ?>" readonly>
+                                            <input type="text" class="form-control money" name="plans[survivors_pension_insured_capital]" value="<?= number_format((float)$simulations[1]['cobertura_morte'], 2, ',', '.'); ?>" readonly>
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -915,7 +915,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                         <label for="monthly_disability_retirement_contribution" class="form-label">Contribuição mensal aposentadoria por invalidez</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[monthly_disability_retirement_contribution]" value="<?= number_format($simulations[1]['contribuicao_invalidez'], 2, '.', ''); ?>" readonly>
+                                            <input type="text" class="form-control money" name="plans[monthly_disability_retirement_contribution]" value="<?= number_format((float)$simulations[1]['contribuicao_invalidez'], 2, ',', '.'); ?>" readonly>
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -927,7 +927,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                         <label for="disability_retirement_insured_capital" class="form-label">Capital segurado aposentadoria por invalidez</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" name="plans[disability_retirement_insured_capital]" value="<?= number_format($simulations[1]['cobertura_invalidez'], 2, '.', ''); ?>" readonly>
+                                            <input type="text" class="form-control money" name="plans[disability_retirement_insured_capital]" value="<?= number_format((float)$simulations[1]['cobertura_invalidez'], 2, ',', '.'); ?>" readonly>
                                             <div class="invalid-feedback">
                                                 Preenchimento obrigatório.
                                             </div>
@@ -1663,7 +1663,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                         <label class="form-label">Total da contribuição</label>
                                         <div class="input-group">
                                             <span class="input-group-text">R$</span>
-                                            <input type="text" class="form-control money" id="paymentTotalContribution" name="paymentDetail[total_contribution]" placeholder="Total da contribuição - R$ (1+2)" value="<?= $totalMonthlyContributionPlan; ?>" readonly>
+                                            <input type="text" class="form-control money" id="paymentTotalContribution" name="paymentDetail[total_contribution]" placeholder="Total da contribuição - R$ (1+2)" value="<?= number_format((float)$totalMonthlyContributionPlan, 2, ',', '.'); ?>" readonly>
                                         </div>
                                     </div>
                                 </div>
@@ -3529,9 +3529,9 @@ $logoAssetPath = 'logo_sul_recortada.png';
                             },
                             ticks: {
                                 callback: function(value) {
-                                    if (value >= 1000000) return 'R$' + (value / 1000000).toFixed(1) + 'M';
-                                    if (value >= 1000) return 'R$' + (value / 1000).toFixed(0) + 'K';
-                                    return 'R$' + value.toFixed(0);
+                                    if (value >= 1000000) return 'R$ ' + (value / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
+                                    if (value >= 1000) return 'R$ ' + (value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + ' mil';
+                                    return 'R$ ' + value.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
                                 }
                             }
                         },

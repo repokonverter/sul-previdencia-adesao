@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\View\Helper;
 
+use App\Utility\Money;
 use Cake\I18n\Number;
 use Cake\View\Helper;
 
@@ -15,6 +16,42 @@ class UtilsHelper extends Helper
   public function currency($value): string
   {
     return Number::currency((float)$value, 'BRL', ['locale' => 'pt_BR']);
+  }
+
+  /**
+   * Valor inicial de um campo de dinheiro (máscara money/money2): "1.234,50".
+   *
+   * O campo recebe o decimal da entidade ("1234.50") ou o POST que voltou
+   * com erro ("1.234,50"); Money::parse entende os dois. Sem isto o campo
+   * abria no formato do banco até a máscara ou o recálculo reescrevê-lo.
+   */
+  public function moneyInput($value): ?string
+  {
+    return $this->numberInput($value, '.');
+  }
+
+  /**
+   * Valor inicial de um campo decimal sem milhar (peso, altura, percentual):
+   * "75,50". O "%" que a máscara de percentual embute sai antes.
+   */
+  public function decimalInput($value): ?string
+  {
+    return $this->numberInput(is_string($value) ? rtrim($value, '%') : $value, '');
+  }
+
+  private function numberInput($value, string $thousandsSeparator): ?string
+  {
+    $parsed = Money::parse($value);
+
+    if ($parsed === null) {
+      return null;
+    }
+
+    if (!is_numeric($parsed)) {
+      return (string)$value;
+    }
+
+    return number_format((float)$parsed, 2, ',', $thousandsSeparator);
   }
 
   public function formatCpf($value)

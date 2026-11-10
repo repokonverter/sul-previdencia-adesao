@@ -28,6 +28,7 @@ $this->assign('title', 'Parâmetros do Plano');
                     'label' => 'Contribuição mensal mínima (R$)*',
                     'class' => 'form-control money2',
                     'prepend' => 'R$',
+                    'value' => $this->Utils->moneyInput($this->Form->getSourceValue('minimum_monthly_contribution')),
                     'type' => 'text',
                     'required' => true,
                 ]) ?>
@@ -52,6 +53,7 @@ $this->assign('title', 'Parâmetros do Plano');
                 <?= $this->Form->control('survivors_pension_percent', [
                     'label' => 'Pensão por morte (%)*',
                     'class' => 'form-control percent',
+                    'value' => $this->Utils->decimalInput($this->Form->getSourceValue('survivors_pension_percent')),
                     'type' => 'text',
                     'required' => true,
                 ]) ?>
@@ -63,6 +65,7 @@ $this->assign('title', 'Parâmetros do Plano');
                 <?= $this->Form->control('disability_retirement_percent', [
                     'label' => 'Aposentadoria por invalidez (%)*',
                     'class' => 'form-control percent',
+                    'value' => $this->Utils->decimalInput($this->Form->getSourceValue('disability_retirement_percent')),
                     'type' => 'text',
                     'required' => true,
                 ]) ?>
@@ -86,6 +89,7 @@ $this->assign('title', 'Parâmetros do Plano');
                     'label' => 'Mínimo da pensão por morte (R$)*',
                     'class' => 'form-control money2',
                     'prepend' => 'R$',
+                    'value' => $this->Utils->moneyInput($this->Form->getSourceValue('survivors_pension_floor')),
                     'type' => 'text',
                     'required' => true,
                 ]) ?>
@@ -98,6 +102,7 @@ $this->assign('title', 'Parâmetros do Plano');
                     'label' => 'Mínimo da invalidez (R$)*',
                     'class' => 'form-control money2',
                     'prepend' => 'R$',
+                    'value' => $this->Utils->moneyInput($this->Form->getSourceValue('disability_retirement_floor')),
                     'type' => 'text',
                     'required' => true,
                 ]) ?>

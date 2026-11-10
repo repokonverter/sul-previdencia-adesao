@@ -220,7 +220,7 @@ $warnUnsavedChanges ??= false;
         const shortCurrency = (value) => {
             if (value >= 1000000) return 'R$ ' + (value / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mi';
             if (value >= 1000) return 'R$ ' + (value / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + ' mil';
-            return 'R$ ' + value.toFixed(0);
+            return 'R$ ' + value.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
         };
 
         let chart = null;
