@@ -4,6 +4,29 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\AdhesionInitialData $adhesion
  */
+
+$personal = $adhesion->adhesion_personal_data;
+$document = $adhesion->adhesion_document;
+$address = $adhesion->adhesion_address;
+$other = $adhesion->adhesion_other_information;
+
+$documentLabel = ($document->type ?? '') !== 'Outro' ? ($document->type ?? 'Documento') : $document->type_other;
+$cityState = implode('/', array_filter([$address->city ?? '', $address->state ?? '']));
+
+/**
+ * Uma célula de ficha: rótulo pequeno em cima e o valor logo abaixo, para o
+ * valor ficar colado na descrição em vez de numa coluna separada.
+ */
+$field = function (string $label, $value, int $colspan = 1): string {
+    $value = trim((string)$value);
+
+    return sprintf(
+        '<td colspan="%d"><div class="label">%s</div><div class="value">%s</div></td>',
+        $colspan,
+        h($label),
+        $value === '' ? '&nbsp;' : h($value)
+    );
+};
 ?>
 <!DOCTYPE html>
 <html>
@@ -11,73 +34,74 @@
 <head>
     <meta charset="utf-8">
     <style>
+        @page {
+            margin: 30px 40px;
+        }
+
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 12px;
+            font-size: 10px;
             color: #000;
         }
 
         h1 {
             text-align: center;
-            font-size: 20px;
-            margin-bottom: 15px;
+            font-size: 16px;
+            margin: 0 0 12px;
         }
 
         .section-title {
             background: #003f7f;
             color: #fff;
-            padding: 4px 8px;
+            padding: 3px 6px;
             font-weight: bold;
-            font-size: 13px;
-            margin-top: 12px;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-top: 10px;
         }
 
         table.form-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            table-layout: fixed;
         }
 
-        .form-table th,
         .form-table td {
-            border: 1px solid #000;
-            padding: 6px;
-            font-size: 12px;
+            border: 1px solid #555;
+            padding: 2px 5px 3px;
+            vertical-align: top;
         }
 
-        .full {
-            width: 100%;
+        .form-table .label {
+            font-size: 7.5px;
+            color: #444;
+            text-transform: uppercase;
+        }
+
+        .form-table .value {
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 1px;
         }
 
         .note-box {
-            width: 90%;
-            border: 1px solid #000;
+            border: 1px solid #555;
             padding: 6px;
-            font-size: 10px;
-            margin-top: 6px;
-            margin-bottom: 12px;
-        }
-
-        .small-text {
-            font-size: 10px;
+            font-size: 9px;
+            line-height: 1.4;
+            margin-top: 12px;
         }
 
         .footer-text {
-            font-size: 11px;
-            margin-top: 30px;
+            font-size: 9px;
+            line-height: 1.4;
+            text-align: justify;
+            margin-top: 12px;
         }
 
-        .checkbox-box {
-            border: 1px solid #000;
-            width: 10px;
-            height: 10px;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 3px;
-        }
-
-        .checkbox-box.checked {
-            background: #000;
+        .signature-line {
+            margin-top: 25px;
+            font-size: 10px;
         }
     </style>
 </head>
@@ -86,37 +110,29 @@
 
     <h1>FORMULÁRIO DE INSCRIÇÃO</h1>
 
-    <div class="section-title">DADOS PESSOAIS</div>
+    <div class="section-title">Dados Pessoais</div>
 
     <table class="form-table">
+        <colgroup>
+            <col style="width: 25%">
+            <col style="width: 25%">
+            <col style="width: 25%">
+            <col style="width: 25%">
+        </colgroup>
         <tr>
-            <td><strong>Nome Completo:</strong></td>
-            <td colspan="3"><?= h($adhesion->adhesion_personal_data->name ?? '') ?></td>
+            <?= $field('Nome Completo', $personal->name ?? '', 4) ?>
         </tr>
         <tr>
-            <td><strong>Data de Nascimento:</strong></td>
-            <td><?= h($adhesion->adhesion_personal_data->birth_date->format('d/m/Y') ?? '') ?></td>
-
-            <td><strong>Nacionalidade:</strong></td>
-            <td><?= h($adhesion->adhesion_personal_data->nacionality ?? '') ?></td>
+            <?= $field('Data de Nascimento', $personal?->birth_date?->format('d/m/Y')) ?>
+            <?= $field('Nacionalidade', $personal->nacionality ?? '') ?>
+            <?= $field('Nº Registro Profissional', $other->professional_register ?? '', 2) ?>
         </tr>
-
         <tr>
-            <td><strong>Nome da Mãe:</strong></td>
-            <td colspan="3"><?= h($adhesion->adhesion_personal_data->mother_name ?? '') ?></td>
+            <?= $field('Profissão', $other->main_occupation_description ?? '', 4) ?>
         </tr>
-
         <tr>
-            <td><strong>Nome do Pai:</strong></td>
-            <td colspan="3"><?= h($adhesion->adhesion_personal_data->father_name ?? '') ?></td>
-        </tr>
-
-        <tr>
-            <td><strong>Profissão:</strong></td>
-            <td><?= h($adhesion->adhesion_other_information->main_occupation_description ?? '') ?></td>
-
-            <td><strong>Nº Registro Profissional:</strong></td>
-            <td><?= h($adhesion->adhesion_other_information->professional_register ?? '') ?></td>
+            <?= $field('Nome da Mãe', $personal->mother_name ?? '', 2) ?>
+            <?= $field('Nome do Pai', $personal->father_name ?? '', 2) ?>
         </tr>
     </table>
 
@@ -124,42 +140,31 @@
 
     <table class="form-table">
         <tr>
-            <td><strong>CPF:</strong></td>
-            <td><?= h($adhesion->adhesion_personal_data->cpf ?? '') ?></td>
-        </tr>
-        <tr>
-            <td><strong><?= $adhesion->adhesion_document->type !== 'Outro' ? $adhesion->adhesion_document->type : $adhesion->adhesion_document->type_other; ?>:</strong></td>
-            <td><?= h($adhesion->adhesion_document->document_number ?? '') ?></td>
+            <?= $field('CPF', $personal->cpf ?? '') ?>
+            <?= $field((string)$documentLabel, $document->document_number ?? '') ?>
         </tr>
     </table>
 
     <div class="section-title">Endereço Residencial</div>
 
     <table class="form-table">
+        <colgroup>
+            <col style="width: 25%">
+            <col style="width: 25%">
+            <col style="width: 25%">
+            <col style="width: 25%">
+        </colgroup>
         <tr>
-            <td><strong>Logradouro:</strong></td>
-            <td colspan="3"><?= h($adhesion->adhesion_address->address ?? '') ?></td>
+            <?= $field('Logradouro', $address->address ?? '', 3) ?>
+            <?= $field('Número', $address->number ?? '') ?>
         </tr>
-
         <tr>
-            <td><strong>Número:</strong></td>
-            <td><?= h($adhesion->adhesion_address->number ?? '') ?></td>
-
-            <td><strong>Complemento:</strong></td>
-            <td><?= h($adhesion->adhesion_address->complement ?? '') ?></td>
+            <?= $field('Complemento', $address->complement ?? '', 2) ?>
+            <?= $field('Bairro', $address->neighborhood ?? '', 2) ?>
         </tr>
-
         <tr>
-            <td><strong>Bairro:</strong></td>
-            <td><?= h($adhesion->adhesion_address->neighborhood ?? '') ?></td>
-
-            <td><strong>Cidade/UF:</strong></td>
-            <td><?= h($adhesion->adhesion_address->city ?? '') ?>/<?= h($adhesion->adhesion_address->state ?? '') ?></td>
-        </tr>
-
-        <tr>
-            <td><strong>CEP:</strong></td>
-            <td colspan="3"><?= h($adhesion->adhesion_address->cep ?? '') ?></td>
+            <?= $field('Cidade/UF', $cityState, 3) ?>
+            <?= $field('CEP', $address->cep ?? '') ?>
         </tr>
     </table>
 
@@ -167,19 +172,12 @@
 
     <table class="form-table">
         <tr style="display: none;">
-            <td><strong>Fone Residencial:</strong></td>
-            <td><?= h($adhesion->adhesion_personal_data->phone ?? '') ?></td>
-
-            <td><strong>Fone Comercial:</strong></td>
-            <td><?= h($adhesion->adhesion_personal_data->commercial_phone ?? '') ?></td>
+            <?= $field('Fone Residencial', $personal->phone ?? '') ?>
+            <?= $field('Fone Comercial', $personal->commercial_phone ?? '') ?>
         </tr>
-
         <tr>
-            <td><strong>Celular:</strong></td>
-            <td><?= h($adhesion->phone ?? '') ?></td>
-
-            <td><strong>E-mail:</strong></td>
-            <td><?= h($adhesion->email ?? '') ?></td>
+            <?= $field('Celular', $adhesion->phone ?? '') ?>
+            <?= $field('E-mail', $adhesion->email ?? '') ?>
         </tr>
     </table>
 
@@ -196,9 +194,9 @@
         (<?= in_array('Complementar (Fundos de pensão)', $pensionSchemeValues) ? 'X' : ' ' ?>) COMPLEMENTAR (Fundos de Pensão)
         <?php if ($pensionSchemeMain && $pensionSchemeMain->cpf) { ?>
             <br><br>
-            Vinculado ao Segurado: <?= h($pensionSchemeMain->name) ?><br>
-            CPF do Segurado: <?= h($pensionSchemeMain->cpf) ?><br>
-            Grau de Parentesco: <?= h($pensionSchemeMain->kinship) ?>
+            Vinculado ao Segurado: <strong><?= h($pensionSchemeMain->name) ?></strong><br>
+            CPF do Segurado: <strong><?= h($pensionSchemeMain->cpf) ?></strong><br>
+            Grau de Parentesco: <strong><?= h($pensionSchemeMain->kinship) ?></strong>
         <?php } ?>
     </div>
 
