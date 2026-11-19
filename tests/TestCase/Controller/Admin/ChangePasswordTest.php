@@ -57,6 +57,7 @@ class ChangePasswordTest extends TestCase
         $this->session(['Auth' => $this->userById(2)]);
         $this->get('/admin/users/change-password');
         $this->assertResponseOk();
+        $this->assertResponseNotContains('name="_method" value="PUT"');
     }
 
     public function testChangesThePasswordAndKeepsThisSession(): void

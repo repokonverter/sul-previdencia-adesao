@@ -95,6 +95,9 @@ class ForgotPasswordTest extends TestCase
         $this->assertResponseOk();
         $this->assertResponseContains('Redefinir senha');
         $this->assertHeader('Referrer-Policy', 'no-referrer');
+        // O usuário já existe: sem 'type' => 'post', o form iria como PUT e a
+        // action responderia 405.
+        $this->assertResponseNotContains('name="_method" value="PUT"');
 
         $this->post("/admin/users/reset-password/$token", [
             'new_password' => self::NEW_PASSWORD,

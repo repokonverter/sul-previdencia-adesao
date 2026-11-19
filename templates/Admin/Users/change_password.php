@@ -14,7 +14,7 @@ $this->assign('title', 'Alterar senha');
 
 <div class="card shadow-sm border-0" style="max-width: 520px;">
     <div class="card-body">
-        <?= $this->Form->create($user) ?>
+        <?= $this->Form->create($user, ['type' => 'post']) ?>
             <input type="email" name="username" value="<?= h($user->email) ?>" autocomplete="username" hidden readonly>
 
             <div class="mb-3">

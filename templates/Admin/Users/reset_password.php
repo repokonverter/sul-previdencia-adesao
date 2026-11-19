@@ -31,7 +31,7 @@ $this->assign('title', $title);
         Olá, <?= h($user->name) ?>. Crie a senha do seu acesso (<?= h($user->email) ?>).
     </p>
 
-    <?= $this->Form->create($user) ?>
+    <?= $this->Form->create($user, ['type' => 'post']) ?>
         <?php // Para o gerenciador de senhas do navegador saber de qual conta é. ?>
         <input type="email" name="username" value="<?= h($user->email) ?>" autocomplete="username" hidden readonly>
 
