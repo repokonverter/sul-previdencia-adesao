@@ -17,10 +17,12 @@ use Cake\ORM\Entity;
  * @property string|null $logo_filename
  * @property bool $active
  * @property bool $is_association
+ * @property bool $brokers_show_partnership
  * @property string|null $company_name
  * @property string|null $company_cnpj
  * @property string|null $institution_number
  * @property \App\Model\Entity\PromotionalCode[] $promotional_codes
+ * @property \App\Model\Entity\Broker[] $brokers
  */
 class Partner extends Entity
 {
@@ -34,6 +36,7 @@ class Partner extends Entity
         'logo_filename' => true,
         'active' => true,
         'is_association' => true,
+        'brokers_show_partnership' => true,
         'company_name' => true,
         'company_cnpj' => true,
         'institution_number' => true,

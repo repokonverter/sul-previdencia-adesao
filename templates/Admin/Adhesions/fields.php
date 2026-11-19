@@ -40,6 +40,16 @@
                     <label class="form-label">Vínculo associativo</label>
                     <input type="text" class="form-control" value="<?= $adhesion->association_partner ? h($adhesion->association_partner->name) : '—' ?>" disabled>
                 </div>
+                <div class="col-md-6 mb-3">
+                    <?= $this->Form->control('broker_id', [
+                        'label' => 'Corretor',
+                        'type' => 'select',
+                        'options' => $brokerOptions,
+                        'empty' => 'Nenhum',
+                        'class' => 'form-select',
+                    ]) ?>
+                    <div class="form-text">O participante não consegue trocar o corretor depois de gravado; a correção é feita aqui e fica no histórico.</div>
+                </div>
             </div>
         </div>
     </div>

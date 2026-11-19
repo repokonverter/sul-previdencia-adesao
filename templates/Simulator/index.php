@@ -572,7 +572,9 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                     Preenchimento obrigatório.
                                 </div>
                             </div>
-                            <?php if (!empty($associations)): ?>
+                            <?php // ResultSet é objeto: empty() seria sempre falso, e a pergunta
+                            // apareceria com o select vazio mesmo sem vínculo cadastrado. ?>
+                            <?php if (count($associations) > 0): ?>
                                 <div class="mb-3" id="associationQuestionGroup">
                                     <label class="form-label d-block">Possuí vínculo associativo?</label>
                                     <div class="form-check form-check-inline">
@@ -595,6 +597,45 @@ $logoAssetPath = 'logo_sul_recortada.png';
                                             <?php endforeach; ?>
                                         </select>
                                         <div class="invalid-feedback">Selecione seu vínculo.</div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (count($brokers) > 0): ?>
+                                <?php
+                                // Pré-seleção que não está entre as opções (corretor
+                                // desativado depois de gravado) não marca "Sim": o
+                                // select ficaria vazio e obrigatório, travando a etapa.
+                                $brokerPreselected = false;
+                                foreach ($brokers as $broker) {
+                                    if ($broker->id === ($preselectedBrokerId ?? null))
+                                        $brokerPreselected = true;
+                                }
+                                ?>
+                                <div class="mb-3" id="brokerQuestionGroup">
+                                    <label class="form-label d-block">Foi atendido por algum corretor?</label>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="brokerAnswer" id="brokerAnswerNo" value="no" <?= $brokerPreselected ? '' : 'checked' ?>>
+                                        <label class="form-check-label" for="brokerAnswerNo">Não</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="brokerAnswer" id="brokerAnswerYes" value="yes" <?= $brokerPreselected ? 'checked' : '' ?>>
+                                        <label class="form-check-label" for="brokerAnswerYes">Sim</label>
+                                    </div>
+
+                                    <div class="mt-2 <?= $brokerPreselected ? '' : 'd-none' ?>" id="brokerSelectGroup">
+                                        <select class="form-select" id="brokerId" name="initialData[brokerId]" <?= $brokerPreselected ? 'required' : '' ?>>
+                                            <option value="">Selecione o corretor</option>
+                                            <?php foreach ($brokers as $broker): ?>
+                                                <option
+                                                    value="<?= h($broker->id) ?>"
+                                                    data-partner-name="<?= h($broker->partner->name) ?>"
+                                                    data-show-partnership="<?= $broker->partner->brokers_show_partnership ? '1' : '0' ?>"
+                                                    data-color="<?= h($broker->partner->color) ?>"
+                                                    data-logo-url="<?= $broker->partner->has_logo ? h($this->Url->build(['controller' => 'Partners', 'action' => 'logo', $broker->partner->id])) : '' ?>"
+                                                    <?= $brokerPreselected && $broker->id === $preselectedBrokerId ? 'selected' : '' ?>><?= h($broker->label) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <div class="invalid-feedback">Selecione o corretor.</div>
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -2267,11 +2308,74 @@ $logoAssetPath = 'logo_sul_recortada.png';
             });
         };
 
+        /* ---------------------------------------------------------------
+         * Corretor
+         *
+         * Só existe no DOM quando há ao menos um corretor que possa ser
+         * escolhido (ver SimulatorController::selectableBrokers()). É
+         * independente do código promocional: um diz quem atendeu, o outro
+         * por qual campanha a pessoa chegou, e nenhum restringe o outro.
+         * ------------------------------------------------------------- */
+        const hasBrokerQuestion = document.getElementById('brokerQuestionGroup') !== null;
+
+        const brokerEls = () => ({
+            yesRadio: document.getElementById('brokerAnswerYes'),
+            noRadio: document.getElementById('brokerAnswerNo'),
+            selectGroup: document.getElementById('brokerSelectGroup'),
+            select: document.getElementById('brokerId'),
+        });
+
+        const isBrokerYes = () => hasBrokerQuestion && brokerEls().yesRadio.checked;
+
+        const setBrokerAnswer = (isYes) => {
+            if (!hasBrokerQuestion) return;
+
+            const {
+                yesRadio,
+                noRadio,
+                selectGroup,
+                select
+            } = brokerEls();
+
+            yesRadio.checked = isYes;
+            noRadio.checked = !isYes;
+            selectGroup.classList.toggle('d-none', !isYes);
+            select.required = isYes;
+
+            if (!isYes) select.value = '';
+
+            updatePartnerHeader();
+        };
+
+        const initBrokerQuestion = () => {
+            if (!hasBrokerQuestion) return;
+
+            const {
+                yesRadio,
+                noRadio,
+                select
+            } = brokerEls();
+
+            [yesRadio, noRadio].forEach((radio) => radio.addEventListener('change', () => {
+                setBrokerAnswer(yesRadio.checked);
+            }));
+
+            select.addEventListener('change', () => {
+                select.classList.remove('is-invalid');
+                updatePartnerHeader();
+            });
+
+            // Quem chega pelo link do corretor (?corretor=) já vem com ele
+            // marcado pelo servidor; aqui só o cabeçalho acompanha.
+            updatePartnerHeader();
+        };
+
         /**
          * De onde vem o parceiro mostrado no cabeçalho: o código promocional
          * validado tem prioridade (é sempre do mesmo parceiro do vínculo,
          * quando os dois coexistem -- a validação já garante isso), e na
-         * ausência dele, o vínculo associativo selecionado já basta. Sem
+         * ausência dele, o vínculo associativo selecionado já basta; sem
+         * nenhum dos dois, vale o parceiro do corretor selecionado. Sem
          * código não há como confirmar um vínculo por texto livre, mas a
          * pessoa selecionou o parceiro num <select> alimentado pelo próprio
          * cadastro, então o nome já está confirmado.
@@ -2285,17 +2389,31 @@ $logoAssetPath = 'logo_sul_recortada.png';
                 };
             }
 
-            if (!isAssociationYes()) return null;
+            const associationOption = isAssociationYes() ? associationEls().select.selectedOptions[0] : null;
 
-            const option = associationEls().select.selectedOptions[0];
+            if (associationOption && associationOption.value) {
+                return {
+                    name: associationOption.textContent,
+                    logoUrl: associationOption.dataset.logoUrl || null,
+                    color: associationOption.dataset.color || null
+                };
+            }
 
-            if (!option || !option.value) return null;
+            // Por último, o parceiro do corretor: é a marca de quem divulgou
+            // o link, quando nada mais a define -- e só se o parceiro liga
+            // essa opção no admin. Mesma ordem e mesma condição de
+            // AdhesionInitialData::brandPartner().
+            const brokerOption = isBrokerYes() ? brokerEls().select.selectedOptions[0] : null;
 
-            return {
-                name: option.textContent,
-                logoUrl: option.dataset.logoUrl || null,
-                color: option.dataset.color || null
-            };
+            if (brokerOption && brokerOption.value && brokerOption.dataset.showPartnership === '1') {
+                return {
+                    name: brokerOption.dataset.partnerName,
+                    logoUrl: brokerOption.dataset.logoUrl || null,
+                    color: brokerOption.dataset.color || null
+                };
+            }
+
+            return null;
         };
 
         const updatePartnerHeader = () => {
@@ -2502,6 +2620,7 @@ $logoAssetPath = 'logo_sul_recortada.png';
             }
 
             initAssociationQuestion();
+            initBrokerQuestion();
         };
 
         /* ---------------------------------------------------------------
@@ -2606,6 +2725,19 @@ $logoAssetPath = 'logo_sul_recortada.png';
                 } = associationEls();
 
                 if (!select.value) {
+                    select.focus();
+
+                    return false;
+                }
+            }
+
+            if (isBrokerYes()) {
+                const {
+                    select
+                } = brokerEls();
+
+                if (!select.value) {
+                    select.classList.add('is-invalid');
                     select.focus();
 
                     return false;
@@ -3339,10 +3471,10 @@ $logoAssetPath = 'logo_sul_recortada.png';
             let simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
 
             // "Simular novamente" recarrega esta mesma página: sem isto, um
-            // ?promo= já em uso na URL atual se perderia no reload.
+            // ?promo= ou ?corretor= já em uso na URL atual se perderia no reload.
             const incomingParams = new URLSearchParams(window.location.search);
 
-            ['promo'].forEach((param) => {
+            ['promo', 'corretor'].forEach((param) => {
                 const paramValue = incomingParams.get(param);
 
                 if (paramValue) simulatorUrl += `&${param}=${encodeURIComponent(paramValue)}`;

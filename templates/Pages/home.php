@@ -1477,12 +1477,13 @@ echo $this->Html->css('application');
         const value = monthlyInvestmentInput.value.replace(/\./g, '').replace(',', '.');
         let simulatorUrl = `<?= $this->Url->build(['controller' => 'Simulator', 'action' => 'index']); ?>?date=${date}&value=${value}`;
 
-        // Link de divulgação de parceiro (?promo=) chegando na home precisa
-        // sobreviver a este redirecionamento — sem isso, o link nunca
-        // alcança o formulário que de fato o usa.
+        // Link de divulgação de parceiro (?promo=) ou de corretor
+        // (?corretor=) chegando na home precisa sobreviver a este
+        // redirecionamento — sem isso, o link nunca alcança o formulário que
+        // de fato o usa.
         const incomingParams = new URLSearchParams(window.location.search);
 
-        ['promo'].forEach((param) => {
+        ['promo', 'corretor'].forEach((param) => {
             const value = incomingParams.get(param);
 
             if (value) simulatorUrl += `&${param}=${encodeURIComponent(value)}`;

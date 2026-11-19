@@ -40,6 +40,10 @@ class AdhesionInitialDatasTable extends AppTable
             'propertyName' => 'association_partner',
         ]);
 
+        $this->belongsTo('Brokers', [
+            'foreignKey' => 'broker_id',
+        ]);
+
         $this->hasOne('AdhesionPersonalDatas', [
             'foreignKey' => 'adhesion_initial_data_id',
         ]);
@@ -109,6 +113,8 @@ class AdhesionInitialDatasTable extends AppTable
 
     public function buildRules(RulesChecker $rules): RulesChecker
     {
+        $rules->add($rules->existsIn('broker_id', 'Brokers', 'Selecione um corretor válido.'));
+
         // Regra na raiz, e não no AdhesionPlansTable: o piso depende da data
         // de nascimento, que mora em outra tabela.
         $rules->add(

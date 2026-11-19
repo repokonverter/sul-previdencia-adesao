@@ -25,6 +25,7 @@ class SimulatorControllerTest extends TestCase
 
     protected array $fixtures = [
         'app.PlanParameters',
+        'app.Partners',
     ];
 
     private function recalculate(array $query): array
@@ -130,6 +131,37 @@ class SimulatorControllerTest extends TestCase
             ))->monthsUntilRetirement('1990-03-15'),
             $this->viewVariable('monthsUntilRetirement')
         );
+    }
+
+    /**
+     * A pergunta do vínculo só aparece com vínculo ativo cadastrado: sem
+     * isso, o select abriria vazio e obrigatório, travando a etapa de quem
+     * respondesse "Sim".
+     */
+    public function testAssociationQuestionOnlyAppearsWithAnActiveAssociation(): void
+    {
+        $open = function (): void {
+            // index() lê $_GET direto, que o IntegrationTestTrait não preenche.
+            $_GET = ['date' => '1990-03-15', 'value' => '500'];
+            try {
+                $this->get('/simulator?' . http_build_query($_GET));
+            } finally {
+                $_GET = [];
+            }
+
+            $this->assertResponseOk();
+        };
+
+        $partners = TableRegistry::getTableLocator()->get('Partners');
+
+        $partners->updateAll(['active' => false], ['is_association' => true]);
+        $open();
+        $this->assertResponseNotContains('Possuí vínculo associativo?');
+
+        $partners->updateAll(['active' => true], ['is_association' => true]);
+        $open();
+        $this->assertResponseContains('Possuí vínculo associativo?');
+        $this->assertResponseContains('Sindilojas Exemplo');
     }
 
     public function testWithoutAnIdentifiedAdhesionBothRisksExist(): void

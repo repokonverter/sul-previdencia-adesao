@@ -187,6 +187,20 @@ class RegistrationsController extends AppController
                     }
                 }
 
+                // Mesma regra do código promocional: uma vez atribuído, o
+                // corretor fica, e só o admin troca. O id vem de um <select>,
+                // mas só é aceito se ainda for um corretor que o formulário
+                // ofereceria (ele e o parceiro ativos).
+                if (empty($initial->broker_id) && !empty($initialData['brokerId'])) {
+                    $broker = $this->fetchTable('Brokers')->find('selectable')
+                        ->where(['Brokers.id' => (int)$initialData['brokerId']])
+                        ->first();
+
+                    if ($broker !== null) {
+                        $patchData['broker_id'] = $broker->id;
+                    }
+                }
+
                 $initial = $this->AdhesionInitialDatas->patchEntity($initial, $patchData);
 
                 $this->AdhesionInitialDatas->save($initial);

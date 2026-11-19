@@ -18,6 +18,7 @@ class AdhesionInitialData extends Entity
         'promotional_code' => true,
         'association_partner_id' => true,
         'association_snapshot' => true,
+        'broker_id' => true,
         'resume_token' => true,
         'resume_token_expires_at' => true,
         'resume_step' => true,
@@ -38,6 +39,7 @@ class AdhesionInitialData extends Entity
         'pix_transaction' => true,
         'promotional_code_entity' => true,
         'association_partner' => true,
+        'broker' => true,
     ];
 
     /**
@@ -58,6 +60,22 @@ class AdhesionInitialData extends Entity
         $decoded = json_decode((string)$this->association_snapshot, true);
 
         return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * O parceiro cuja marca (logo e cor) acompanha a adesão: o do código
+     * promocional, senão o vínculo associativo, senão o parceiro do corretor
+     * -- este só quando o parceiro liga brokers_show_partnership; desligado,
+     * o corretor continua atribuído, mas não muda a marca. É a mesma ordem de selectedPartnerInfo() no formulário
+     * (templates/Simulator/index.php), que decide antes de haver adesão
+     * gravada. Lê só o que estiver carregado: quem chama faz o contain de
+     * PromotionalCodes.Partners, AssociationPartners e Brokers.Partners.
+     */
+    public function brandPartner(): ?Partner
+    {
+        return $this->promotional_code_entity?->partner
+            ?? $this->association_partner
+            ?? ($this->broker?->partner?->brokers_show_partnership ? $this->broker->partner : null);
     }
 
     /**

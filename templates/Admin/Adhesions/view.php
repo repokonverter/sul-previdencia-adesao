@@ -36,6 +36,9 @@ $auditFieldLabel = function (string $path): string
         'adhesion_payment_detail' => 'Dados para pagamento',
     ];
 
+    if ($path === 'broker_id')
+        return 'Corretor';
+
     $parts = explode('.', $path);
     $section = $sections[$parts[0]] ?? null;
 
@@ -129,6 +132,9 @@ $formatLogBody = function (?string $value): string
                 </div>
                 <div class="col-md-4">
                     <p><strong>Vínculo associativo:</strong> <?= $adhesion->association_partner ? h($adhesion->association_partner->name) : '—' ?></p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Corretor:</strong> <?= $adhesion->broker ? h($adhesion->broker->label) : '—' ?></p>
                 </div>
             </div>
         </div>
@@ -642,6 +648,12 @@ $formatLogBody = function (?string $value): string
                                         <?php if ($changes !== []): ?>
                                             <ul class="list-unstyled small mb-0">
                                                 <?php foreach ($changes as $field => [$was, $now]): ?>
+                                                    <?php
+                                                    if ($field === 'broker_id') {
+                                                        $was = $auditBrokerLabels[(int)$was] ?? $was;
+                                                        $now = $auditBrokerLabels[(int)$now] ?? $now;
+                                                    }
+                                                    ?>
                                                     <li class="mb-1">
                                                         <span class="text-muted"><?= h($auditFieldLabel($field)) ?>:</span>
                                                         <span class="text-decoration-line-through text-danger-emphasis"><?= h($formatAuditValue($was)) ?></span>

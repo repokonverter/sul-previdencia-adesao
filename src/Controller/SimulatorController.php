@@ -17,6 +17,14 @@ class SimulatorController extends AppController
         $minimum = $simulator->parameters()->minimumMonthlyContribution();
 
         $associations = $this->activeAssociations();
+        $brokers = $this->selectableBrokers();
+
+        // Link de divulgação do corretor: chega com ele já escolhido, mas a
+        // pessoa pode trocar. Token que não resolve é ignorado em silêncio --
+        // quem recebeu o link não tem o que fazer com uma mensagem de erro.
+        $preselectedBrokerId = $this->fetchTable('Brokers')
+            ->findSelectableByToken($this->request->getQuery('corretor'))
+            ?->id;
 
         if ((float)str_replace(',', '.', (string)($data['value'] ?? 0)) < $minimum) {
             $this->Flash->error('O investimento mensal mínimo é de R$ ' . number_format($minimum, 2, ',', '.') . '.');
@@ -39,6 +47,8 @@ class SimulatorController extends AppController
             'totalMonthlyContributionPlan',
             'age',
             'associations',
+            'brokers',
+            'preselectedBrokerId',
             'includeSurvivorsPension',
             'includeDisabilityRetirement'
         ));
@@ -125,6 +135,11 @@ class SimulatorController extends AppController
             'totalMonthlyContributionPlan' => $value,
             'age' => PlanSimulator::ageOn($birthDate),
             'associations' => $this->activeAssociations(),
+            'brokers' => $this->selectableBrokers(),
+            // O corretor gravado não muda pelo formulário (ver
+            // RegistrationsController::save()); vem marcado para quem voltar
+            // aos Dados Iniciais não achar que a resposta se perdeu.
+            'preselectedBrokerId' => $adhesion->broker_id,
             'includeSurvivorsPension' => $includeSurvivorsPension,
             'includeDisabilityRetirement' => $includeDisabilityRetirement,
             'simulationDate' => $birthDate,
@@ -280,6 +295,15 @@ class SimulatorController extends AppController
             ->where(['Partners.active' => true])
             ->orderBy(['Partners.name' => 'ASC'])
             ->all();
+    }
+
+    /**
+     * Mesma ideia de activeAssociations(): sem corretor que possa ser
+     * escolhido, a pergunta "Foi atendido por algum corretor?" nem aparece.
+     */
+    private function selectableBrokers(): iterable
+    {
+        return $this->fetchTable('Brokers')->find('selectable')->all();
     }
 
     /**

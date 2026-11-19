@@ -29,7 +29,9 @@ $this->assign('title', $entityLabelPlural);
                 <?= $this->Form->control('q', [
                     'label' => 'Busca',
                     'class' => 'form-control',
-                    'placeholder' => 'Buscar por nome do parceiro ou por texto de código',
+                    'placeholder' => $isAssociationScope
+                        ? 'Buscar por nome do parceiro ou por texto de código'
+                        : 'Buscar por nome do parceiro, texto de código ou nome de corretor',
                     'value' => $this->request->getQuery('q'),
                 ]) ?>
             </div>

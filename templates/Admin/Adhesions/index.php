@@ -4,6 +4,8 @@
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\AdhesionInitialData> $adhesions
  * @var iterable<\App\Model\Entity\Partner> $partners
+ * @var array{total: int, completed: int, signed: int, paid: int, awaitingPayment: int} $summary
+ * @var string|null $summaryTitle
  */
 
 /**
@@ -38,26 +40,27 @@ $getClientCell = function ($adhesion) use ($copyableRow)
 
 $getPromotionalCodeCell = function ($adhesion)
 {
-    if (empty($adhesion->promotional_code)) {
+    $lines = [];
+
+    if (!empty($adhesion->promotional_code)) {
+        // O snapshot é a fonte da verdade; o parceiro vem do vínculo, quando ainda existe.
+        $partner = $adhesion->promotional_code_entity->partner->name ?? null;
+
+        $lines[] = '<code>' . h($adhesion->promotional_code) . '</code>';
+
+        if ($partner)
+            $lines[] = '<span class="text-muted small">' . h($partner) . '</span>';
+    } elseif (!empty($adhesion->association_partner->name)) {
         // Sem código, mas com vínculo selecionado (o código é sempre
         // opcional): mostra o vínculo sozinho, senão a coluna fica vazia
         // para quem de fato respondeu a pergunta.
-        $association = $adhesion->association_partner->name ?? null;
-
-        return $association
-            ? '<span class="text-muted small">Vínculo: ' . h($association) . '</span>'
-            : '<span class="text-muted">&mdash;</span>';
+        $lines[] = '<span class="text-muted small">Vínculo: ' . h($adhesion->association_partner->name) . '</span>';
     }
 
-    // O snapshot é a fonte da verdade; o parceiro vem do vínculo, quando ainda existe.
-    $partner = $adhesion->promotional_code_entity->partner->name ?? null;
+    if ($adhesion->broker)
+        $lines[] = '<span class="text-muted small">Corretor: ' . h($adhesion->broker->label) . '</span>';
 
-    $cell = '<code>' . h($adhesion->promotional_code) . '</code>';
-
-    if ($partner)
-        $cell .= '<br><span class="text-muted small">' . h($partner) . '</span>';
-
-    return $cell;
+    return $lines === [] ? '<span class="text-muted">&mdash;</span>' : implode('<br>', $lines);
 };
 
 $getPixStatusBadge = function ($adhesion)
@@ -113,9 +116,11 @@ $getSignatureStatusBadge = function ($adhesion)
 
 <div class="card mb-4 shadow-sm border-0">
     <div class="card-body">
-        <?= $this->Form->create(null, ['type' => 'get']) ?>
+        <?php // Os campos voltam preenchidos com o filtro aplicado: o resumo abaixo
+        // conta o que está filtrado, e o formulário precisa mostrar o quê. ?>
+        <?= $this->Form->create(null, ['type' => 'get', 'valueSources' => ['query']]) ?>
         <div class="row g-3">
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <?= $this->Form->control('name', [
                     'label' => 'Nome',
                     'class' => 'form-control',
@@ -123,7 +128,7 @@ $getSignatureStatusBadge = function ($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <?= $this->Form->control('cpf', [
                     'label' => 'CPF',
                     'class' => 'form-control',
@@ -131,7 +136,7 @@ $getSignatureStatusBadge = function ($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <?= $this->Form->control('promotionalCode', [
                     'label' => 'Código promocional',
                     'class' => 'form-control text-uppercase',
@@ -139,7 +144,7 @@ $getSignatureStatusBadge = function ($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <?php
                 $partnerOptions = [];
                 foreach ($partners as $partner) {
@@ -155,14 +160,76 @@ $getSignatureStatusBadge = function ($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-6">
+                <?= $this->Form->control('brokerId', [
+                    'label' => 'Corretor',
+                    'type' => 'select',
+                    'options' => $brokerOptions,
+                    'empty' => 'Todos os corretores',
+                    'class' => 'form-select',
+                ]) ?>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <?= $this->Form->control('dateFrom', [
+                    'label' => 'De',
+                    'type' => 'date',
+                    'class' => 'form-control',
+                ]) ?>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <?= $this->Form->control('dateUntil', [
+                    'label' => 'Até',
+                    'type' => 'date',
+                    'class' => 'form-control',
+                ]) ?>
+            </div>
+
+            <?php // Linha própria: cada campo traz mb-3 no wrapper, e um botão
+            // alinhado ao fundo da coluna ficaria 1rem abaixo dos campos. ?>
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <?= $this->Html->link(
+                    '<i class="bi bi-x-circle"></i> Limpar filtros',
+                    ['action' => 'index'],
+                    ['escape' => false, 'class' => 'btn btn-outline-secondary']
+                ) ?>
                 <?= $this->Form->button('<i class="bi bi-search"></i> Filtrar', [
                     'escapeTitle' => false,
-                    'class' => 'btn btn-outline-primary w-100'
+                    'class' => 'btn btn-outline-primary'
                 ]) ?>
             </div>
         </div>
         <?= $this->Form->end() ?>
+    </div>
+</div>
+
+<?php
+$summaryItems = [
+    ['label' => 'Total', 'value' => $summary['total'], 'class' => 'text-primary'],
+    ['label' => 'Concluídas', 'value' => $summary['completed'], 'class' => 'text-body'],
+    ['label' => 'Assinadas', 'value' => $summary['signed'], 'class' => 'text-success'],
+    ['label' => 'Pagas', 'value' => $summary['paid'], 'class' => 'text-success'],
+    ['label' => 'Aguardando pagamento', 'value' => $summary['awaitingPayment'], 'class' => 'text-warning'],
+];
+?>
+<div class="card mb-4 shadow-sm border-0" id="adhesionsSummary">
+    <div class="card-body">
+        <h6 class="card-title mb-3">
+            Resumo<?php if ($summaryTitle !== null): ?>
+                <span class="text-muted fw-normal">&mdash; <?= h($summaryTitle) ?></span>
+            <?php endif; ?>
+        </h6>
+        <div class="row row-cols-2 row-cols-md-5 g-3 text-center">
+            <?php foreach ($summaryItems as $item): ?>
+                <div class="col">
+                    <div class="border rounded py-2 h-100">
+                        <div class="fs-3 fw-bold <?= $item['class'] ?>"><?= $this->Number->format($item['value']) ?></div>
+                        <div class="text-muted small"><?= h($item['label']) ?></div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
     </div>
 </div>
 
@@ -173,7 +240,7 @@ $getSignatureStatusBadge = function ($adhesion)
                 <tr>
                     <th>Cliente</th>
                     <th>Etapa</th>
-                    <th>Código</th>
+                    <th>Código / Corretor</th>
                     <th>Pix</th>
                     <th>Assinatura</th>
                     <th>Data/hora</th>

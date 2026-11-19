@@ -41,16 +41,17 @@ composer cs-check   # phpcs
 composer cs-fix      # phpcbf (correção automática)
 ```
 
-Os testes usam um banco SQLite em memória (`tmp/tests.sqlite`), configurado em `config/app_local.php` em `Datasources.test`.
+Os testes usam um banco PostgreSQL dedicado (`adesao-sulprev-test`, na mesma instância Docker do dev), configurado por `DATABASE_TEST_URL` em `config/.env`. Precisa ser Postgres: a função do simulador (`simulacao_previdencia`) é PL/pgSQL.
 
 ## Arquitetura
 
-Visão geral do fluxo de requisições, modelo de dados e integrações está documentada em [`CLAUDE.md`](./CLAUDE.md).
+Visão geral do fluxo de requisições, modelo de dados e integrações está documentada em [`CLAUDE.md`](./CLAUDE.md). Os termos do domínio (Parceiro, Vínculo associativo, Código promocional, Corretor etc.) estão em [`GLOSSARY.md`](./GLOSSARY.md).
 
 Resumo:
 
 - **Rotas públicas** (`/`) — página inicial, simulador de previdência, formulário de adesão (`RegistrationsController`) e consulta de CBO.
-- **Rotas administrativas** (`/admin/`) — protegidas pelo plugin `Authentication`; dashboard, listagem/consulta de adesões e download de PDFs, login de usuários.
+- **Rotas administrativas** (`/admin/`) — protegidas pelo plugin `Authentication`; dashboard, listagem/consulta de adesões (com filtros por parceiro, corretor e período, e um resumo com as contagens do filtro) e download de PDFs, Parceiros e Vínculos associativos (com seus códigos promocionais e corretores), login de usuários.
+- **Links de divulgação** — a página inicial aceita `?promo=<código>` e `?corretor=<token>` e os repassa ao simulador, que abre a adesão com o código ou o corretor já preenchidos. O link de cada corretor é copiado na tela do Parceiro.
 - **Integrações**: `ClicksignService` (assinatura digital) e `SicoobService` (cobrança Pix via mTLS).
 - **Frontend**: templates PHP simples em `templates/`, com o formulário de adesão em `templates/Pages/home.php` controlado por `webroot/js/application.js`.
 

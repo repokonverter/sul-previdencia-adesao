@@ -81,23 +81,58 @@ class AdhesionsController extends AppController
                 'ClicksignDatas' => ['sort' => ['ClicksignDatas.attempt' => 'DESC']],
                 'PromotionalCodes.Partners',
                 'AssociationPartners',
+                'Brokers.Partners',
             ]);
 
+        $this->applyIndexFilters($query);
+
+        $adhesions = $this->paginate($query);
+        $partners = $this->Partners->find()->orderBy(['name' => 'ASC'])->all();
+        $brokerOptions = $this->brokerOptions(includeInactive: true);
+
+        // Uma por adesão da página: o botão "Link de retomada" da listagem
+        // abre um modal por linha, e cada um precisa da mesma informação que
+        // view() monta para o seu -- sem query extra, forPicker() só lê
+        // associações que o find() acima já carregou.
+        $resumeInfo = [];
+        foreach ($adhesions as $adhesion) {
+            $resumeInfo[$adhesion->id] = $this->resumeLinkInfo($adhesion);
+        }
+
+        $summary = $this->indexSummary($this->applyIndexFilters($this->AdhesionInitialDatas->find()));
+        $summaryTitle = $this->indexSummaryTitle($partners, $brokerOptions);
+
+        $this->set(compact('adhesions', 'partners', 'brokerOptions', 'resumeInfo', 'summary', 'summaryTitle'));
+    }
+
+    /**
+     * Os filtros da listagem, num lugar só: a paginação e o resumo partem da
+     * mesma consulta e não têm como divergir. Nenhum filtro depende de join
+     * (os dados pessoais entram por subconsulta), então serve tanto à
+     * consulta com contain quanto à de contagem.
+     */
+    private function applyIndexFilters(\Cake\ORM\Query\SelectQuery $query): \Cake\ORM\Query\SelectQuery
+    {
         $searchName = $this->request->getQuery('name');
         $searchCpf  = $this->request->getQuery('cpf');
         $searchPromotionalCode = $this->request->getQuery('promotionalCode');
         $searchPartnerId = $this->request->getQuery('partnerId');
+        $searchBrokerId = $this->request->getQuery('brokerId');
+        $dateFrom = $this->indexDateFilter('dateFrom');
+        $dateUntil = $this->indexDateFilter('dateUntil');
+
+        $personalDatas = $this->AdhesionInitialDatas->AdhesionPersonalDatas;
 
         if ($searchName) {
-            $query->where([
-                'AdhesionPersonalDatas.name LIKE' => "%$searchName%"
-            ]);
+            $query->where(['AdhesionInitialDatas.id IN' => $personalDatas->find()
+                ->select(['adhesion_initial_data_id'])
+                ->where(['AdhesionPersonalDatas.name LIKE' => "%$searchName%"])]);
         }
 
         if ($searchCpf) {
-            $query->where([
-                'AdhesionPersonalDatas.cpf LIKE' => "%$searchCpf%"
-            ]);
+            $query->where(['AdhesionInitialDatas.id IN' => $personalDatas->find()
+                ->select(['adhesion_initial_data_id'])
+                ->where(['AdhesionPersonalDatas.cpf LIKE' => "%$searchCpf%"])]);
         }
 
         if ($searchPromotionalCode) {
@@ -109,26 +144,128 @@ class AdhesionsController extends AppController
         }
 
         if ($searchPartnerId) {
-            // O parceiro só é conhecido pelo vínculo atual, então adesões cujo
-            // código foi excluído (o parceiro nunca é, se o código foi usado)
-            // não entram nesse filtro.
-            $query->innerJoinWith('PromotionalCodes')
-                ->where(['PromotionalCodes.partner_id' => (int)$searchPartnerId]);
+            // A adesão é do parceiro pelo código promocional ou pelo corretor
+            // (ver GLOSSARY.md). O parceiro só é conhecido pelo vínculo atual,
+            // então adesões cujo código foi excluído (o parceiro nunca é, se o
+            // código foi usado) não entram por esse lado.
+            $query->where(['OR' => [
+                ['AdhesionInitialDatas.promotional_code_id IN' => $this->fetchTable('PromotionalCodes')->find()
+                    ->select(['id'])
+                    ->where(['PromotionalCodes.partner_id' => (int)$searchPartnerId])],
+                ['AdhesionInitialDatas.broker_id IN' => $this->fetchTable('Brokers')->find()
+                    ->select(['id'])
+                    ->where(['Brokers.partner_id' => (int)$searchPartnerId])],
+            ]]);
         }
 
-        $adhesions = $this->paginate($query);
-        $partners = $this->Partners->find()->orderBy(['name' => 'ASC'])->all();
-
-        // Uma por adesão da página: o botão "Link de retomada" da listagem
-        // abre um modal por linha, e cada um precisa da mesma informação que
-        // view() monta para o seu -- sem query extra, forPicker() só lê
-        // associações que o find() acima já carregou.
-        $resumeInfo = [];
-        foreach ($adhesions as $adhesion) {
-            $resumeInfo[$adhesion->id] = $this->resumeLinkInfo($adhesion);
+        if ($searchBrokerId) {
+            $query->where(['AdhesionInitialDatas.broker_id' => (int)$searchBrokerId]);
         }
 
-        $this->set(compact('adhesions', 'partners', 'resumeInfo'));
+        if ($dateFrom !== null) {
+            $query->where(['AdhesionInitialDatas.created >=' => $dateFrom->format('Y-m-d 00:00:00')]);
+        }
+
+        if ($dateUntil !== null) {
+            // "Até" inclui o dia inteiro: compara com o início do dia seguinte.
+            $query->where(['AdhesionInitialDatas.created <' => $dateUntil->modify('+1 day')->format('Y-m-d 00:00:00')]);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Data do filtro de período (Y-m-d, como o <input type="date"> envia);
+     * qualquer outra coisa é ignorada, como um filtro vazio.
+     */
+    private function indexDateFilter(string $param): ?\DateTimeImmutable
+    {
+        $value = $this->request->getQuery($param);
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date !== false && $date->format('Y-m-d') === $value ? $date : null;
+    }
+
+    /**
+     * As contagens do card de resumo, sobre todas as adesões filtradas (não
+     * só a página atual). As regras são as mesmas das colunas da listagem e
+     * dos cards de parceiro: concluída tem "Outras informações"; assinada e
+     * paga olham qualquer tentativa, porque as duas coisas são definitivas;
+     * aguardando pagamento chegou à etapa de pagamento e não tem Pix pago.
+     *
+     * @return array{total: int, completed: int, signed: int, paid: int, awaitingPayment: int}
+     */
+    private function indexSummary(\Cake\ORM\Query\SelectQuery $query): array
+    {
+        $table = $this->AdhesionInitialDatas;
+        $exists = fn (\Cake\ORM\Association $related, array $conditions = []) => $query->newExpr()->exists(
+            $related->find()
+                ->select(['id'])
+                ->where([$related->aliasField('adhesion_initial_data_id') => $query->identifier('AdhesionInitialDatas.id')] + $conditions)
+        );
+        // COUNT(CASE WHEN ... THEN 1 END): o 1 vai literal, não como
+        // parâmetro, senão o Postgres o recebe como texto.
+        $countWhen = fn ($condition) => $query->func()->count(
+            $query->newExpr()->case()->when($condition)->then($query->newExpr('1'))
+        );
+
+        $paid = $exists($table->PixTransactions, ['PixTransactions.paid' => true]);
+
+        $row = $query
+            ->select([
+                'total' => $query->func()->count('*'),
+                'completed' => $countWhen($exists($table->AdhesionOtherInformations)),
+                'signed' => $countWhen($exists($table->ClicksignDatas, ['ClicksignDatas.status' => 'signed'])),
+                'paid' => $countWhen($paid),
+                'awaitingPayment' => $countWhen($query->newExpr()->and([
+                    $exists($table->AdhesionPaymentDetails),
+                    $query->newExpr()->not($paid),
+                ])),
+            ])
+            ->disableHydration()
+            ->first();
+
+        return array_map('intval', $row);
+    }
+
+    /**
+     * O que o resumo está contando, quando o filtro é por corretor, parceiro
+     * ou período -- os filtros que respondem "quantas adesões de quem e
+     * quando"; nome, CPF e código ficam visíveis no próprio formulário.
+     */
+    private function indexSummaryTitle(iterable $partners, array $brokerOptions): ?string
+    {
+        $parts = [];
+        $brokerId = (int)$this->request->getQuery('brokerId');
+        $partnerId = (int)$this->request->getQuery('partnerId');
+
+        if ($brokerId && isset($brokerOptions[$brokerId])) {
+            $parts[] = $brokerOptions[$brokerId];
+        } elseif ($partnerId) {
+            foreach ($partners as $partner) {
+                if ($partner->id === $partnerId) {
+                    $parts[] = $partner->name;
+                }
+            }
+        }
+
+        $from = $this->indexDateFilter('dateFrom');
+        $until = $this->indexDateFilter('dateUntil');
+
+        if ($from && $until) {
+            $parts[] = $from->format('d/m/Y') . ' a ' . $until->format('d/m/Y');
+        } elseif ($from) {
+            $parts[] = 'desde ' . $from->format('d/m/Y');
+        } elseif ($until) {
+            $parts[] = 'até ' . $until->format('d/m/Y');
+        }
+
+        return $parts === [] ? null : implode(' · ', $parts);
     }
 
     /**
@@ -155,6 +292,7 @@ class AdhesionsController extends AppController
             'AdhesionAudits' => ['sort' => ['AdhesionAudits.created' => 'DESC']],
             'ClicksignDatas' => ['sort' => ['ClicksignDatas.attempt' => 'DESC']],
             'AssociationPartners',
+            'Brokers.Partners',
         ]);
 
         $resume = $this->resumeLinkInfo($adhesion);
@@ -165,7 +303,70 @@ class AdhesionsController extends AppController
             'suggestedStep' => $resume['suggestedStep'],
             'resumeUrl' => $resume['url'],
             'planProjection' => $this->planProjectionFor($adhesion),
+            'auditBrokerLabels' => $this->auditBrokerLabels($adhesion),
         ]);
+    }
+
+    /**
+     * O histórico guarda broker_id, que sozinho não diz nada a quem lê;
+     * aqui ele vira "{Parceiro} - {Corretor}" para cada id que aparece.
+     *
+     * @return array<int, string>
+     */
+    private function auditBrokerLabels(\Cake\Datasource\EntityInterface $adhesion): array
+    {
+        $ids = [];
+
+        foreach ((array)$adhesion->adhesion_audits as $audit) {
+            foreach ($audit->changeList()['broker_id'] ?? [] as $id) {
+                if ($id !== null && $id !== '') {
+                    $ids[] = (int)$id;
+                }
+            }
+        }
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $labels = [];
+
+        foreach ($this->fetchTable('Brokers')->find()->contain(['Partners'])->where(['Brokers.id IN' => array_unique($ids)]) as $broker) {
+            $labels[$broker->id] = $broker->label;
+        }
+
+        return $labels;
+    }
+
+    /**
+     * O select de corretor do admin: os que o formulário público ofereceria,
+     * mais -- na edição -- o já gravado, mesmo que desativado depois, para
+     * salvar a adesão não apagá-lo sem ninguém ter mexido no campo.
+     *
+     * @return array<int, string>
+     */
+    private function brokerOptions(?int $current = null, bool $includeInactive = false): array
+    {
+        $brokers = $this->fetchTable('Brokers');
+        $query = $includeInactive
+            ? $brokers->find()->contain(['Partners'])->orderBy(['Partners.name' => 'ASC', 'Brokers.name' => 'ASC'])
+            : $brokers->find('selectable');
+
+        $options = [];
+
+        foreach ($query as $broker) {
+            $options[$broker->id] = $broker->label . ($broker->isSelectable() ? '' : ' (inativo)');
+        }
+
+        if ($current !== null && !isset($options[$current])) {
+            $broker = $brokers->find()->contain(['Partners'])->where(['Brokers.id' => $current])->first();
+
+            if ($broker !== null) {
+                $options[$broker->id] = $broker->label . ' (inativo)';
+            }
+        }
+
+        return $options;
     }
 
     public function checkPixPayment($id)
@@ -440,8 +641,9 @@ class AdhesionsController extends AppController
 
         $economicallyLocked = false;
         $lockReason = ['paid' => false, 'signed' => false];
+        $brokerOptions = $this->brokerOptions();
 
-        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason'));
+        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'brokerOptions'));
     }
 
     private function savePensionSchemes($adhesionInitialDataId, array $data): void
@@ -523,8 +725,9 @@ class AdhesionsController extends AppController
         $minimumMonthlyContribution = $this->fetchTable('PlanParameters')->current()->minimumMonthlyContribution();
 
         $planProjection = $this->planProjectionFor($adhesion);
+        $brokerOptions = $this->brokerOptions($adhesion->getOriginal('broker_id'));
 
-        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'minimumMonthlyContribution', 'planProjection'));
+        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'minimumMonthlyContribution', 'planProjection', 'brokerOptions'));
     }
 
     /**

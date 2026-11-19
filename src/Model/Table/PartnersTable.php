@@ -32,6 +32,10 @@ class PartnersTable extends AppTable
             'foreignKey' => 'partner_id',
         ]);
 
+        $this->hasMany('Brokers', [
+            'foreignKey' => 'partner_id',
+        ]);
+
         // Adesões vinculadas a este parceiro como vínculo associativo, à
         // parte de qualquer relação por código promocional (ver
         // association_partner_id em AdhesionInitialDatasTable).
@@ -123,7 +127,9 @@ class PartnersTable extends AppTable
 
     /**
      * Acrescenta as contagens de códigos ativos e de adesões (iniciadas e
-     * concluídas), somando todos os códigos promocionais do parceiro.
+     * concluídas) atribuídas ao parceiro, por código promocional ou por
+     * corretor. Uma adesão com código e corretor do mesmo parceiro conta uma
+     * vez só.
      */
     public function findWithAdhesionCounts(SelectQuery $query): SelectQuery
     {
@@ -136,20 +142,27 @@ class PartnersTable extends AppTable
 
         $adhesionsTable = $this->PromotionalCodes->AdhesionInitialDatas;
 
+        $attributedToPartner = [
+            'OR' => [
+                'PromotionalCodes.partner_id' => $query->identifier('Partners.id'),
+                'Brokers.partner_id' => $query->identifier('Partners.id'),
+            ],
+        ];
+
+        // LEFT nos dois: a adesão pode ter só um deles. Os dois são
+        // belongsTo, então o join não duplica linha e o COUNT(*) não infla.
         $started = $adhesionsTable->find()
             ->select(['count' => $query->func()->count('*')])
-            ->innerJoinWith('PromotionalCodes')
-            ->where([
-                'PromotionalCodes.partner_id' => $query->identifier('Partners.id'),
-            ]);
+            ->leftJoinWith('PromotionalCodes')
+            ->leftJoinWith('Brokers')
+            ->where($attributedToPartner);
 
         $completed = $adhesionsTable->find()
             ->select(['count' => $query->func()->count('*')])
-            ->innerJoinWith('PromotionalCodes')
+            ->leftJoinWith('PromotionalCodes')
+            ->leftJoinWith('Brokers')
             ->innerJoinWith('AdhesionOtherInformations')
-            ->where([
-                'PromotionalCodes.partner_id' => $query->identifier('Partners.id'),
-            ]);
+            ->where($attributedToPartner);
 
         return $query->selectAlso([
             'active_codes' => $activeCodes,
