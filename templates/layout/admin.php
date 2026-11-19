@@ -99,6 +99,9 @@
                     <a class="nav-link" href="<?= $this->Url->build('/admin/pix-webhooks') ?>">Webhooks Pix</a>
                 </li> -->
                 <li class="nav-item">
+                    <a class="nav-link" href="<?= $this->Url->build('/admin/users/change-password') ?>">Alterar senha</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="<?= $this->Url->build('/admin/users/logout') ?>">Sair</a>
                 </li>
             </ul>

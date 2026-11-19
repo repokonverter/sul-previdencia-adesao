@@ -14,6 +14,7 @@ use Cake\ORM\Entity;
  * @property string $email
  * @property string $password
  * @property string $role
+ * @property \Cake\I18n\DateTime|null $password_changed_at
  * @property \Cake\I18n\DateTime $created
  * @property \Cake\I18n\DateTime $modified
  */
@@ -40,6 +41,15 @@ class User extends Entity
         return self::ROLES[$this->role] ?? (string)$this->role;
     }
 
+    /**
+     * Convidado que ainda não usou o link: a senha gravada é aleatória e
+     * ninguém a conhece.
+     */
+    public function hasDefinedPassword(): bool
+    {
+        return $this->password_changed_at !== null;
+    }
+
     protected function _setPassword(string $password): string
     {
         return (new DefaultPasswordHasher())->hash($password);
@@ -57,7 +67,9 @@ class User extends Entity
     protected array $_accessible = [
         'name' => true,
         'email' => true,
-        'password' => true,
+        // Sem `password`: ninguém define senha por formulário de cadastro.
+        // Ela só muda por UsersTable::changePassword() (link por e-mail ou
+        // "Alterar minha senha"), com a política de PasswordPolicy.
         'role' => true,
         'created' => true,
         'modified' => true,

@@ -19,6 +19,7 @@ class ResendService
     private string $fromAddress;
     private string $fromName;
     private ?int $adhesionId = null;
+    private bool $logBody = true;
 
     public static function fromConfigure(): self
     {
@@ -47,6 +48,22 @@ class ResendService
         $this->adhesionId = $adhesionId;
 
         return $this;
+    }
+
+    /**
+     * Não grava o corpo do e-mail no log de integrações: os de senha levam um
+     * link que dá acesso ao admin, e o log é lido por qualquer admin.
+     */
+    public function withoutBodyInLogs(): static
+    {
+        $this->logBody = false;
+
+        return $this;
+    }
+
+    private function loggedBody(string $html): string
+    {
+        return $this->logBody ? $html : '[omitido: contém link de acesso]';
     }
 
     /**
@@ -96,7 +113,7 @@ class ResendService
                 'statusCode' => $response->getStatusCode(),
                 'success' => $success,
                 'durationMs' => IntegrationLogger::elapsedMs($startedAt),
-                'requestBody' => ['to' => $to, 'subject' => $subject, 'html' => $html],
+                'requestBody' => ['to' => $to, 'subject' => $subject, 'html' => $this->loggedBody($html)],
                 'responseBody' => $response->getStringBody(),
                 'errorMessage' => $errorMessage,
             ]);
@@ -157,7 +174,7 @@ class ResendService
                 'url' => "{$host}:{$port}",
                 'success' => true,
                 'durationMs' => IntegrationLogger::elapsedMs($startedAt),
-                'requestBody' => ['to' => $to, 'subject' => $subject, 'html' => $html],
+                'requestBody' => ['to' => $to, 'subject' => $subject, 'html' => $this->loggedBody($html)],
                 'context' => ['transport' => 'mailpit'],
             ]);
 

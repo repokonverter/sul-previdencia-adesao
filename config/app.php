@@ -127,6 +127,19 @@ return [
             'duration' => '+1 minutes',
         ],
 
+        /*
+         * Tentativas de login, pedidos de "esqueci a senha" e senha atual
+         * errada (App\Utility\Throttle). Cada entrada guarda o próprio
+         * prazo; a duração aqui só precisa cobrir a maior janela (1 hora).
+         */
+        'throttle' => [
+            'className' => FileEngine::class,
+            'prefix' => 'myapp_throttle_',
+            'path' => CACHE . 'persistent' . DS,
+            'serialize' => true,
+            'duration' => '+2 hours',
+        ],
+
         '_cake_translations_' => [
             'className' => FileEngine::class,
             'prefix' => 'myapp_cake_translations_',

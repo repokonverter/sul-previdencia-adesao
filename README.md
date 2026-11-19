@@ -51,6 +51,7 @@ Resumo:
 
 - **Rotas públicas** (`/`) — página inicial, simulador de previdência, formulário de adesão (`RegistrationsController`) e consulta de CBO.
 - **Rotas administrativas** (`/admin/`) — protegidas pelo plugin `Authentication`; dashboard, listagem/consulta de adesões (com filtros por parceiro, corretor e período, e um resumo com as contagens do filtro) e download de PDFs, Parceiros e Vínculos associativos (com seus códigos promocionais e corretores), login de usuários.
+- **Senhas do admin** — "Esqueci minha senha" no login (link por e-mail, válido por 1 hora e de uso único), convite por e-mail ao criar usuário (o admin não define senha de ninguém) e "Alterar senha" no menu. Regra do NIST SP 800-63B: de 15 a 64 caracteres, sem exigir composição, recusando o nome do serviço e o nome/e-mail do usuário. Login, pedidos de link e senha atual errada têm limite de tentativas; trocar a senha encerra as outras sessões.
 - **Links de divulgação** — a página inicial aceita `?promo=<código>` e `?corretor=<token>` e os repassa ao simulador, que abre a adesão com o código ou o corretor já preenchidos. O link de cada corretor é copiado na tela do Parceiro.
 - **Integrações**: `ClicksignService` (assinatura digital) e `SicoobService` (cobrança Pix via mTLS).
 - **Frontend**: templates PHP simples em `templates/`, com o formulário de adesão em `templates/Pages/home.php` controlado por `webroot/js/application.js`.

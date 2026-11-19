@@ -42,6 +42,80 @@ class EmailTemplates
         ');
     }
 
+    /**
+     * Esqueci a senha do admin. A validade vai escrita pelo mesmo motivo do
+     * e-mail de retomada, e o "se não foi você" evita o susto de quem recebe
+     * um pedido feito por outra pessoa.
+     */
+    public static function passwordReset(string $name, string $url, int $minutes): string
+    {
+        return self::adminLink(
+            'Redefina sua senha, ' . h($name),
+            'Recebemos um pedido para redefinir a sua senha do painel da Sul Previdência.
+                Para criar uma nova, clique no botão abaixo.',
+            'Redefinir minha senha',
+            $url,
+            'Este link vale por ' . $minutes . ' minutos e só pode ser usado uma vez.
+                Se você não pediu a redefinição, ignore este e-mail: sua senha continua a mesma.'
+        );
+    }
+
+    public static function userInvite(string $name, string $url, int $hours): string
+    {
+        return self::adminLink(
+            'Olá, ' . h($name),
+            'Você recebeu acesso ao painel da Sul Previdência. Defina sua senha para entrar.',
+            'Definir minha senha',
+            $url,
+            'Este link vale por ' . $hours . ' horas e só pode ser usado uma vez. Se expirar,
+                peça um novo ao administrador.'
+        );
+    }
+
+    public static function passwordChanged(string $name, string $when): string
+    {
+        $logoUrl = Router::url('/img/logo_sul_recortada.png', true);
+
+        return self::wrap($logoUrl, '
+            <h1 style="margin:0 0 16px;font-size:22px;color:#333333;">Sua senha foi alterada, ' . h($name) . '</h1>
+            <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#555555;">
+                A senha do seu acesso ao painel da Sul Previdência foi alterada em <strong>' . h($when) . '</strong>.
+                As sessões abertas em outros navegadores foram encerradas.
+            </p>
+            <p style="margin:0;font-size:14px;line-height:1.6;color:#c0392b;">
+                Se não foi você, fale com o administrador imediatamente.
+            </p>
+        ');
+    }
+
+    private static function adminLink(string $titleHtml, string $introHtml, string $button, string $url, string $footnoteHtml): string
+    {
+        $logoUrl = Router::url('/img/logo_sul_recortada.png', true);
+
+        return self::wrap($logoUrl, '
+            <h1 style="margin:0 0 16px;font-size:22px;color:#333333;">' . $titleHtml . '</h1>
+            <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#555555;">
+                ' . $introHtml . '
+            </p>
+            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+                <tr>
+                    <td style="border-radius:8px;background-color:#FC7A29;">
+                        <a href="' . h($url) . '" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;">
+                            ' . h($button) . '
+                        </a>
+                    </td>
+                </tr>
+            </table>
+            <p style="margin:0 0 8px;font-size:13px;color:#888888;">
+                Ou copie e cole este link no navegador:<br>
+                <a href="' . h($url) . '" style="color:#FC7A29;word-break:break-all;">' . h($url) . '</a>
+            </p>
+            <p style="margin:24px 0 0;font-size:13px;color:#888888;">
+                ' . $footnoteHtml . '
+            </p>
+        ');
+    }
+
     public static function paymentLink(string $customerName, string $paymentUrl): string
     {
         $logoUrl = Router::url('/img/logo_sul_recortada.png', true);

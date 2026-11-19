@@ -51,12 +51,23 @@ class AppController extends BaseController
         // Perfil lido do banco, não da sessão: a sessão de quem logou antes da
         // coluna existir não tem `role`, e rebaixar um admin precisa valer já.
         $user = $this->fetchTable('Users')->find()
-            ->select(['id', 'role'])
+            ->select(['id', 'role', 'password_changed_at'])
             ->where(['id' => $identity->getIdentifier()])
             ->first();
 
         if ($user === null) {
             $this->Authentication->logout();
+            $event->setResult($this->redirect(['controller' => 'Users', 'action' => 'login']));
+
+            return;
+        }
+
+        // A senha mudou depois que esta sessão começou (a sessão guarda o
+        // usuário do momento do login): quem tinha acesso perde. Quem troca
+        // a própria senha recebe a identidade nova e segue logado.
+        if (self::passwordStamp($user->password_changed_at) !== self::passwordStamp($identity->get('password_changed_at'))) {
+            $this->Authentication->logout();
+            $this->Flash->error(__('Sua senha foi alterada. Entre novamente.'));
             $event->setResult($this->redirect(['controller' => 'Users', 'action' => 'login']));
 
             return;
@@ -76,6 +87,14 @@ class AppController extends BaseController
         parent::beforeRender($event);
 
         $this->set('isAdmin', $this->isAdmin());
+    }
+
+    /**
+     * Até o segundo, que é o que o banco guarda.
+     */
+    private static function passwordStamp(mixed $changedAt): ?string
+    {
+        return $changedAt instanceof \DateTimeInterface ? $changedAt->format('Y-m-d H:i:s') : null;
     }
 
     protected function isAdmin(): bool

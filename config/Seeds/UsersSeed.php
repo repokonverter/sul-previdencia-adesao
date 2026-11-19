@@ -27,8 +27,8 @@ class UsersSeed extends AbstractSeed
 
         if ($existing) {
             $this->execute(
-                'UPDATE users SET name = ?, password = ?, modified = ? WHERE id = ?',
-                ['admin', $password, $now, $existing['id']]
+                'UPDATE users SET name = ?, password = ?, password_changed_at = ?, modified = ? WHERE id = ?',
+                ['admin', $password, $now, $now, $existing['id']]
             );
 
             return;
@@ -39,6 +39,9 @@ class UsersSeed extends AbstractSeed
                 'name' => 'admin',
                 'email' => $email,
                 'password' => $password,
+                // Senha definida (não é convite pendente); na atualização,
+                // derruba as sessões abertas com a senha anterior.
+                'password_changed_at' => $now,
                 'created' => $now,
                 'modified' => $now,
             ],

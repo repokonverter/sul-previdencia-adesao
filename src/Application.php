@@ -107,6 +107,10 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
     public function services(ContainerInterface $container): void
     {
+        // Injetado nas ações de senha do admin (Admin\UsersController), para
+        // que os testes troquem o envio real por um dublê (mockService).
+        $container->add(\App\Services\ResendService::class, fn () => \App\Services\ResendService::fromConfigure());
+
         // $container->add(ClicksignService::class, function () {
         //     $baseUrl = Configure::read('Clicksign.baseUrl');
         //     $accessToken = Configure::read('Clicksign.accessToken');

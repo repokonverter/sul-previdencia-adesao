@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use App\Model\Entity\User;
+use App\Utility\PasswordPolicy;
+use Cake\I18n\DateTime;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\Validation\Validator;
@@ -26,6 +28,7 @@ use Cake\Validation\Validator;
  * @method iterable<\App\Model\Entity\User>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\User>|false deleteMany(iterable $entities, array $options = [])
  * @method iterable<\App\Model\Entity\User>|\Cake\Datasource\ResultSetInterface<\App\Model\Entity\User> deleteManyOrFail(iterable $entities, array $options = [])
  *
+ * @property \App\Model\Table\PasswordResetsTable&\Cake\ORM\Association\HasMany $PasswordResets
  * @mixin \Cake\ORM\Behavior\TimestampBehavior
  */
 class UsersTable extends AppTable
@@ -43,6 +46,10 @@ class UsersTable extends AppTable
         $this->setTable('users');
         $this->setDisplayField('email');
         $this->setPrimaryKey('id');
+
+        $this->hasMany('PasswordResets', [
+            'foreignKey' => 'user_id',
+        ]);
     }
 
     /**
@@ -65,16 +72,64 @@ class UsersTable extends AppTable
             ->notEmptyString('email');
 
         $validator
-            ->scalar('password')
-            ->maxLength('password', 255)
-            ->requirePresence('password', 'create')
-            ->notEmptyString('password');
-
-        $validator
             ->inList('role', array_keys(User::ROLES), 'Perfil inválido.')
             ->notEmptyString('role');
 
         return $validator;
+    }
+
+    /**
+     * Usuário novo, sem senha conhecida: recebe uma aleatória e um convite
+     * por e-mail para definir a própria (ver UsersController::add()).
+     */
+    public function newInvitedUser(array $data): User
+    {
+        $user = $this->newEntity($data);
+        $user->password = bin2hex(random_bytes(32));
+        $user->password_changed_at = null;
+
+        return $user;
+    }
+
+    /**
+     * O único caminho que troca uma senha: aplica PasswordPolicy, carimba
+     * password_changed_at (o que derruba as outras sessões, ver
+     * Admin\AppController) e invalida os links pendentes. Os erros ficam na
+     * entidade, nos campos `new_password` e `confirm_password` do formulário.
+     */
+    public function changePassword(User $user, string $newPassword, string $confirmation): bool
+    {
+        $errors = [];
+        $violations = PasswordPolicy::violations($newPassword, $user->name, $user->email);
+
+        if ($violations !== []) {
+            $errors['new_password'] = $violations;
+        }
+
+        if ($newPassword !== $confirmation) {
+            $errors['confirm_password'] = [__('A confirmação não confere com a nova senha.')];
+        }
+
+        if ($errors !== []) {
+            $user->setErrors($errors);
+
+            return false;
+        }
+
+        $user->password = $newPassword;
+        // Sem os microssegundos, que o banco não guarda: a sessão de quem
+        // trocou recebe esta mesma entidade e precisa bater com o banco.
+        $user->password_changed_at = DateTime::now()->microsecond(0);
+
+        return (bool)$this->getConnection()->transactional(function () use ($user): bool {
+            if (!$this->save($user)) {
+                return false;
+            }
+
+            $this->PasswordResets->invalidateFor($user->id);
+
+            return true;
+        });
     }
 
     /**
