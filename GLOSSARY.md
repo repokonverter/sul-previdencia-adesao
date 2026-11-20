@@ -6,6 +6,10 @@ Inscrição de participantes no plano de previdência da Sul Previdência: o par
 
 ### Adesão
 
+**Plano**:
+Plano de benefícios da Sul Previdência ao qual o participante adere — PlenoPrev ou MaisPremium. Cada um tem seu subdomínio, seus dados de documento (CNPJ, CNPB, seguradora) e seu banco de recebimento do Pix; a Adesão pertence a um único Plano, fixado ao nascer.
+_Evitar_: Produto, tenant
+
 **Adesão**:
 A inscrição de um participante no plano, do preenchimento dos Dados Iniciais até a assinatura e o pagamento.
 _Evitar_: Cadastro, registro, inscrição
