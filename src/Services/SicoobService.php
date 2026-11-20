@@ -7,17 +7,21 @@ use Cake\Core\Configure;
 use Exception;
 use Cake\Log\Log;
 
-class SicoobService
+class SicoobService implements PixGateway
 {
-    public static function fromConfigure(): self
+    /**
+     * @param string $configKey Chave do Configure com as credenciais; ver
+     *   `pix.config` em config/plans.php.
+     */
+    public static function fromConfigure(string $configKey = 'Sicoob'): self
     {
         return new self([
-            'baseUrl' => Configure::read('Sicoob.baseUrl'),
-            'authUrl' => Configure::read('Sicoob.authUrl'),
-            'clientId' => Configure::read('Sicoob.clientId'),
-            'certificateBase64' => Configure::read('Sicoob.certificateBase64'),
-            'privateKeyBase64' => Configure::read('Sicoob.privateKeyBase64'),
-            'fixedToken' => Configure::read('Sicoob.fixedToken'),
+            'baseUrl' => Configure::read($configKey . '.baseUrl'),
+            'authUrl' => Configure::read($configKey . '.authUrl'),
+            'clientId' => Configure::read($configKey . '.clientId'),
+            'certificateBase64' => Configure::read($configKey . '.certificateBase64'),
+            'privateKeyBase64' => Configure::read($configKey . '.privateKeyBase64'),
+            'fixedToken' => Configure::read($configKey . '.fixedToken'),
         ]);
     }
 

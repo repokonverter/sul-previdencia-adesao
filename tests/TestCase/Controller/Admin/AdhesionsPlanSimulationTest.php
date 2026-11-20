@@ -43,6 +43,7 @@ class AdhesionsPlanSimulationTest extends TestCase
         $adhesions = $this->table('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
             'storage_uuid' => Text::uuid(),
+            'benefit_plan' => 'plenoprev',
             'name' => 'Fulana da Silva',
             'email' => 'fulana@exemplo.test',
             'phone' => '48999999999',

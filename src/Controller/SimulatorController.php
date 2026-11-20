@@ -23,7 +23,7 @@ class SimulatorController extends AppController
         // pessoa pode trocar. Token que não resolve é ignorado em silêncio --
         // quem recebeu o link não tem o que fazer com uma mensagem de erro.
         $preselectedBrokerId = $this->fetchTable('Brokers')
-            ->findSelectableByToken($this->request->getQuery('corretor'))
+            ->findSelectableByToken($this->request->getQuery('corretor'), $this->benefitPlan()->slug)
             ?->id;
 
         if ((float)str_replace(',', '.', (string)($data['value'] ?? 0)) < $minimum) {
@@ -89,7 +89,13 @@ class SimulatorController extends AppController
             return $this->render('resume_unavailable');
         }
 
-        $simulator = $this->planSimulator();
+        $redirect = $this->redirectToAdhesionHost($adhesion->benefitPlan());
+
+        if ($redirect !== null) {
+            return $redirect;
+        }
+
+        $simulator = $this->planSimulator($adhesion->benefitPlan());
         $birthDate = $adhesion->adhesion_personal_data?->birth_date?->format('Y-m-d');
         $plan = $adhesion->adhesion_plan;
 
@@ -292,6 +298,7 @@ class SimulatorController extends AppController
     {
         return $this->fetchTable('Partners')->find()
             ->find('byAssociationScope', isAssociation: true)
+            ->find('byBenefitPlan', benefitPlan: $this->benefitPlan()->slug)
             ->where(['Partners.active' => true])
             ->orderBy(['Partners.name' => 'ASC'])
             ->all();
@@ -303,7 +310,7 @@ class SimulatorController extends AppController
      */
     private function selectableBrokers(): iterable
     {
-        return $this->fetchTable('Brokers')->find('selectable')->all();
+        return $this->fetchTable('Brokers')->find('selectable', benefitPlan: $this->benefitPlan()->slug)->all();
     }
 
     /**

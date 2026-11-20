@@ -8,7 +8,8 @@ use App\Model\Entity\Partner;
 use Cake\Datasource\EntityInterface;
 
 /**
- * Um plano a apresentar ao cliente: quem, quanto e com quais riscos.
+ * Um plano a apresentar ao cliente: de qual plano de benefícios, quem,
+ * quanto e com quais riscos.
  *
  * Existe para que o PDF da simulação e a projeção não dependam de uma adesão.
  * A aba Plano monta o seu a partir do que está gravado (fromAdhesion()); a
@@ -19,6 +20,7 @@ use Cake\Datasource\EntityInterface;
 final class PlanQuote
 {
     public function __construct(
+        public readonly BenefitPlan $benefitPlan,
         public readonly string $clientName,
         public readonly string $birthDate,
         public readonly ?int $benefitEntryAge,
@@ -53,6 +55,7 @@ final class PlanQuote
         $hasDisabilityRetirement = $plan->has_disability_retirement !== false;
 
         return new self(
+            benefitPlan: BenefitPlans::get($adhesion->get('benefit_plan')),
             clientName: (string)($personalData->name ?? $adhesion->get('name') ?? ''),
             birthDate: $birthDate,
             benefitEntryAge: $plan->benefit_entry_age === null ? null : (int)$plan->benefit_entry_age,

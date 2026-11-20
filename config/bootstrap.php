@@ -206,6 +206,7 @@ ServerRequest::addDetector('tablet', function ($request) {
 });
 
 Configure::load('authentication', 'default');
+Configure::load('plans', 'default');
 
 
 /*

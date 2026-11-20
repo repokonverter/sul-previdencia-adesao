@@ -76,6 +76,7 @@ class AdhesionFormMapTest extends TestCase
         $adhesions = $this->table('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
             'storage_uuid' => Text::uuid(),
+            'benefit_plan' => 'plenoprev',
             'name' => 'Fulano de Tal',
             'phone' => '48999999999',
         ]);

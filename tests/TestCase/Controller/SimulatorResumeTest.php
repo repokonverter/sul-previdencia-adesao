@@ -31,6 +31,7 @@ class SimulatorResumeTest extends TestCase
         $adhesions = $this->table('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
             'storage_uuid' => Text::uuid(),
+            'benefit_plan' => 'plenoprev',
             'name' => 'Fulano de Tal',
             'email' => 'fulano@exemplo.test',
             'phone' => '48999999999',
@@ -88,7 +89,7 @@ class SimulatorResumeTest extends TestCase
     {
         return (new \App\Services\PlanSimulator(
             \Cake\Datasource\ConnectionManager::get('test'),
-            $this->table('PlanParameters')->current()
+            $this->table('PlanParameters')->forPlan('plenoprev')
         ))->projectSavedPlan('1985-03-10', $plan);
     }
 

@@ -5,18 +5,23 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\Admin\AppController;
-use App\Services\SicoobService;
-use Cake\Core\Configure;
-use Cake\Routing\Router;
+use App\Services\BenefitPlans;
+use App\Services\PixPaymentService;
 use Cake\Utility\Security;
 
+/**
+ * Um webhook por conta Pix: cada plano de benefícios recebe na sua (ver
+ * config/plans.php), e o webhook gravado sabe de qual plano é, para o
+ * WebhooksController reconfirmar o pagamento no banco certo.
+ */
 class PixWebhooksController extends AppController
 {
     public function index()
     {
         $webhooks = $this->fetchTable('PixWebhooks')->find()->orderBy(['created' => 'DESC'])->all();
+        $benefitPlans = BenefitPlans::options();
 
-        $this->set(compact('webhooks'));
+        $this->set(compact('webhooks', 'benefitPlans'));
     }
 
     public function add()
@@ -25,33 +30,51 @@ class PixWebhooksController extends AppController
         $webhook = $pixWebhooks->newEmptyEntity();
 
         if ($this->request->is('post')) {
-            $chave = $this->request->getData('chave') ?: Configure::read('Sicoob.pixKey');
+            $slug = (string)$this->request->getData('benefit_plan');
+
+            if (!BenefitPlans::exists($slug)) {
+                $this->Flash->error('Selecione o plano.');
+
+                return $this->redirect(['action' => 'add']);
+            }
+
+            $plan = BenefitPlans::get($slug);
+            $chave = $this->request->getData('chave') ?: PixPaymentService::pixKeyFor($plan);
             $token = bin2hex(Security::randomBytes(20));
-            $url = Router::url('/sicoob/webhook/' . $token, true);
+            // No host do plano, e não no desta requisição: o admin responde
+            // nos dois, e a URL cadastrada no banco tem que sobreviver a quem
+            // a cadastrou.
+            $url = $plan->url('/' . $plan->pix['provider'] . '/webhook/' . $token);
 
             try {
-                SicoobService::fromConfigure()->configureWebhook($chave, $url);
+                PixPaymentService::gatewayFor($plan)->configureWebhook($chave, $url);
 
                 $webhook = $pixWebhooks->patchEntity($webhook, [
                     'chave' => $chave,
                     'token' => $token,
                     'url' => $url,
+                    'benefit_plan' => $plan->slug,
                 ]);
 
                 if ($pixWebhooks->save($webhook)) {
-                    $this->Flash->success('Webhook cadastrado no Sicoob com sucesso.');
+                    $this->Flash->success('Webhook cadastrado no banco com sucesso.');
 
                     return $this->redirect(['action' => 'index']);
                 }
 
-                $this->Flash->error('Webhook criado no Sicoob, mas houve falha ao salvar localmente. Verifique os logs.');
+                $this->Flash->error('Webhook criado no banco, mas houve falha ao salvar localmente. Verifique os logs.');
             } catch (\Exception $e) {
-                $this->Flash->error('Falha ao cadastrar webhook no Sicoob: ' . $e->getMessage());
+                $this->Flash->error('Falha ao cadastrar webhook no banco: ' . $e->getMessage());
             }
         }
 
-        $defaultChave = Configure::read('Sicoob.pixKey');
-        $this->set(compact('webhook', 'defaultChave'));
+        $benefitPlans = BenefitPlans::options();
+        $defaultKeys = array_map(
+            fn ($plan) => PixPaymentService::pixKeyFor($plan),
+            BenefitPlans::all()
+        );
+
+        $this->set(compact('webhook', 'benefitPlans', 'defaultKeys'));
     }
 
     public function delete($id)
@@ -62,9 +85,9 @@ class PixWebhooksController extends AppController
         $webhook = $pixWebhooks->get($id);
 
         try {
-            SicoobService::fromConfigure()->deleteWebhook($webhook->chave);
+            PixPaymentService::gatewayFor(BenefitPlans::get($webhook->benefit_plan))->deleteWebhook($webhook->chave);
         } catch (\Exception $e) {
-            $this->Flash->error('Falha ao remover webhook no Sicoob (removendo apenas localmente): ' . $e->getMessage());
+            $this->Flash->error('Falha ao remover webhook no banco (removendo apenas localmente): ' . $e->getMessage());
         }
 
         if ($pixWebhooks->delete($webhook))

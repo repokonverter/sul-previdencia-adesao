@@ -119,7 +119,9 @@ requisição — webhooks e comandos rodam sem host.
 
 ## Ordem de implementação
 
-1. **Refatoração multiplano só com o PlenoPrev** — coluna `plan`,
+1. **Refatoração multiplano só com o PlenoPrev** _(implementada no branch
+   `feat/multiplano`; a coluna se chama `benefit_plan`, para não confundir
+   com `adhesion_plans`)_ — coluna `plan`,
    `config/plans.php`, middleware de host, `PixGateway` com Sicoob, admin com
    filtros/seletores, migration de dados. Vai para produção sem nenhuma
    mudança visível.

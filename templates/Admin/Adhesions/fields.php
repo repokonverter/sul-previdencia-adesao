@@ -22,6 +22,24 @@
         <div class="card p-4 shadow-sm">
             <div class="row">
                 <div class="col-md-6 mb-3">
+                    <?php // Escolhido na criação e travado depois: Pix, envelope e parceiro ficam ligados a ele. ?>
+                    <?= $this->Form->control('benefit_plan', [
+                        'label' => 'Plano*',
+                        'type' => 'select',
+                        'options' => $benefitPlans,
+                        'empty' => $adhesion->isNew() && count($benefitPlans) > 1 ? 'Selecione o plano' : false,
+                        'class' => 'form-select',
+                        'required' => $adhesion->isNew(),
+                        'disabled' => !$adhesion->isNew(),
+                        'data-benefit-plan' => true,
+                    ]) ?>
+                    <?php if (!$adhesion->isNew()): ?>
+                        <div class="form-text">O plano não muda depois de criada a adesão. Plano errado: exclua e refaça.</div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
                     <?= $this->Form->control('name', ['label' => 'Nome completo*', 'class' => 'form-control', 'required' => true]) ?>
                 </div>
                 <div class="col-md-6 mb-3">

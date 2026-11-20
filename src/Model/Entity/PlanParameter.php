@@ -9,9 +9,9 @@ use Cake\ORM\Entity;
 /**
  * PlanParameter Entity
  *
- * Linha única com os números do plano que antes viviam no código: as taxas
- * estavam cravadas na procedure `simulacao_previdencia` e o mínimo numa
- * constante de [[SimulatorController]].
+ * Uma linha por plano de benefícios com os números que antes viviam no
+ * código: as taxas estavam cravadas na procedure `simulacao_previdencia` e o
+ * mínimo numa constante de [[SimulatorController]].
  *
  * Os percentuais são guardados como percentual (16.00, e não 0.16) porque é
  * assim que o admin digita e lê; quem precisa da fração usa
@@ -29,6 +29,7 @@ use Cake\ORM\Entity;
  * @property string $survivors_pension_floor
  * @property string $disability_retirement_floor
  * @property int $resume_link_days
+ * @property string $benefit_plan
  */
 class PlanParameter extends Entity
 {

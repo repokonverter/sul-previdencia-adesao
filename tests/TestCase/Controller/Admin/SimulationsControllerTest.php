@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Controller\Admin;
 
 use App\Services\PlanSimulator;
+use App\Test\TestSuite\SecondBenefitPlanTrait;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
@@ -18,6 +19,7 @@ use DateTimeImmutable;
 class SimulationsControllerTest extends TestCase
 {
     use IntegrationTestTrait;
+    use SecondBenefitPlanTrait;
 
     protected array $fixtures = [
         'app.Users',
@@ -217,6 +219,33 @@ class SimulationsControllerTest extends TestCase
 
         $this->assertFalse($body['success']);
         $this->assertSame('A contribuição total mínima é de R$ 100,00.', $body['message']);
+    }
+
+    /**
+     * O plano escolhido na tela muda o cálculo, não só o nome no PDF: cada
+     * plano tem a sua contribuição mínima.
+     */
+    public function testTheChosenPlansParametersApply(): void
+    {
+        $this->configureSecondBenefitPlan();
+
+        $this->get('/admin/simulations');
+        $this->assertResponseContains('<option value="maispremium">MaisPremium</option>');
+
+        $body = $this->getJson('/admin/simulations/recalculate', [
+            'date' => $this->yearsAgo(35),
+            'totalContribution' => '200',
+            'benefitPlan' => 'maispremium',
+        ]);
+        $this->assertSame('A contribuição total mínima é de R$ 250,00.', $body['message']);
+
+        $this->post('/admin/simulations/pdf', $this->simulation([
+            'benefit_plan' => 'maispremium',
+            'monthly_retirement_contribution' => '200,00',
+            'has_survivors_pension' => '0',
+            'has_disability_retirement' => '0',
+        ]));
+        $this->assertResponseContains('A contribuição total mínima é de R$ 250,00.');
     }
 
     public function testRecalculateRefusesRisksAboveTheTotal(): void

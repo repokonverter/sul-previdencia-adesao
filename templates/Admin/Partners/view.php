@@ -12,7 +12,9 @@ use Cake\I18n\Date;
 
 $this->assign('title', $entityLabelSingular . ': ' . $partner->name);
 
-$baseUrl = rtrim($this->Url->build('/', ['fullBase' => true]), '/');
+// Os links de divulgação vão para o host do plano do parceiro, qualquer que
+// seja o host em que o admin está aberto.
+$baseUrl = $partner->benefitPlan()->baseUrl;
 
 $getCodeValidityCell = function (\App\Model\Entity\PromotionalCode $code): string
 {
@@ -30,6 +32,7 @@ $getCodeValidityCell = function (\App\Model\Entity\PromotionalCode $code): strin
     <h2 class="fw-bold text-primary d-flex align-items-center gap-2">
         <span class="d-inline-block rounded-circle" style="width:18px;height:18px;background:<?= h($partner->color) ?>"></span>
         <?= h($partner->name) ?>
+        <span class="badge text-bg-light border fs-6"><?= h($partner->benefitPlan()->name) ?></span>
         <?php if (!$partner->active): ?>
             <span class="badge bg-secondary">Inativo</span>
         <?php endif; ?>

@@ -367,7 +367,7 @@ $ratePercent = fn(float $rate): string => (string)floor($rate * 100);
                     <?php endif; ?>
                 </td>
                 <td style="text-align: right;">
-                    <div class="kicker">Plano PlenoPrev</div>
+                    <div class="kicker">Plano <?= h($quote->benefitPlan->name) ?></div>
                     <div class="doc-title">Simulação do Plano</div>
                     <div class="doc-date">Emitida em <?= date('d/m/Y') ?></div>
                 </td>

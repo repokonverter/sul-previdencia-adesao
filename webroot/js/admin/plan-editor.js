@@ -68,9 +68,14 @@ window.PlanEditor = (() => {
      *   abaixo dessa idade os riscos ficam desmarcados e travados. Na adesão
      *   a regra fica com o servidor, que não deixa o plano chegar a esse
      *   estado.
+     * @param {function(): string} options.benefitPlan o plano de benefícios
+     *   (slug) cujos parâmetros valem no cálculo: o da adesão, ou o escolhido
+     *   na simulação avulsa. Vai em toda chamada como `benefitPlan`.
      */
-    const init = ({ root, birthDateInput, urls, minimumRiskAge = null }) => {
+    const init = ({ root, birthDateInput, urls, minimumRiskAge = null, benefitPlan }) => {
         if (!root) return;
+
+        const request = (url, params) => getJson(url, { ...params, benefitPlan: benefitPlan() });
 
         const field = (role) => root.querySelector(`[data-plan-field="${role}"]`);
         const fields = {
@@ -167,7 +172,7 @@ window.PlanEditor = (() => {
         const updateProjection = () => {
             if (!birthDate() || !window.PlanProjectionView) return;
 
-            getJson(urls.projection, {
+            request(urls.projection, {
                 date: birthDate(),
                 retirementContribution: parseMoney(fields.retirement.value),
                 survivorsPensionContribution: contractedContribution('survivors'),
@@ -184,7 +189,7 @@ window.PlanEditor = (() => {
         const updateRiskCapital = () => {
             if (!birthDate()) return;
 
-            getJson(urls.riskCapital, {
+            request(urls.riskCapital, {
                 date: birthDate(),
                 survivorsPensionContribution: parseMoney(risks.survivors.contribution.value),
                 disabilityRetirementContribution: parseMoney(risks.disability.contribution.value),
@@ -221,7 +226,7 @@ window.PlanEditor = (() => {
 
             recalculateButton.disabled = true;
 
-            getJson(urls.recalculate, {
+            request(urls.recalculate, {
                 date: birthDate(),
                 totalContribution: parseMoney(fields.total.value),
                 hasSurvivorsPension: contracted('survivors') ? 1 : 0,

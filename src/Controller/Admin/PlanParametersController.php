@@ -6,13 +6,14 @@ namespace App\Controller\Admin;
 
 use App\Controller\Admin\AppController;
 use App\Model\Table\PlanParametersTable;
+use App\Services\BenefitPlans;
 use App\Utility\Money;
+use Cake\Http\Exception\NotFoundException;
 
 /**
- * Tela única dos parâmetros do plano. Não há index, add nem delete de
- * propósito: a tabela tem uma linha só, criada pela migration, e um segundo
- * registro faria PlanParametersTable::current() escolher em silêncio qual dos
- * dois vale.
+ * Os parâmetros de cada plano de benefícios, um formulário por plano. Não há
+ * index, add nem delete de propósito: cada plano tem uma linha só, criada
+ * por migration, e o índice único em benefit_plan não deixa haver duas.
  */
 class PlanParametersController extends AppController
 {
@@ -31,9 +32,14 @@ class PlanParametersController extends AppController
         $this->PlanParameters = $this->fetchTable('PlanParameters');
     }
 
-    public function edit()
+    public function edit(?string $benefitPlan = null)
     {
-        $planParameter = $this->PlanParameters->current();
+        if ($benefitPlan !== null && !BenefitPlans::exists($benefitPlan)) {
+            throw new NotFoundException();
+        }
+
+        $plan = $benefitPlan === null ? BenefitPlans::primary() : BenefitPlans::get($benefitPlan);
+        $planParameter = $this->PlanParameters->forPlan($plan->slug);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             if (!$this->isAdmin()) {
@@ -46,15 +52,17 @@ class PlanParametersController extends AppController
             );
 
             if ($this->PlanParameters->save($planParameter)) {
-                $this->Flash->success('Parâmetros do plano atualizados.');
+                $this->Flash->success('Parâmetros do plano ' . $plan->name . ' atualizados.');
 
-                return $this->redirect(['action' => 'edit']);
+                return $this->redirect(['action' => 'edit', $plan->slug]);
             }
 
             $this->Flash->error('Não foi possível salvar os parâmetros. Revise os valores.');
         }
 
-        $this->set(compact('planParameter'));
+        $benefitPlans = BenefitPlans::options();
+
+        $this->set(compact('planParameter', 'plan', 'benefitPlans'));
     }
 
     /**

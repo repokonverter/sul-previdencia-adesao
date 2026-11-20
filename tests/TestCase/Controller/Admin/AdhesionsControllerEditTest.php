@@ -46,6 +46,7 @@ class AdhesionsControllerEditTest extends TestCase
         $adhesions = $this->table('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
             'storage_uuid' => Text::uuid(),
+            'benefit_plan' => 'plenoprev',
             'name' => 'Fulano de Tal',
             'email' => 'fulano@exemplo.test',
             'phone' => '48999999999',
@@ -286,6 +287,7 @@ class AdhesionsControllerEditTest extends TestCase
         $pix->saveOrFail($pix->newEntity([
             'adhesion_initial_data_id' => $adhesionId,
             'txid' => 'tx' . $adhesionId,
+            'provider' => 'sicoob',
             'attempt' => 1,
             'paid' => true,
         ]));

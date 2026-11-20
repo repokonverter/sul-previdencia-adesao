@@ -71,7 +71,13 @@ class AdhesionPlansTable extends AppTable
      */
     private function contributionsReachTheirFloor(EntityInterface $plan): bool
     {
-        $parameters = TableRegistry::getTableLocator()->get('PlanParameters')->current();
+        $locator = TableRegistry::getTableLocator();
+        $benefitPlan = $locator->get('AdhesionInitialDatas')->find()
+            ->select(['benefit_plan'])
+            ->where(['id' => $plan->get('adhesion_initial_data_id')])
+            ->firstOrFail()
+            ->benefit_plan;
+        $parameters = $locator->get('PlanParameters')->forPlan($benefitPlan);
         $withinFloor = true;
 
         foreach (self::RISKS as $has => $risk) {

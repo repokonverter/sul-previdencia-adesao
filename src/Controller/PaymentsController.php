@@ -7,7 +7,6 @@ namespace App\Controller;
 use App\Controller\AppController;
 use App\Services\IntegrationLogger;
 use App\Services\PixPaymentService;
-use App\Services\SicoobService;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
 use Endroid\QrCode\Builder\Builder;
@@ -28,6 +27,11 @@ class PaymentsController extends AppController
         if (!$adhesion || !$adhesion->adhesion_payment_detail)
             throw new NotFoundException('Pagamento não encontrado.');
 
+        $redirect = $this->redirectToAdhesionHost($adhesion->benefitPlan());
+
+        if ($redirect !== null)
+            return $redirect;
+
         IntegrationLogger::logEvent([
             'adhesionId' => $adhesion->id,
             'operation' => 'payment_page.opened',
@@ -39,7 +43,7 @@ class PaymentsController extends AppController
         $amount = (float)$adhesion->adhesion_payment_detail->total_contribution;
 
         try {
-            $pixPaymentService = new PixPaymentService(SicoobService::fromConfigure(), $this->fetchTable('PixTransactions'));
+            $pixPaymentService = PixPaymentService::forPlan($adhesion->benefitPlan(), $this->fetchTable('PixTransactions'));
             $result = $pixPaymentService->resolve($adhesion->id, $cpf, $customerName, $amount);
         } catch (\Exception $e) {
             Log::error('Erro ao resolver cobrança Pix da adesão #' . $adhesion->id . ': ' . $e->getMessage());

@@ -8,6 +8,7 @@ use App\Controller\Admin\AppController;
 use App\Model\Table\BrokersTable;
 use App\Model\Table\PartnersTable;
 use App\Model\Table\PromotionalCodesTable;
+use App\Services\BenefitPlans;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
@@ -42,6 +43,7 @@ class PartnersController extends AppController
         ];
 
         $this->set('isAssociationScope', $this->isAssociationScope);
+        $this->set('benefitPlans', BenefitPlans::options());
         $this->set('entityLabelPlural', $this->isAssociationScope ? 'Vínculos associativos' : 'Parceiros');
         $this->set('entityLabelSingular', $this->isAssociationScope ? 'Vínculo associativo' : 'Parceiro');
     }
@@ -81,8 +83,10 @@ class PartnersController extends AppController
 
     public function index()
     {
+        $benefitPlan = $this->request->getQuery('benefitPlan');
         $query = $this->Partners->find('withAdhesionCounts')
-            ->find('byAssociationScope', isAssociation: $this->isAssociationScope);
+            ->find('byAssociationScope', isAssociation: $this->isAssociationScope)
+            ->find('byBenefitPlan', benefitPlan: BenefitPlans::exists($benefitPlan) ? $benefitPlan : null);
 
         $q = $this->request->getQuery('q');
 

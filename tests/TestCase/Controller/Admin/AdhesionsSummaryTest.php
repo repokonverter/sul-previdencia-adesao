@@ -46,9 +46,9 @@ class AdhesionsSummaryTest extends TestCase
         $this->createAdhesion('2026-11-15 12:00:00', ['broker_id' => 1], completed: true, payment: true);
         $paid = $this->createAdhesion('2026-11-30 23:59:00', ['broker_id' => 1], completed: true, payment: true);
         $this->insert('clicksign_data', $paid, ['envelope_id' => 'env-1', 'status' => 'signed']);
-        $this->insert('pix_transactions', $paid, ['txid' => 'tx-1', 'paid' => true]);
+        $this->insert('pix_transactions', $paid, ['txid' => 'tx-1', 'provider' => 'sicoob', 'paid' => true]);
         $unpaid = $this->createAdhesion('2026-12-01 00:00:00', ['broker_id' => 1], completed: true, payment: true);
-        $this->insert('pix_transactions', $unpaid, ['txid' => 'tx-2', 'paid' => false]);
+        $this->insert('pix_transactions', $unpaid, ['txid' => 'tx-2', 'provider' => 'sicoob', 'paid' => false]);
 
         $this->createAdhesion('2026-10-10 09:00:00', [], completed: true);
         for ($i = 0; $i < 8; $i++) {
@@ -61,6 +61,7 @@ class AdhesionsSummaryTest extends TestCase
         $adhesions = TableRegistry::getTableLocator()->get('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity($data + [
             'storage_uuid' => Text::uuid(),
+            'benefit_plan' => 'plenoprev',
             'name' => 'Fulano de Tal',
             'email' => 'fulano@exemplo.test',
             'phone' => '48999999999',

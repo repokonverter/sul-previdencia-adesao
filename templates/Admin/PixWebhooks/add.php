@@ -3,7 +3,8 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\PixWebhook $webhook
- * @var string|null $defaultChave
+ * @var array<string, string> $benefitPlans slug => nome
+ * @var array<string, string|null> $defaultKeys slug => chave Pix da conta do plano
  */
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -14,19 +15,32 @@
 
 <div class="card p-4 shadow-sm" style="max-width: 640px;">
     <p class="text-muted">
-        Registra no Sicoob a URL que receberá notificações de pagamento Pix para a chave
-        informada. Um token de segurança é gerado automaticamente e embutido na URL.
+        Registra no banco do plano a URL que receberá notificações de pagamento Pix para a
+        chave informada. Um token de segurança é gerado automaticamente e embutido na URL.
     </p>
 
     <?= $this->Form->create($webhook) ?>
+    <?= $this->Form->control('benefit_plan', [
+        'label' => 'Plano',
+        'type' => 'select',
+        'options' => $benefitPlans,
+        'empty' => count($benefitPlans) > 1 ? 'Selecione o plano' : false,
+        'class' => 'form-select mb-3',
+    ]) ?>
+    <?php
+    $keyHelp = [];
+    foreach ($benefitPlans as $slug => $planName) {
+        $keyHelp[] = $planName . ': ' . ($defaultKeys[$slug] ?? '(não configurada)');
+    }
+    ?>
     <?= $this->Form->control('chave', [
         'label' => 'Chave Pix',
         'class' => 'form-control',
-        'value' => $defaultChave,
-        'help' => 'Chave cadastrada no Sicoob para recebimento das cobranças.'
+        'required' => false,
+        'help' => h('Em branco, usa a chave configurada para o plano — ' . implode(' · ', $keyHelp) . '.'),
     ]) ?>
     <div class="mt-3">
-        <?= $this->Form->button('<i class="bi bi-cloud-check"></i> Cadastrar no Sicoob', [
+        <?= $this->Form->button('<i class="bi bi-cloud-check"></i> Cadastrar no banco', [
             'escapeTitle' => false,
             'class' => 'btn btn-primary'
         ]) ?>

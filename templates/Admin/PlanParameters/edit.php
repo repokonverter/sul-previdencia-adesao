@@ -2,14 +2,30 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\PlanParameter $planParameter
+ * @var \App\Services\BenefitPlan $plan
+ * @var array<string, string> $benefitPlans slug => nome
  */
-$this->assign('title', 'Parâmetros do Plano');
+$this->assign('title', 'Parâmetros do Plano ' . $plan->name);
 ?>
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">
         <i class="bi bi-sliders"></i> Parâmetros do Plano
     </h2>
 </div>
+
+<?php if (count($benefitPlans) > 1): ?>
+    <ul class="nav nav-tabs">
+        <?php foreach ($benefitPlans as $slug => $planName): ?>
+            <li class="nav-item">
+                <?= $this->Html->link(
+                    h($planName),
+                    ['action' => 'edit', $slug],
+                    ['class' => 'nav-link' . ($slug === $plan->slug ? ' active' : ''), 'escape' => false]
+                ) ?>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+<?php endif; ?>
 
 <div class="container mt-4">
     <?php if (!$isAdmin): ?>
@@ -18,7 +34,7 @@ $this->assign('title', 'Parâmetros do Plano');
         </div>
     <?php endif; ?>
 
-    <?= $this->Form->create($planParameter, ['class' => 'card p-4 shadow-sm']) ?>
+    <?= $this->Form->create($planParameter, ['class' => 'card p-4 shadow-sm', 'url' => ['action' => 'edit', $plan->slug]]) ?>
 
     <fieldset<?= $isAdmin ? '' : ' disabled' ?>>
     <div class="row">

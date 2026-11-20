@@ -47,7 +47,10 @@ class PromotionalCodesController extends AppController
             ]);
         }
 
-        $promotionalCode = $this->PromotionalCodes->findByCodeText($this->request->getQuery('code'));
+        $promotionalCode = $this->PromotionalCodes->findByCodeText(
+            $this->request->getQuery('code'),
+            $this->benefitPlan()->slug
+        );
 
         if ($promotionalCode === null) {
             return $this->respond([

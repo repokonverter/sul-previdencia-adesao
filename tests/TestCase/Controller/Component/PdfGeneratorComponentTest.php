@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Controller\Component;
 
 use App\Controller\Component\PdfGeneratorComponent;
+use App\Services\BenefitPlans;
+use App\Services\PlanProjection;
+use App\Services\PlanQuote;
+use App\Test\TestSuite\SecondBenefitPlanTrait;
 use Cake\Controller\Controller;
 use Cake\Controller\ComponentRegistry;
 use Cake\Http\ServerRequest;
@@ -21,6 +25,8 @@ use Cake\Utility\Text;
  */
 class PdfGeneratorComponentTest extends TestCase
 {
+    use SecondBenefitPlanTrait;
+
     /**
      * O questionário de saúde, isolado do resto do documento.
      *
@@ -56,11 +62,16 @@ class PdfGeneratorComponentTest extends TestCase
      * saúde é opcional de propósito: é justamente a ausência dela que este
      * arquivo cobre.
      */
-    private function createAdhesion(bool $withStatement, bool $hasRisks = true, ?array $association = null): int
-    {
+    private function createAdhesion(
+        bool $withStatement,
+        bool $hasRisks = true,
+        ?array $association = null,
+        string $benefitPlan = 'plenoprev',
+    ): int {
         $adhesions = $this->table('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
             'storage_uuid' => Text::uuid(),
+            'benefit_plan' => $benefitPlan,
             'name' => 'Fulano de Tal',
             'email' => 'fulano@exemplo.test',
             'phone' => '48999999999',
@@ -242,5 +253,67 @@ class PdfGeneratorComponentTest extends TestCase
 
         $this->assertStringContainsString('CEPREV', $header);
         $this->assertStringContainsString('48.307.525/0001-09', $header);
+    }
+
+    public function testThePlenoPrevProposalKeepsItsData(): void
+    {
+        $id = $this->createAdhesion(withStatement: true);
+        $html = $this->pdf->applicationFormHtml($id);
+
+        $this->assertStringContainsString('PLENOPREV', $html);
+        $this->assertStringContainsString('(CNPB) nº 2011/0017-65', $html);
+        $this->assertStringContainsString('Mongeral Aegon Seguros e Previdência', $html);
+        $this->assertStringContainsString('regulamento do plano PlenoPrev', $html);
+        $this->assertStringContainsString('BFX - Proposta PlenoPrev', $html);
+    }
+
+    /**
+     * Mesma proposta, outro plano: tudo que identifica o plano sai do
+     * config/plans.php dele, e nada do PlenoPrev sobra no documento.
+     */
+    public function testTheProposalCarriesItsOwnPlansData(): void
+    {
+        $this->configureSecondBenefitPlan();
+
+        $id = $this->createAdhesion(withStatement: true, benefitPlan: self::SECOND_PLAN);
+        $html = $this->pdf->applicationFormHtml($id);
+        $header = $this->instituteHeader($html);
+
+        $this->assertStringContainsString('99.888.777/0001-66', $header);
+        $this->assertStringContainsString('INSTITUIDOR MP', $header);
+        $this->assertStringContainsString('MAISPREMIUM', $html);
+        $this->assertStringContainsString('(CNPB) nº 2026/0042-11', $html);
+        $this->assertStringContainsString('regulamento do plano MaisPremium', $html);
+        $this->assertStringContainsString('1ª Via: Seguradora MP', $html);
+        $this->assertStringContainsString('MPX - Proposta MaisPremium', $html);
+
+        $this->assertStringNotContainsString('48.307.525/0001-09', $html);
+        $this->assertStringNotContainsString('2011/0017-65', $html);
+        $this->assertStringNotContainsString('PlenoPrev', $html);
+        $this->assertStringNotContainsString('CEPREV', $html);
+    }
+
+    public function testThePlanSimulationNamesItsPlan(): void
+    {
+        $this->configureSecondBenefitPlan();
+
+        $quote = new PlanQuote(
+            benefitPlan: BenefitPlans::get(self::SECOND_PLAN),
+            clientName: 'Ciclana',
+            birthDate: '1985-03-10',
+            benefitEntryAge: 65,
+            retirementContribution: 300.0,
+            hasSurvivorsPension: false,
+            survivorsPensionContribution: 0.0,
+            survivorsPensionInsuredCapital: 0.0,
+            hasDisabilityRetirement: false,
+            disabilityRetirementContribution: 0.0,
+            disabilityRetirementInsuredCapital: 0.0,
+        );
+
+        $html = $this->pdf->planSimulationHtml($quote, new PlanProjection([], 0, 300.0));
+
+        $this->assertStringContainsString('Plano MaisPremium', $html);
+        $this->assertStringNotContainsString('PlenoPrev', $html);
     }
 }

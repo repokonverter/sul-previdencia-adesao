@@ -48,6 +48,7 @@ class SimulatorControllerTest extends TestCase
         $adhesions = TableRegistry::getTableLocator()->get('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity([
             'storage_uuid' => Text::uuid(),
+            'benefit_plan' => 'plenoprev',
             'name' => 'Fulano de Tal',
             'phone' => '48999999999',
         ]);
@@ -76,7 +77,7 @@ class SimulatorControllerTest extends TestCase
 
         $simulator = new \App\Services\PlanSimulator(
             \Cake\Datasource\ConnectionManager::get('test'),
-            TableRegistry::getTableLocator()->get('PlanParameters')->current()
+            TableRegistry::getTableLocator()->get('PlanParameters')->forPlan('plenoprev')
         );
         $expected = $simulator->simulate('1995-07-24', 1000.0);
 
@@ -127,7 +128,7 @@ class SimulatorControllerTest extends TestCase
         $this->assertSame(
             (new PlanSimulator(
                 ConnectionManager::get('test'),
-                TableRegistry::getTableLocator()->get('PlanParameters')->current()
+                TableRegistry::getTableLocator()->get('PlanParameters')->forPlan('plenoprev')
             ))->monthsUntilRetirement('1990-03-15'),
             $this->viewVariable('monthsUntilRetirement')
         );

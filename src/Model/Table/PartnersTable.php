@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use App\Model\Entity\Partner;
+use App\Services\BenefitPlans;
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\Validation\Validator;
@@ -111,7 +113,30 @@ class PartnersTable extends AppTable
 
     public function buildRules(RulesChecker $rules): RulesChecker
     {
+        $rules->addCreate(
+            fn(EntityInterface $partner): bool => BenefitPlans::exists($partner->get('benefit_plan')),
+            'knownBenefitPlan',
+            ['errorField' => 'benefit_plan', 'message' => 'Selecione um plano válido.']
+        );
+
+        // Links de divulgação e adesões já atribuídas apontam para o plano;
+        // parceiro que atua nos dois é cadastrado duas vezes.
+        $rules->addUpdate(
+            fn(EntityInterface $partner): bool => !$partner->isDirty('benefit_plan'),
+            'benefitPlanUnchanged',
+            ['errorField' => 'benefit_plan', 'message' => 'O plano de um parceiro não muda depois de cadastrado.']
+        );
+
         return $rules;
+    }
+
+    /**
+     * Só os parceiros (e vínculos) de um plano de benefícios. Sem plano, não
+     * filtra: é o "Todos" das listagens do admin.
+     */
+    public function findByBenefitPlan(SelectQuery $query, ?string $benefitPlan): SelectQuery
+    {
+        return $benefitPlan === null ? $query : $query->where(['Partners.benefit_plan' => $benefitPlan]);
     }
 
     /**

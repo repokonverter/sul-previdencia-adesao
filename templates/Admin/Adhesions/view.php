@@ -77,6 +77,7 @@ $formatLogBody = function (?string $value): string
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-primary">
         <i class="bi bi-person-vcard"></i> Detalhes da Adesão
+        <span class="badge text-bg-light border fs-6 align-middle"><?= h($adhesion->benefitPlan()->name) ?></span>
     </h2>
 
     <div>

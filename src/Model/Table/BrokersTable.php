@@ -115,11 +115,12 @@ class BrokersTable extends AppTable
 
     /**
      * Os corretores que o formulário público oferece: ativos, de parceiro
-     * comum ativo, na ordem em que o select os mostra.
+     * comum ativo do plano de benefícios, na ordem em que o select os mostra.
+     * Sem plano, os de todos -- só o admin, que escolhe o plano na mesma tela.
      */
-    public function findSelectable(SelectQuery $query): SelectQuery
+    public function findSelectable(SelectQuery $query, ?string $benefitPlan = null): SelectQuery
     {
-        return $query
+        $query
             ->contain(['Partners'])
             ->where([
                 'Brokers.active' => true,
@@ -127,12 +128,18 @@ class BrokersTable extends AppTable
                 'Partners.is_association' => false,
             ])
             ->orderBy(['Partners.name' => 'ASC', 'Brokers.name' => 'ASC']);
+
+        if ($benefitPlan !== null) {
+            $query->where(['Partners.benefit_plan' => $benefitPlan]);
+        }
+
+        return $query;
     }
 
     /**
      * O corretor de um link de divulgação, se ainda puder ser escolhido.
      */
-    public function findSelectableByToken(?string $token): ?Broker
+    public function findSelectableByToken(?string $token, string $benefitPlan): ?Broker
     {
         $token = trim((string)$token);
 
@@ -141,7 +148,7 @@ class BrokersTable extends AppTable
         }
 
         /** @var \App\Model\Entity\Broker|null */
-        return $this->find('selectable')
+        return $this->find('selectable', benefitPlan: $benefitPlan)
             ->where(['Brokers.token' => $token])
             ->first();
     }

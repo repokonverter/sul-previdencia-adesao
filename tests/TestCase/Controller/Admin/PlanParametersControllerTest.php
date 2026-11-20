@@ -71,7 +71,7 @@ class PlanParametersControllerTest extends TestCase
             'disability_retirement_floor' => '18.00',
         ]);
 
-        $this->assertRedirect(['action' => 'edit']);
+        $this->assertRedirect(['action' => 'edit', 'plenoprev']);
 
         $parameters = $this->current();
 

@@ -7,13 +7,13 @@ use App\Controller\Admin\AppController;
 use App\Model\Entity\PasswordReset;
 use App\Model\Entity\User;
 use App\Model\Table\PasswordResetsTable;
+use App\Services\BenefitPlans;
 use App\Services\EmailTemplates;
 use App\Services\ResendService;
 use App\Utility\PasswordPolicy;
 use App\Utility\Throttle;
 use Authentication\PasswordHasher\DefaultPasswordHasher;
 use Cake\I18n\DateTime;
-use Cake\Routing\Router;
 
 /**
  * Users Controller
@@ -365,7 +365,9 @@ class UsersController extends AppController
     {
         $purpose = $user->hasDefinedPassword() ? PasswordReset::PURPOSE_RESET : PasswordReset::PURPOSE_INVITE;
         $token = $this->PasswordResets->issue($user, $purpose, $this->request->clientIp());
-        $url = Router::url(['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'resetPassword', $token], true);
+        // Host fixo, o do plano principal: o usuário do admin não é de plano
+        // nenhum, e o link não depende de em qual host o admin foi aberto.
+        $url = BenefitPlans::primary()->url(['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'resetPassword', $token]);
         $minutes = PasswordResetsTable::LIFETIMES[$purpose];
 
         [$subject, $html] = $purpose === PasswordReset::PURPOSE_INVITE

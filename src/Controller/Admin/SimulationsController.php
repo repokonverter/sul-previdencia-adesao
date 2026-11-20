@@ -6,6 +6,8 @@ namespace App\Controller\Admin;
 
 use App\Form\PlanSimulationForm;
 use App\Services\BenefitEntryAge;
+use App\Services\BenefitPlan;
+use App\Services\BenefitPlans;
 use App\Services\PlanSimulator;
 use App\Utility\Money;
 
@@ -35,6 +37,7 @@ class SimulationsController extends AppController
         // Para quem tem até 65 anos, benefitEntryAge() limitado ao teto do
         // admin dá sempre 65: é o padrão, antes mesmo da data de nascimento.
         $simulation->setData([
+            'benefit_plan' => $this->selectedPlan()->slug,
             'benefit_entry_age' => BenefitEntryAge::MAXIMUM,
             'has_survivors_pension' => true,
             'has_disability_retirement' => true,
@@ -63,7 +66,7 @@ class SimulationsController extends AppController
         }
 
         $quote = $simulation->quote();
-        $projection = $this->planSimulator()->projectQuote($quote);
+        $projection = $this->planSimulator($quote->benefitPlan)->projectQuote($quote);
 
         return $this->response
             ->withType('pdf')
@@ -85,7 +88,7 @@ class SimulationsController extends AppController
             return $this->json(['success' => false, 'message' => 'Data de nascimento é obrigatória.']);
         }
 
-        $projection = $this->planSimulator()->project(
+        $projection = $this->planSimulator($this->selectedPlan())->project(
             $date,
             $this->amountFromQuery('retirementContribution'),
             $this->amountFromQuery('survivorsPensionContribution'),
@@ -109,7 +112,7 @@ class SimulationsController extends AppController
             return $this->json(['success' => false, 'message' => 'Preencha a data de nascimento antes de recalcular.']);
         }
 
-        $simulator = $this->planSimulator();
+        $simulator = $this->planSimulator($this->selectedPlan());
         $total = $this->amountFromQuery('totalContribution');
         $minimumError = $simulator->parameters()->minimumContributionError($total);
 
@@ -152,14 +155,31 @@ class SimulationsController extends AppController
     private function setScreenParameters(): void
     {
         $this->set([
-            'minimumMonthlyContribution' => $this->planSimulator()->parameters()->minimumMonthlyContribution(),
+            'benefitPlans' => BenefitPlans::options(),
             'minimumRiskAge' => PlanSimulator::MINIMUM_RISK_AGE,
         ]);
     }
 
     private function simulationForm(): PlanSimulationForm
     {
-        return new PlanSimulationForm($this->planSimulator());
+        $plan = $this->selectedPlan();
+
+        return new PlanSimulationForm($plan, $this->planSimulator($plan));
+    }
+
+    /**
+     * O plano de benefícios da simulação: o do formulário no PDF, o da query
+     * nas chamadas da tela (plan-editor.js manda `benefitPlan`, que na aba
+     * Plano da adesão é o plano dela). Sem plano válido, o principal.
+     *
+     * Não usa o host: o admin responde nos dois, e o plano muda o PDF e os
+     * parâmetros do cálculo.
+     */
+    private function selectedPlan(): BenefitPlan
+    {
+        $slug = $this->request->getData('benefit_plan') ?? $this->request->getQuery('benefitPlan');
+
+        return BenefitPlans::exists($slug) ? BenefitPlans::get($slug) : BenefitPlans::primary();
     }
 
     private function birthDateFromQuery(): ?string

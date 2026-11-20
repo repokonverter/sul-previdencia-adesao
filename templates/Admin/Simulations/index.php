@@ -7,6 +7,7 @@
  * @var \App\View\AppView $this
  * @var \App\Form\PlanSimulationForm $simulation
  * @var int $minimumRiskAge
+ * @var array<string, string> $benefitPlans slug => nome
  */
 ?>
 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -24,14 +25,25 @@
 <div class="card p-4 shadow-sm mb-4">
     <h5 class="fw-bold mb-3 text-primary">Cliente</h5>
     <div class="row">
-        <div class="col-md-8 mb-3">
+        <div class="col-md-3 mb-3">
+            <?php // Muda o nome do plano no PDF e os parâmetros do cálculo (mínimo, percentuais de risco). ?>
+            <?= $this->Form->control('benefit_plan', [
+                'label' => 'Plano*',
+                'type' => 'select',
+                'options' => $benefitPlans,
+                'class' => 'form-select',
+                'required' => true,
+                'data-benefit-plan' => true,
+            ]) ?>
+        </div>
+        <div class="col-md-6 mb-3">
             <?= $this->Form->control('name', [
                 'label' => 'Nome*',
                 'class' => 'form-control',
                 'required' => true,
             ]) ?>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
             <?= $this->Form->control('birth_date', [
                 'label' => 'Data de nasc.*',
                 'class' => 'form-control',
@@ -68,6 +80,7 @@
         PlanEditor.init({
             root: form.querySelector('[data-plan-editor]'),
             birthDateInput: form.querySelector('input[name="birth_date"]'),
+            benefitPlan: () => form.querySelector('[data-benefit-plan]').value,
             urls: {
                 riskCapital: <?= json_encode($this->Url->build(['controller' => 'Simulator', 'action' => 'recalculateRiskCapital', 'prefix' => false])) ?>,
                 recalculate: <?= json_encode($this->Url->build(['action' => 'recalculate'])) ?>,

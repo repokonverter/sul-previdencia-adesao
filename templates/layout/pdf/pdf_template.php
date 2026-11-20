@@ -189,7 +189,7 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
 <body>
     <div>
         <div style="font-size: 8pt; text-align: right; margin-bottom: 5px;">
-            BFX - Proposta Plenoprev <?= date('M/Y') ?>
+            <?= h($fixedData['plan']->proposalPrefix) ?> - Proposta <?= h($fixedData['plan']->name) ?> <?= date('M/Y') ?>
         </div>
 
         <table class="header-table">
@@ -201,15 +201,15 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
                     </div>
                 </td>
                 <td style="width: 40%;">
-                    <div class="logo-text">PLENOPREV</div>
-                    <div class="slogan">A realização do seu futuro</div>
+                    <div class="logo-text"><?= h(mb_strtoupper($fixedData['plan']->name)) ?></div>
+                    <div class="slogan"><?= h($fixedData['plan']->slogan) ?></div>
                 </td>
             </tr>
         </table>
 
         <div style="border-bottom: 2px solid #000; margin-bottom: 5px;"></div>
         <div style="font-size: 7pt; text-align: right; margin-bottom: 5px;">
-            1ª Via: MAG Seguros - 2ª Via: Sul Previdência - 3ª Via: Participante
+            1ª Via: <?= h($fixedData['useInsuranceCompany']['shortName']) ?> - 2ª Via: Sul Previdência - 3ª Via: Participante
         </div>
 
         <table>
@@ -335,10 +335,10 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
                 <td>Valor da Contribuição (1)<br>R$ <?= number_format($adhesion->adhesion_plan->monthly_retirement_contribution ?? 0, 2, ',', '.') ?></td>
             </tr>
             <tr>
-                <td colspan="3">Taxa de Carregamento do plano: 0%. O valor de contribuição será atualizado, anualmente, no mês de junho, conforme o regulamento do plano.</td>
+                <td colspan="3">Taxa de Carregamento do plano: <?= h($fixedData['plan']->loading) ?>. O valor de contribuição será atualizado, anualmente, no mês de junho, conforme o regulamento do plano.</td>
             </tr>
         </table>
-        <div class="small-note">Inscrição do plano no Cadastro Nacional de Planos de Benefícios (CNPB) nº 2011/0017-65.</div>
+        <div class="small-note">Inscrição do plano no Cadastro Nacional de Planos de Benefícios (CNPB) nº <?= h($fixedData['plan']->cnpb) ?>.</div>
 
         <div class="section-title">BENEFICIÁRIOS DO PLANO</div>
         <table>
@@ -402,8 +402,8 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
             </tr>
             <tr>
                 <td colspan="2">
-                    Pecúlios garantidos pela Mongeral Aegon Seguros e Previdência<br>
-                    CNPJ: 33.608.308/0001-73 Carregamento: 30%
+                    Pecúlios garantidos pela <?= h($fixedData['useInsuranceCompany']['name']) ?><br>
+                    CNPJ: <?= h($fixedData['useInsuranceCompany']['cnpj']) ?> Carregamento: <?= h($fixedData['useInsuranceCompany']['loading']) ?>
                 </td>
                 <td class="text-right bold">
                     Total da Parcela Adicional de Risco (2):
@@ -448,7 +448,7 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
     <div>
         <div class="small-note">
             Espaço para relógio protocolo<br>
-            A aceitação estará sujeita à análise do risco e a MAG Seguros tem o prazo de até 15 dias, contados da data que vier a ser registrada pelo relógio protocolo, para manifestar-se em relação à aceitação ou recusa desta proposta. Este prazo será suspenso quando necessária a requisição de outros documentos ou dados para análise do risco. Essa eventual suspensão terminará quando forem protocolados os documentos ou dados para análise do risco. Caso não haja manifestação de recusa desta proposta pela MAG Seguros no prazo antes referido, a aceitação da proposta se dará automaticamente. No caso de não aceitação da proposta, o valor aportado será devolvido, atualizado até a data da efetiva restituição, de acordo com a regulamentação em vigor.
+            A aceitação estará sujeita à análise do risco e a <?= h($fixedData['useInsuranceCompany']['shortName']) ?> tem o prazo de até 15 dias, contados da data que vier a ser registrada pelo relógio protocolo, para manifestar-se em relação à aceitação ou recusa desta proposta. Este prazo será suspenso quando necessária a requisição de outros documentos ou dados para análise do risco. Essa eventual suspensão terminará quando forem protocolados os documentos ou dados para análise do risco. Caso não haja manifestação de recusa desta proposta pela <?= h($fixedData['useInsuranceCompany']['shortName']) ?> no prazo antes referido, a aceitação da proposta se dará automaticamente. No caso de não aceitação da proposta, o valor aportado será devolvido, atualizado até a data da efetiva restituição, de acordo com a regulamentação em vigor.
         </div>
 
         <div class="section-title">PARA USO DA SEGURADORA</div>
@@ -615,7 +615,7 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
         </table>
 
         <div style="border-top: 1px solid #000; border-bottom: 1px solid #000; text-align: center;">
-            Gestor do plano: Sociedade de Previdência Complementar Sul Previdência - CNPJ: 12.148.125/0001-42
+            Gestor do plano: <?= $fixedData['footer']['planManager'] ?> - CNPJ: <?= $fixedData['footer']['cnpjPlanManager'] ?>
         </div>
     </div>
 
@@ -657,9 +657,9 @@ $hasDisabilityRetirement = $adhesion->adhesion_plan->has_disability_retirement ?
 
         <div class="section-title">DECLARAÇÕES DO PROPONENTE</div>
         <div class="small-note">
-            Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano PlenoPrev, bem como material explicativo sobre o referido plano. Declaro também que tive prévio e expresso conhecimento e estou de acordo com os termos dos regulamentos dos planos de Pecúlio, contratados pela Sul Previdência junto à MAG Seguros, e por mim custeados, que determinam como único beneficiário a Sul Previdência, o que não poderá ser alterado. Entendo que a responsabilidade pelo pagamento das rendas mensais de aposentadoria programada, aposentadoria por invalidez e pensão será da Sul Previdência. Desta maneira, reconheço que a minha assinatura na presente proposta implica na minha automática adesão aos referidos regulamentos, sabendo, desde já, que a aceitação dos planos de risco está sujeita à análise do risco.
+            Declaro ter recebido o exemplar do estatuto da Sul Previdência e do regulamento do plano <?= h($fixedData['plan']->name) ?>, bem como material explicativo sobre o referido plano. Declaro também que tive prévio e expresso conhecimento e estou de acordo com os termos dos regulamentos dos planos de Pecúlio, contratados pela Sul Previdência junto à <?= h($fixedData['useInsuranceCompany']['shortName']) ?>, e por mim custeados, que determinam como único beneficiário a Sul Previdência, o que não poderá ser alterado. Entendo que a responsabilidade pelo pagamento das rendas mensais de aposentadoria programada, aposentadoria por invalidez e pensão será da Sul Previdência. Desta maneira, reconheço que a minha assinatura na presente proposta implica na minha automática adesão aos referidos regulamentos, sabendo, desde já, que a aceitação dos planos de risco está sujeita à análise do risco.
             <br>
-            Declaro, ainda, que as informações por mim fornecidas são verdadeiras e ciente estou de que quaisquer omissões ou falsidades tornarão nula esta proposta, nos termos do Artigo 766 do Código Civil, podendo vir a responder civil e criminalmente pelas inveracidades eventualmente verificadas. Autorizo, desde já, médicos, hospitais, clínicas ou quaisquer entidades públicas ou privadas a prestar à MAG Seguros informações relacionadas ao meu estado de saúde ou moléstias que eu possa sofrer ou ter sofrido, bem como resultados de exames e tratamentos instituídos, isentando-os, desde já, de qualquer responsabilidade que implique em ofensa ou sigilo profissional.
+            Declaro, ainda, que as informações por mim fornecidas são verdadeiras e ciente estou de que quaisquer omissões ou falsidades tornarão nula esta proposta, nos termos do Artigo 766 do Código Civil, podendo vir a responder civil e criminalmente pelas inveracidades eventualmente verificadas. Autorizo, desde já, médicos, hospitais, clínicas ou quaisquer entidades públicas ou privadas a prestar à <?= h($fixedData['useInsuranceCompany']['shortName']) ?> informações relacionadas ao meu estado de saúde ou moléstias que eu possa sofrer ou ter sofrido, bem como resultados de exames e tratamentos instituídos, isentando-os, desde já, de qualquer responsabilidade que implique em ofensa ou sigilo profissional.
             <br>
             Comprometo-me a informar à Sul Previdência a minha condição de pessoa politicamente exposta, mesmo que ocorrida após a assinatura da proposta, durante a vigência do plano, conforme os termos definidos na IN MPS nº 34/2020 e na Circular SUSEP nº 612/2020.
             <br>

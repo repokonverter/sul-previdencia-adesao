@@ -28,5 +28,6 @@ class PixTransaction extends Entity
         'amount' => true,
         'attempt' => true,
         'brcode' => true,
+        'provider' => true,
     ];
 }

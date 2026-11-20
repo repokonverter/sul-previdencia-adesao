@@ -27,7 +27,7 @@ class PlanParametersTableTest extends TestCase
 
     private function save(array $changes): \App\Model\Entity\PlanParameter
     {
-        $parameters = $this->PlanParameters->patchEntity($this->PlanParameters->current(), $changes + [
+        $parameters = $this->PlanParameters->patchEntity($this->PlanParameters->forPlan('plenoprev'), $changes + [
             'minimum_monthly_contribution' => '100.00',
             'survivors_pension_percent' => '16.00',
             'disability_retirement_percent' => '10.00',
@@ -42,7 +42,7 @@ class PlanParametersTableTest extends TestCase
 
     public function testCurrentReturnsTheSeededRow(): void
     {
-        $parameters = $this->PlanParameters->current();
+        $parameters = $this->PlanParameters->forPlan('plenoprev');
 
         $this->assertSame(100.0, $parameters->minimumMonthlyContribution());
         $this->assertSame(0.16, $parameters->survivorsPensionRate());
@@ -58,7 +58,7 @@ class PlanParametersTableTest extends TestCase
         ]);
 
         $this->assertEmpty($parameters->getErrors());
-        $this->assertSame(0.20, $this->PlanParameters->current()->survivorsPensionRate());
+        $this->assertSame(0.20, $this->PlanParameters->forPlan('plenoprev')->survivorsPensionRate());
     }
 
     /**

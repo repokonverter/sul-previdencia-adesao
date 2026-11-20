@@ -7,7 +7,7 @@ namespace App\Test\Fixture;
 use Cake\TestSuite\Fixture\TestFixture;
 
 /**
- * A linha única de plan_parameters.
+ * A linha de plan_parameters do PlenoPrev.
  *
  * Existe porque Migrator::run() trunca as tabelas depois de migrar: a linha
  * que CreatePlanParameters insere não sobrevive à preparação do banco de
@@ -21,6 +21,7 @@ class PlanParametersFixture extends TestFixture
         $this->records = [
             [
                 'id' => 1,
+                'benefit_plan' => 'plenoprev',
                 'minimum_monthly_contribution' => '100.00',
                 'survivors_pension_percent' => '16.00',
                 'disability_retirement_percent' => '10.00',

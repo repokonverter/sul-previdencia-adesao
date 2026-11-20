@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace App\Model\Entity;
 
+use App\Services\BenefitPlan;
+use App\Services\BenefitPlans;
 use Cake\ORM\Entity;
 
+/**
+ * @property string $benefit_plan Slug de config/plans.php. Nasce com a adesão
+ *   (pelo host, ou escolhido no cadastro do admin) e não muda depois --
+ *   cobrança Pix, envelope e parceiro já ficam ligados a ele. Quem impede a
+ *   troca é a regra benefitPlanUnchanged, e não $_accessible.
+ */
 class AdhesionInitialData extends Entity
 {
     protected array $_accessible = [
         'id' => true,
         'storage_uuid' => true,
+        'benefit_plan' => true,
         'name' => true,
         'email' => true,
         'phone' => true,
@@ -41,6 +50,11 @@ class AdhesionInitialData extends Entity
         'association_partner' => true,
         'broker' => true,
     ];
+
+    public function benefitPlan(): BenefitPlan
+    {
+        return BenefitPlans::get($this->benefit_plan);
+    }
 
     /**
      * association_snapshot é gravado como JSON (companyName, companyCnpj,

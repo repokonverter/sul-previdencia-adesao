@@ -109,8 +109,12 @@ class PromotionalCodesTable extends AppTable
     /**
      * Busca um código pelo texto digitado, normalizando antes de comparar e
      * já trazendo o parceiro (necessário para isUsable/unusableReason).
+     *
+     * O código é único no sistema inteiro, mas só vale no plano de
+     * benefícios do seu parceiro: digitado no outro plano, é como se não
+     * existisse.
      */
-    public function findByCodeText(?string $code): ?PromotionalCode
+    public function findByCodeText(?string $code, string $benefitPlan): ?PromotionalCode
     {
         $normalized = PromotionalCode::normalizeCode($code);
 
@@ -121,7 +125,10 @@ class PromotionalCodesTable extends AppTable
         /** @var \App\Model\Entity\PromotionalCode|null */
         return $this->find()
             ->contain(['Partners'])
-            ->where(['PromotionalCodes.code' => $normalized])
+            ->where([
+                'PromotionalCodes.code' => $normalized,
+                'Partners.benefit_plan' => $benefitPlan,
+            ])
             ->first();
     }
 

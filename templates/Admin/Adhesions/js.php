@@ -180,6 +180,7 @@
         PlanEditor.init({
             root: form.querySelector('[data-plan-editor]'),
             birthDateInput: form.querySelector('input[name="adhesion_personal_data[birth_date]"]'),
+            benefitPlan: () => form.querySelector('[data-benefit-plan]').value,
             urls: {
                 riskCapital: <?= json_encode($this->Url->build(['controller' => 'Simulator', 'action' => 'recalculateRiskCapital', 'prefix' => false])) ?>,
                 recalculate: <?= json_encode($this->Url->build(['controller' => 'Simulations', 'action' => 'recalculate'])) ?>,

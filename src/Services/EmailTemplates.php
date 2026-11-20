@@ -116,14 +116,14 @@ class EmailTemplates
         ');
     }
 
-    public static function paymentLink(string $customerName, string $paymentUrl): string
+    public static function paymentLink(string $customerName, string $paymentUrl, string $planName): string
     {
         $logoUrl = Router::url('/img/logo_sul_recortada.png', true);
 
         return self::wrap($logoUrl, '
             <h1 style="margin:0 0 16px;font-size:22px;color:#333333;">Falta pouco, ' . h($customerName) . '!</h1>
             <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#555555;">
-                Recebemos sua adesão ao plano de previdência Sul Previdência. Para concluir,
+                Recebemos sua adesão ao plano ' . h($planName) . ' da Sul Previdência. Para concluir,
                 falta apenas o pagamento via Pix. Clique no botão abaixo para ver o QR Code
                 e o código copia e cola.
             </p>

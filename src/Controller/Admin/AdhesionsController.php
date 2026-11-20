@@ -8,15 +8,14 @@ use App\Controller\Admin\AppController;
 use App\Model\Table\AdhesionInitialDatasTable;
 use App\Model\Table\AdhesionPensionSchemesTable;
 use App\Model\Entity\AdhesionAudit;
-use Cake\Routing\Router;
 use App\Model\Table\PartnersTable;
 use App\Services\AdhesionAuditor;
 use App\Services\AdhesionSteps;
+use App\Services\BenefitPlans;
 use App\Services\ClicksignService;
 use App\Services\PixPaymentService;
 use App\Services\PlanProjection;
 use App\Services\PlanQuote;
-use App\Services\SicoobService;
 use App\Utility\Money;
 
 class AdhesionsController extends AppController
@@ -99,10 +98,11 @@ class AdhesionsController extends AppController
             $resumeInfo[$adhesion->id] = $this->resumeLinkInfo($adhesion);
         }
 
-        $summary = $this->indexSummary($this->applyIndexFilters($this->AdhesionInitialDatas->find()));
+        $summary = $this->AdhesionInitialDatas->summarize($this->applyIndexFilters($this->AdhesionInitialDatas->find()));
         $summaryTitle = $this->indexSummaryTitle($partners, $brokerOptions);
+        $benefitPlans = BenefitPlans::options();
 
-        $this->set(compact('adhesions', 'partners', 'brokerOptions', 'resumeInfo', 'summary', 'summaryTitle'));
+        $this->set(compact('adhesions', 'partners', 'brokerOptions', 'resumeInfo', 'summary', 'summaryTitle', 'benefitPlans'));
     }
 
     /**
@@ -118,6 +118,7 @@ class AdhesionsController extends AppController
         $searchPromotionalCode = $this->request->getQuery('promotionalCode');
         $searchPartnerId = $this->request->getQuery('partnerId');
         $searchBrokerId = $this->request->getQuery('brokerId');
+        $searchBenefitPlan = $this->request->getQuery('benefitPlan');
         $dateFrom = $this->indexDateFilter('dateFrom');
         $dateUntil = $this->indexDateFilter('dateUntil');
 
@@ -162,6 +163,10 @@ class AdhesionsController extends AppController
             $query->where(['AdhesionInitialDatas.broker_id' => (int)$searchBrokerId]);
         }
 
+        if (BenefitPlans::exists($searchBenefitPlan)) {
+            $query->where(['AdhesionInitialDatas.benefit_plan' => $searchBenefitPlan]);
+        }
+
         if ($dateFrom !== null) {
             $query->where(['AdhesionInitialDatas.created >=' => $dateFrom->format('Y-m-d 00:00:00')]);
         }
@@ -192,48 +197,6 @@ class AdhesionsController extends AppController
     }
 
     /**
-     * As contagens do card de resumo, sobre todas as adesões filtradas (não
-     * só a página atual). As regras são as mesmas das colunas da listagem e
-     * dos cards de parceiro: concluída tem "Outras informações"; assinada e
-     * paga olham qualquer tentativa, porque as duas coisas são definitivas;
-     * aguardando pagamento chegou à etapa de pagamento e não tem Pix pago.
-     *
-     * @return array{total: int, completed: int, signed: int, paid: int, awaitingPayment: int}
-     */
-    private function indexSummary(\Cake\ORM\Query\SelectQuery $query): array
-    {
-        $table = $this->AdhesionInitialDatas;
-        $exists = fn (\Cake\ORM\Association $related, array $conditions = []) => $query->newExpr()->exists(
-            $related->find()
-                ->select(['id'])
-                ->where([$related->aliasField('adhesion_initial_data_id') => $query->identifier('AdhesionInitialDatas.id')] + $conditions)
-        );
-        // COUNT(CASE WHEN ... THEN 1 END): o 1 vai literal, não como
-        // parâmetro, senão o Postgres o recebe como texto.
-        $countWhen = fn ($condition) => $query->func()->count(
-            $query->newExpr()->case()->when($condition)->then($query->newExpr('1'))
-        );
-
-        $paid = $exists($table->PixTransactions, ['PixTransactions.paid' => true]);
-
-        $row = $query
-            ->select([
-                'total' => $query->func()->count('*'),
-                'completed' => $countWhen($exists($table->AdhesionOtherInformations)),
-                'signed' => $countWhen($exists($table->ClicksignDatas, ['ClicksignDatas.status' => 'signed'])),
-                'paid' => $countWhen($paid),
-                'awaitingPayment' => $countWhen($query->newExpr()->and([
-                    $exists($table->AdhesionPaymentDetails),
-                    $query->newExpr()->not($paid),
-                ])),
-            ])
-            ->disableHydration()
-            ->first();
-
-        return array_map('intval', $row);
-    }
-
-    /**
      * O que o resumo está contando, quando o filtro é por corretor, parceiro
      * ou período -- os filtros que respondem "quantas adesões de quem e
      * quando"; nome, CPF e código ficam visíveis no próprio formulário.
@@ -241,6 +204,12 @@ class AdhesionsController extends AppController
     private function indexSummaryTitle(iterable $partners, array $brokerOptions): ?string
     {
         $parts = [];
+        $benefitPlan = $this->request->getQuery('benefitPlan');
+
+        if (BenefitPlans::exists($benefitPlan)) {
+            $parts[] = BenefitPlans::get($benefitPlan)->name;
+        }
+
         $brokerId = (int)$this->request->getQuery('brokerId');
         $partnerId = (int)$this->request->getQuery('partnerId');
 
@@ -276,9 +245,8 @@ class AdhesionsController extends AppController
         return [
             'steps' => AdhesionSteps::forPicker($adhesion),
             'suggestedStep' => AdhesionSteps::firstIncomplete($adhesion),
-            'url' => $adhesion->resume_token === null ? null : Router::url(
-                ['controller' => 'Simulator', 'action' => 'resume', $adhesion->resume_token, 'prefix' => false],
-                true
+            'url' => $adhesion->resume_token === null ? null : $adhesion->benefitPlan()->url(
+                ['controller' => 'Simulator', 'action' => 'resume', $adhesion->resume_token, 'prefix' => false]
             ),
         ];
     }
@@ -345,12 +313,12 @@ class AdhesionsController extends AppController
      *
      * @return array<int, string>
      */
-    private function brokerOptions(?int $current = null, bool $includeInactive = false): array
+    private function brokerOptions(?int $current = null, bool $includeInactive = false, ?string $benefitPlan = null): array
     {
         $brokers = $this->fetchTable('Brokers');
         $query = $includeInactive
             ? $brokers->find()->contain(['Partners'])->orderBy(['Partners.name' => 'ASC', 'Brokers.name' => 'ASC'])
-            : $brokers->find('selectable');
+            : $brokers->find('selectable', benefitPlan: $benefitPlan);
 
         $options = [];
 
@@ -388,17 +356,18 @@ class AdhesionsController extends AppController
         }
 
         try {
-            $pixPaymentService = new PixPaymentService(SicoobService::fromConfigure(), $pixTransactions);
+            $adhesion = $this->AdhesionInitialDatas->get($id);
+            $pixPaymentService = PixPaymentService::forPlan($adhesion->benefitPlan(), $pixTransactions);
             $result = $pixPaymentService->confirmIfPaid($latest->txid);
 
             if (!$result['found'])
-                $this->Flash->error('Cobrança não encontrada no Sicoob.');
+                $this->Flash->error('Cobrança não encontrada no banco.');
             elseif ($result['paid'])
-                $this->Flash->success('Pagamento confirmado no Sicoob.');
+                $this->Flash->success('Pagamento confirmado no banco.');
             else
-                $this->Flash->info('Ainda não há confirmação de pagamento no Sicoob (status: ' . ($result['status'] ?? 'desconhecido') . ').');
+                $this->Flash->info('Ainda não há confirmação de pagamento no banco (status: ' . ($result['status'] ?? 'desconhecido') . ').');
         } catch (\Exception $e) {
-            $this->Flash->error('Falha ao consultar o Sicoob: ' . $e->getMessage());
+            $this->Flash->error('Falha ao consultar o banco: ' . $e->getMessage());
         }
 
         return $this->redirect(['action' => 'view', $id, '?' => array_filter(['tab' => $tab])]);
@@ -641,9 +610,12 @@ class AdhesionsController extends AppController
 
         $economicallyLocked = false;
         $lockReason = ['paid' => false, 'signed' => false];
+        // De todos os planos: o plano é escolhido na mesma tela, e a regra
+        // attributionMatchesBenefitPlan recusa corretor de outro.
         $brokerOptions = $this->brokerOptions();
+        $benefitPlans = BenefitPlans::options();
 
-        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'brokerOptions'));
+        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'brokerOptions', 'benefitPlans'));
     }
 
     private function savePensionSchemes($adhesionInitialDataId, array $data): void
@@ -722,12 +694,15 @@ class AdhesionsController extends AppController
 
         // O "Recalcular" da aba Plano recusa um total abaixo do mínimo do
         // plano, o mesmo piso que o simulador público aplica.
-        $minimumMonthlyContribution = $this->fetchTable('PlanParameters')->current()->minimumMonthlyContribution();
+        $minimumMonthlyContribution = $this->fetchTable('PlanParameters')
+            ->forPlan($adhesion->benefit_plan)
+            ->minimumMonthlyContribution();
 
         $planProjection = $this->planProjectionFor($adhesion);
-        $brokerOptions = $this->brokerOptions($adhesion->getOriginal('broker_id'));
+        $brokerOptions = $this->brokerOptions($adhesion->getOriginal('broker_id'), benefitPlan: $adhesion->benefit_plan);
+        $benefitPlans = BenefitPlans::options();
 
-        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'minimumMonthlyContribution', 'planProjection', 'brokerOptions'));
+        $this->set(compact('adhesion', 'economicallyLocked', 'lockReason', 'minimumMonthlyContribution', 'planProjection', 'brokerOptions', 'benefitPlans'));
     }
 
     /**
@@ -738,7 +713,7 @@ class AdhesionsController extends AppController
     {
         $quote = PlanQuote::fromAdhesion($adhesion);
 
-        return $quote === null ? null : $this->planSimulator()->projectQuote($quote);
+        return $quote === null ? null : $this->planSimulator($quote->benefitPlan)->projectQuote($quote);
     }
 
     /**
@@ -977,7 +952,7 @@ class AdhesionsController extends AppController
             return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
         }
 
-        $days = $this->fetchTable('PlanParameters')->current()->resumeLinkDays();
+        $days = $this->fetchTable('PlanParameters')->forPlan($adhesion->benefit_plan)->resumeLinkDays();
         $this->AdhesionInitialDatas->issueResumeToken($adhesion, $days, $step);
 
         $this->auditor->record((int)$id, $this->currentUser(), AdhesionAudit::ACTION_UPDATED, [
@@ -1014,9 +989,8 @@ class AdhesionsController extends AppController
             return $this->redirect(['action' => 'view', $id, '?' => ['openResumeModal' => 1]]);
         }
 
-        $url = Router::url(
-            ['controller' => 'Simulator', 'action' => 'resume', $adhesion->resume_token, 'prefix' => false],
-            true
+        $url = $adhesion->benefitPlan()->url(
+            ['controller' => 'Simulator', 'action' => 'resume', $adhesion->resume_token, 'prefix' => false]
         );
 
         try {
@@ -1027,7 +1001,7 @@ class AdhesionsController extends AppController
                     $adhesion->adhesion_personal_data->name ?? $adhesion->name ?? 'Olá',
                     $url,
                     AdhesionSteps::ORDER[$adhesion->resume_step] ?? 'a primeira etapa',
-                    $this->fetchTable('PlanParameters')->current()->resumeLinkDays()
+                    $this->fetchTable('PlanParameters')->forPlan($adhesion->benefit_plan)->resumeLinkDays()
                 )
             );
 
@@ -1165,6 +1139,6 @@ class AdhesionsController extends AppController
         return $this->response
             ->withType('pdf')
             ->withDownload($this->PdfGenerator->planSimulationFileName($quote))
-            ->withStringBody($this->PdfGenerator->planSimulationPdf($quote, $this->planSimulator()->projectQuote($quote)));
+            ->withStringBody($this->PdfGenerator->planSimulationPdf($quote, $this->planSimulator($quote->benefitPlan)->projectQuote($quote)));
     }
 }

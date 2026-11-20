@@ -19,19 +19,21 @@ class PlanParametersTable extends AppTable
     }
 
     /**
-     * A linha única de parâmetros. A migration que cria a tabela já insere a
-     * linha, e não existe tela de criar nem de excluir — se ela sumiu, algo
-     * mexeu no banco à mão, e falhar alto é melhor do que simular valores
-     * padrão e gravar adesões com números que ninguém configurou.
+     * A linha de parâmetros de um plano de benefícios. A migration que cria a
+     * tabela semeia a do PlenoPrev, e um plano novo ganha a sua por migration
+     * também; não existe tela de criar nem de excluir -- se ela falta, o
+     * plano foi configurado pela metade, e falhar alto é melhor do que
+     * simular valores padrão e gravar adesões com números que ninguém
+     * configurou.
      */
-    public function current(): PlanParameter
+    public function forPlan(string $benefitPlan): PlanParameter
     {
         /** @var \App\Model\Entity\PlanParameter|null $parameters */
-        $parameters = $this->find()->orderBy(['PlanParameters.id' => 'ASC'])->first();
+        $parameters = $this->find()->where(['PlanParameters.benefit_plan' => $benefitPlan])->first();
 
         if ($parameters === null) {
             throw new RuntimeException(
-                'Nenhuma linha em plan_parameters. Rode as migrations: a linha é criada por CreatePlanParameters.'
+                "Nenhuma linha em plan_parameters para o plano \"$benefitPlan\". Cada plano de config/plans.php precisa da sua."
             );
         }
 

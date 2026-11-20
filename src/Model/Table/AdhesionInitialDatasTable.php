@@ -7,9 +7,12 @@ namespace App\Model\Table;
 use App\Model\Entity\AdhesionInitialData;
 use App\Services\AdhesionAuditor;
 use App\Services\BenefitEntryAge;
+use App\Services\BenefitPlans;
 use Cake\Chronos\ChronosDate;
 use Cake\Datasource\EntityInterface;
 use Cake\I18n\DateTime;
+use Cake\ORM\Association;
+use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\Validation\Validator;
 use DateTimeInterface;
@@ -115,6 +118,25 @@ class AdhesionInitialDatasTable extends AppTable
     {
         $rules->add($rules->existsIn('broker_id', 'Brokers', 'Selecione um corretor válido.'));
 
+        $rules->addCreate(
+            fn(EntityInterface $adhesion): bool => BenefitPlans::exists($adhesion->get('benefit_plan')),
+            'knownBenefitPlan',
+            ['errorField' => 'benefit_plan', 'message' => 'Selecione um plano válido.']
+        );
+
+        // Pix, envelope e parceiro já ficam ligados ao plano; adesão no plano
+        // errado se exclui e refaz.
+        $rules->addUpdate(
+            fn(EntityInterface $adhesion): bool => !$adhesion->isDirty('benefit_plan'),
+            'benefitPlanUnchanged',
+            ['errorField' => 'benefit_plan', 'message' => 'O plano de uma adesão não muda depois de criada.']
+        );
+
+        $rules->add(
+            fn(EntityInterface $adhesion): bool => $this->attributionMatchesBenefitPlan($adhesion),
+            'attributionMatchesBenefitPlan'
+        );
+
         // Regra na raiz, e não no AdhesionPlansTable: o piso depende da data
         // de nascimento, que mora em outra tabela.
         $rules->add(
@@ -124,6 +146,49 @@ class AdhesionInitialDatasTable extends AppTable
         );
 
         return $rules;
+    }
+
+    /**
+     * Código promocional, corretor e vínculo associativo pertencem a um
+     * parceiro, e o parceiro a um plano de benefícios: atribuir a uma adesão
+     * de outro plano mandaria o link e a proposta de um para o outro. O
+     * formulário público já só oferece os do plano; a regra cobre o admin e
+     * o POST forjado.
+     */
+    private function attributionMatchesBenefitPlan(EntityInterface $adhesion): bool
+    {
+        $partnerPlans = [
+            'promotional_code_id' => [$this->PromotionalCodes, 'Partners', 'O código promocional é de um parceiro de outro plano.'],
+            'broker_id' => [$this->Brokers, 'Partners', 'O corretor é de um parceiro de outro plano.'],
+            'association_partner_id' => [$this->AssociationPartners, null, 'O vínculo associativo é de outro plano.'],
+        ];
+        $matches = true;
+
+        foreach ($partnerPlans as $field => [$association, $partners, $message]) {
+            $id = $adhesion->get($field);
+
+            if ($id === null || !$adhesion->isDirty($field)) {
+                continue;
+            }
+
+            $planField = ($partners ?? $association->getAlias()) . '.benefit_plan';
+            $query = $association->find()
+                ->select(['benefit_plan' => $planField])
+                ->where([$association->aliasField('id') => $id]);
+
+            if ($partners !== null) {
+                $query->innerJoinWith($partners);
+            }
+
+            $row = $query->disableHydration()->first();
+
+            if ($row !== null && $row['benefit_plan'] !== $adhesion->get('benefit_plan')) {
+                $adhesion->setError($field, ['benefitPlan' => $message]);
+                $matches = false;
+            }
+        }
+
+        return $matches;
     }
 
     /**
@@ -152,6 +217,47 @@ class AdhesionInitialDatasTable extends AppTable
         $plan->setError('benefit_entry_age', ['withinRange' => $error]);
 
         return false;
+    }
+
+    /**
+     * As contagens do card de resumo da listagem de adesões e do dashboard,
+     * sobre todas as adesões da consulta (não só a página atual). As regras
+     * são as mesmas das colunas da listagem e dos cards de parceiro: concluída tem "Outras informações"; assinada e
+     * paga olham qualquer tentativa, porque as duas coisas são definitivas;
+     * aguardando pagamento chegou à etapa de pagamento e não tem Pix pago.
+     *
+     * @return array{total: int, completed: int, signed: int, paid: int, awaitingPayment: int}
+     */
+    public function summarize(SelectQuery $query): array
+    {
+        $exists = fn (Association $related, array $conditions = []) => $query->newExpr()->exists(
+            $related->find()
+                ->select(['id'])
+                ->where([$related->aliasField('adhesion_initial_data_id') => $query->identifier('AdhesionInitialDatas.id')] + $conditions)
+        );
+        // COUNT(CASE WHEN ... THEN 1 END): o 1 vai literal, não como
+        // parâmetro, senão o Postgres o recebe como texto.
+        $countWhen = fn ($condition) => $query->func()->count(
+            $query->newExpr()->case()->when($condition)->then($query->newExpr('1'))
+        );
+
+        $paid = $exists($this->PixTransactions, ['PixTransactions.paid' => true]);
+
+        $row = $query
+            ->select([
+                'total' => $query->func()->count('*'),
+                'completed' => $countWhen($exists($this->AdhesionOtherInformations)),
+                'signed' => $countWhen($exists($this->ClicksignDatas, ['ClicksignDatas.status' => 'signed'])),
+                'paid' => $countWhen($paid),
+                'awaitingPayment' => $countWhen($query->newExpr()->and([
+                    $exists($this->AdhesionPaymentDetails),
+                    $query->newExpr()->not($paid),
+                ])),
+            ])
+            ->disableHydration()
+            ->first();
+
+        return array_map('intval', $row);
     }
 
     /**

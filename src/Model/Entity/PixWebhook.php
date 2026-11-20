@@ -12,6 +12,7 @@ class PixWebhook extends Entity
         'chave' => true,
         'token' => true,
         'url' => true,
+        'benefit_plan' => true,
         'created' => true,
         'updated' => true,
     ];

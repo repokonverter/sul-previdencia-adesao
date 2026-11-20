@@ -3,13 +3,32 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Partner $partner
  * @var bool $isAssociationScope
+ * @var array<string, string> $benefitPlans slug => nome
  */
 ?>
 <div class="container mt-4">
     <?= $this->Form->create($partner, ['type' => 'file', 'class' => 'card p-4 shadow-sm']) ?>
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-md-3">
+            <div class="mb-3">
+                <?php // Escolhido no cadastro e travado depois: os links e as adesões já atribuídas apontam para o plano. ?>
+                <?= $this->Form->control('benefit_plan', [
+                    'label' => 'Plano*',
+                    'type' => 'select',
+                    'options' => $benefitPlans,
+                    'empty' => $partner->isNew() && count($benefitPlans) > 1 ? 'Selecione o plano' : false,
+                    'class' => 'form-select',
+                    'required' => $partner->isNew(),
+                    'disabled' => !$partner->isNew(),
+                ]) ?>
+                <?php if (!$partner->isNew()): ?>
+                    <div class="form-text">Não muda depois do cadastro. Para atuar no outro plano, cadastre de novo.</div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="col-md-5">
             <div class="mb-3">
                 <?= $this->Form->control('name', [
                     'label' => 'Nome do parceiro*',

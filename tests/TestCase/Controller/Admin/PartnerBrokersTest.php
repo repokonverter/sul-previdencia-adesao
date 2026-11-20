@@ -58,6 +58,7 @@ class PartnerBrokersTest extends TestCase
         $adhesions = $this->table('AdhesionInitialDatas');
         $adhesion = $adhesions->newEntity($data + [
             'storage_uuid' => Text::uuid(),
+            'benefit_plan' => 'plenoprev',
             'name' => 'Fulano de Tal',
             'email' => 'fulano@exemplo.test',
             'phone' => '48999999999',

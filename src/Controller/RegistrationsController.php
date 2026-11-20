@@ -25,7 +25,6 @@ use Cake\Log\Log;
 use Cake\Http\Client;
 use Cake\Core\Configure;
 use App\View\Helper\BankHelper;
-use Cake\Routing\Router;
 use App\Services\AdhesionFormMap;
 use App\Utility\Money;
 use Cake\Utility\Text;
@@ -113,6 +112,12 @@ class RegistrationsController extends AppController
                     throw new NotFoundException();
                 }
 
+                // A adesão continua no plano em que nasceu: os links de
+                // retomada e de pagamento já levam ao host dele.
+                if ($initialDataAll->benefit_plan !== $this->benefitPlan()->slug) {
+                    throw new NotFoundException();
+                }
+
                 $storageUuid = $initialDataAll->storage_uuid;
             }
 
@@ -133,6 +138,7 @@ class RegistrationsController extends AppController
                 // existia, e reaproveitava o mesmo valor entre adesões.
                 if ($initial->isNew()) {
                     $patchData['storage_uuid'] = Text::uuid();
+                    $initial->set('benefit_plan', $this->benefitPlan()->slug);
                 }
 
                 // Uma vez atribuído, o código promocional permanece mesmo que
@@ -141,7 +147,10 @@ class RegistrationsController extends AppController
                 if (empty($initial->promotional_code_id)) {
                     // O código enviado pelo formulário é revalidado aqui: a
                     // checagem no navegador é conveniência, não garantia.
-                    $promotionalCode = $this->PromotionalCodes->findByCodeText($initialData['promotionalCode'] ?? null);
+                    $promotionalCode = $this->PromotionalCodes->findByCodeText(
+                        $initialData['promotionalCode'] ?? null,
+                        $this->benefitPlan()->slug
+                    );
 
                     if ($promotionalCode !== null && $promotionalCode->isUsable()) {
                         $patchData['promotional_code_id'] = $promotionalCode->id;
@@ -175,6 +184,7 @@ class RegistrationsController extends AppController
                 ) {
                     $association = $this->fetchTable('Partners')->find()
                         ->find('byAssociationScope', isAssociation: true)
+                        ->find('byBenefitPlan', benefitPlan: $this->benefitPlan()->slug)
                         ->where([
                             'Partners.id' => (int)$initialData['associationPartnerId'],
                             'Partners.active' => true,
@@ -192,7 +202,7 @@ class RegistrationsController extends AppController
                 // mas só é aceito se ainda for um corretor que o formulário
                 // ofereceria (ele e o parceiro ativos).
                 if (empty($initial->broker_id) && !empty($initialData['brokerId'])) {
-                    $broker = $this->fetchTable('Brokers')->find('selectable')
+                    $broker = $this->fetchTable('Brokers')->find('selectable', benefitPlan: $this->benefitPlan()->slug)
                         ->where(['Brokers.id' => (int)$initialData['brokerId']])
                         ->first();
 
@@ -433,14 +443,14 @@ class RegistrationsController extends AppController
                 // A cobrança Pix não é mais criada aqui: nasce sob demanda quando o
                 // cliente abre a página de pagamento (ver PaymentsController), o que
                 // tira o Sicoob do caminho crítico desta requisição.
-                $paymentUrl = Router::url([
+                $paymentUrl = $initialDataAll->benefitPlan()->url([
                     'controller' => 'Payments',
                     'action' => 'view',
                     $initialDataAll->storage_uuid,
-                ], true);
+                ]);
 
                 if (!empty($initialDataAll->email))
-                    $this->sendPaymentLinkEmail(intval($initialDataId), $initialDataAll->email, $customerName, $paymentUrl);
+                    $this->sendPaymentLinkEmail(intval($initialDataId), $initialDataAll->email, $customerName, $paymentUrl, $initialDataAll->benefitPlan()->name);
 
                 return $this->response->withType('application/json')
                     ->withStringBody(json_encode([
@@ -516,13 +526,13 @@ class RegistrationsController extends AppController
         }
     }
 
-    private function sendPaymentLinkEmail(int $initialDataId, string $email, string $customerName, string $paymentUrl): void
+    private function sendPaymentLinkEmail(int $initialDataId, string $email, string $customerName, string $paymentUrl, string $planName): void
     {
         try {
             \App\Services\ResendService::fromConfigure()->forAdhesion($initialDataId)->send(
                 [$email],
                 'Sua adesão está quase concluída - falta o pagamento',
-                \App\Services\EmailTemplates::paymentLink($customerName, $paymentUrl)
+                \App\Services\EmailTemplates::paymentLink($customerName, $paymentUrl, $planName)
             );
         } catch (\Exception $e) {
             Log::error('Falha ao enviar e-mail de pagamento para ' . $email . ': ' . $e->getMessage());

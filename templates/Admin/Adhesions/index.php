@@ -6,6 +6,7 @@
  * @var iterable<\App\Model\Entity\Partner> $partners
  * @var array{total: int, completed: int, signed: int, paid: int, awaitingPayment: int} $summary
  * @var string|null $summaryTitle
+ * @var array<string, string> $benefitPlans slug => nome
  */
 
 /**
@@ -146,9 +147,12 @@ $getSignatureStatusBadge = function ($adhesion)
 
             <div class="col-md-3">
                 <?php
+                // Parceiro que atua nos dois planos é cadastrado duas vezes,
+                // com o mesmo nome: o plano desfaz a ambiguidade.
                 $partnerOptions = [];
                 foreach ($partners as $partner) {
-                    $partnerOptions[$partner->id] = $partner->name;
+                    $partnerOptions[$partner->id] = $partner->name
+                        . (count($benefitPlans) > 1 ? ' (' . ($benefitPlans[$partner->benefit_plan] ?? $partner->benefit_plan) . ')' : '');
                 }
                 ?>
                 <?= $this->Form->control('partnerId', [
@@ -160,7 +164,17 @@ $getSignatureStatusBadge = function ($adhesion)
                 ]) ?>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-3">
+                <?= $this->Form->control('benefitPlan', [
+                    'label' => 'Plano',
+                    'type' => 'select',
+                    'options' => $benefitPlans,
+                    'empty' => 'Todos os planos',
+                    'class' => 'form-select',
+                ]) ?>
+            </div>
+
+            <div class="col-md-3">
                 <?= $this->Form->control('brokerId', [
                     'label' => 'Corretor',
                     'type' => 'select',
@@ -239,6 +253,7 @@ $summaryItems = [
             <thead class="table-light">
                 <tr>
                     <th>Cliente</th>
+                    <th>Plano</th>
                     <th>Etapa</th>
                     <th>Código / Corretor</th>
                     <th>Pix</th>
@@ -252,6 +267,7 @@ $summaryItems = [
                 <?php foreach ($adhesions as $adhesion): ?>
                     <tr>
                         <td style="min-width: 220px;"><?= $getClientCell($adhesion) ?></td>
+                        <td><?= h($benefitPlans[$adhesion->benefit_plan] ?? $adhesion->benefit_plan) ?></td>
                         <td><?= h(\App\Services\AdhesionSteps::currentStageLabel($adhesion)) ?></td>
                         <td><?= $getPromotionalCodeCell($adhesion) ?></td>
                         <td><?= $getPixStatusBadge($adhesion) ?></td>

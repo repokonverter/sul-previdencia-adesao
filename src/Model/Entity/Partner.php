@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Model\Entity;
 
+use App\Services\BenefitPlan;
+use App\Services\BenefitPlans;
 use Cake\ORM\Entity;
 
 /**
@@ -21,6 +23,9 @@ use Cake\ORM\Entity;
  * @property string|null $company_name
  * @property string|null $company_cnpj
  * @property string|null $institution_number
+ * @property string $benefit_plan Escolhido no cadastro e imutável (regra
+ *   benefitPlanUnchanged), porque links e adesões já gerados apontam para o
+ *   plano.
  * @property \App\Model\Entity\PromotionalCode[] $promotional_codes
  * @property \App\Model\Entity\Broker[] $brokers
  */
@@ -30,6 +35,7 @@ class Partner extends Entity
 
     protected array $_accessible = [
         'name' => true,
+        'benefit_plan' => true,
         'color' => true,
         'logo_data' => true,
         'logo_mime_type' => true,
@@ -52,6 +58,11 @@ class Partner extends Entity
     protected function _getHasLogo(): bool
     {
         return $this->logo_mime_type !== null;
+    }
+
+    public function benefitPlan(): BenefitPlan
+    {
+        return BenefitPlans::get($this->benefit_plan);
     }
 
     /**

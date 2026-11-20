@@ -73,7 +73,7 @@ class BrokersTableTest extends TestCase
     public function testCpfIsUniqueOnlyWithinThePartner(): void
     {
         $partners = TableRegistry::getTableLocator()->get('Partners');
-        $other = $partners->saveOrFail($partners->newEntity(['name' => 'Outro Parceiro', 'color' => '#123456', 'active' => true]));
+        $other = $partners->saveOrFail($partners->newEntity(['name' => 'Outro Parceiro', 'benefit_plan' => 'plenoprev', 'color' => '#123456', 'active' => true]));
 
         $samePartner = $this->Brokers->newEntity(['partner_id' => 1, 'name' => 'Repetido', 'cpf' => '529.982.247-25', 'active' => true]);
         $this->assertFalse($this->Brokers->save($samePartner));
@@ -104,15 +104,15 @@ class BrokersTableTest extends TestCase
         $partners->saveOrFail($partner);
 
         $this->assertSame(0, $this->Brokers->find('selectable')->count());
-        $this->assertNull($this->Brokers->findSelectableByToken('joaoabc23456'));
+        $this->assertNull($this->Brokers->findSelectableByToken('joaoabc23456', 'plenoprev'));
     }
 
     public function testFindSelectableByToken(): void
     {
-        $this->assertSame(1, $this->Brokers->findSelectableByToken('joaoabc23456')?->id);
-        $this->assertNull($this->Brokers->findSelectableByToken('mariabc23456'));
-        $this->assertNull($this->Brokers->findSelectableByToken('naoexiste'));
-        $this->assertNull($this->Brokers->findSelectableByToken(null));
+        $this->assertSame(1, $this->Brokers->findSelectableByToken('joaoabc23456', 'plenoprev')?->id);
+        $this->assertNull($this->Brokers->findSelectableByToken('mariabc23456', 'plenoprev'));
+        $this->assertNull($this->Brokers->findSelectableByToken('naoexiste', 'plenoprev'));
+        $this->assertNull($this->Brokers->findSelectableByToken(null, 'plenoprev'));
     }
 
     public function testLabelIsPartnerThenBroker(): void

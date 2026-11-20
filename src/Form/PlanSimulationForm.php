@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Services\BenefitEntryAge;
+use App\Services\BenefitPlan;
 use App\Services\PlanProjection;
 use App\Services\PlanQuote;
 use App\Services\PlanSimulator;
@@ -41,14 +42,20 @@ class PlanSimulationForm extends Form
         ],
     ];
 
-    public function __construct(private readonly PlanSimulator $simulator)
-    {
+    /**
+     * @param \App\Services\PlanSimulator $simulator Com os parâmetros do plano escolhido na tela.
+     */
+    public function __construct(
+        private readonly BenefitPlan $benefitPlan,
+        private readonly PlanSimulator $simulator,
+    ) {
         parent::__construct();
     }
 
     protected function _buildSchema(Schema $schema): Schema
     {
         return $schema
+            ->addField('benefit_plan', 'string')
             ->addField('name', 'string')
             ->addField('birth_date', 'date')
             ->addField('benefit_entry_age', 'integer')
@@ -139,6 +146,7 @@ class PlanSimulationForm extends Form
         );
 
         return new PlanQuote(
+            benefitPlan: $this->benefitPlan,
             clientName: trim((string)$data['name']),
             birthDate: $data['birth_date'],
             benefitEntryAge: (int)$data['benefit_entry_age'],

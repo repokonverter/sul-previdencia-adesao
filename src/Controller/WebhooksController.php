@@ -9,7 +9,7 @@ use App\Services\ClicksignSignatureChecker;
 use App\Services\ClicksignWebhookPayload;
 use App\Services\IntegrationLogger;
 use App\Services\PixPaymentService;
-use App\Services\SicoobService;
+use App\Services\BenefitPlans;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Log\Log;
 
@@ -64,7 +64,12 @@ class WebhooksController extends AppController
         if (empty($pixEvents))
             Log::warning('Webhook Sicoob: payload sem formato reconhecido: ' . $rawBody);
 
-        $pixPaymentService = new PixPaymentService(SicoobService::fromConfigure(), $this->fetchTable('PixTransactions'));
+        // O webhook é cadastrado na conta de um plano (PixWebhooks no admin):
+        // os txids que ele traz são dessa conta.
+        $pixPaymentService = PixPaymentService::forPlan(
+            BenefitPlans::get($webhook->benefit_plan),
+            $this->fetchTable('PixTransactions')
+        );
         $processedTxids = [];
 
         foreach ($pixEvents as $event) {

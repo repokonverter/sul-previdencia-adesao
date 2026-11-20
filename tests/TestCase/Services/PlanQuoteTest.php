@@ -17,6 +17,7 @@ class PlanQuoteTest extends TestCase
     {
         return new AdhesionInitialData([
             'id' => 42,
+            'benefit_plan' => 'plenoprev',
             'name' => 'Nome do cadastro inicial',
             'adhesion_personal_data' => new AdhesionPersonalData($personalData + [
                 'name' => 'Fulana da Silva',

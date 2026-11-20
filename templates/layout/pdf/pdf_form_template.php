@@ -201,7 +201,7 @@ $field = function (string $label, $value, int $colspan = 1): string {
     </div>
 
     <p class="footer-text">
-        (X) AUTORIZO ( ) NÃO AUTORIZO o CEPREV a realizar o tratamento de meus Dados
+        (X) AUTORIZO ( ) NÃO AUTORIZO o <?= h($benefitPlan->institution['name']) ?> a realizar o tratamento de meus Dados
         Pessoais para oferecer produtos e serviços, por meio de e-mail, ligações, SMS,
         mensagens, bem como autorizo compartilhar meus dados com seus parceiros e demais
         prestadores de serviços.

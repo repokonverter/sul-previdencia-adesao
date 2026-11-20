@@ -1248,8 +1248,9 @@ echo $this->Html->css('application');
             <?= $this->Form->control('plano', [
                 'label' => 'Plano',
                 'type' => 'select',
-                'options' => ['pleno_prev' => 'Pleno Prev'],
-                'empty' => 'Selecione um plano',
+                // O plano é o do subdomínio: só um a escolher.
+                'options' => [$benefitPlan->slug => $benefitPlan->name],
+                'default' => $benefitPlan->slug,
                 'class' => 'form-input',
                 'templates' => ['inputContainer' => '{{content}}']
             ]) ?>

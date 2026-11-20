@@ -5,6 +5,7 @@
  * @var iterable<\App\Model\Entity\Partner> $partners
  * @var string $entityLabelPlural
  * @var string $entityLabelSingular
+ * @var array<string, string> $benefitPlans slug => nome
  */
 
 $this->assign('title', $entityLabelPlural);
@@ -25,7 +26,18 @@ $this->assign('title', $entityLabelPlural);
     <div class="card-body">
         <?= $this->Form->create(null, ['type' => 'get']) ?>
         <div class="row g-3">
-            <div class="col-md-9">
+            <div class="col-md-3">
+                <?= $this->Form->control('benefitPlan', [
+                    'label' => 'Plano',
+                    'type' => 'select',
+                    'options' => $benefitPlans,
+                    'empty' => 'Todos os planos',
+                    'class' => 'form-select',
+                    'value' => $this->request->getQuery('benefitPlan'),
+                ]) ?>
+            </div>
+
+            <div class="col-md-6">
                 <?= $this->Form->control('q', [
                     'label' => 'Busca',
                     'class' => 'form-control',
@@ -54,6 +66,7 @@ $this->assign('title', $entityLabelPlural);
                 <tr>
                     <th></th>
                     <th><?= $this->Paginator->sort('name', 'Parceiro') ?></th>
+                    <th><?= $this->Paginator->sort('benefit_plan', 'Plano') ?></th>
                     <th class="text-center">Situação</th>
                     <th class="text-center">Códigos ativos</th>
                     <th class="text-center">Adesões iniciadas</th>
@@ -70,6 +83,7 @@ $this->assign('title', $entityLabelPlural);
                         <td class="fw-semibold">
                             <?= $this->Html->link(h($partner->name), ['action' => 'view', $partner->id]) ?>
                         </td>
+                        <td><?= h($benefitPlans[$partner->benefit_plan] ?? $partner->benefit_plan) ?></td>
                         <td class="text-center">
                             <?php if ($partner->active): ?>
                                 <span class="badge bg-success">Ativo</span>

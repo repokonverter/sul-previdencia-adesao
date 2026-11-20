@@ -149,7 +149,7 @@ class BrokerAttributionTest extends TestCase
     {
         $locator = TableRegistry::getTableLocator();
         $adhesions = $locator->get('AdhesionInitialDatas');
-        $adhesion = $adhesions->newEntity(['name' => 'Fulano', 'storage_uuid' => 'x', 'broker_id' => 1]);
+        $adhesion = $adhesions->newEntity(['name' => 'Fulano', 'storage_uuid' => 'x', 'benefit_plan' => 'plenoprev', 'broker_id' => 1]);
         $adhesions->saveOrFail($adhesion);
         $contain = ['PromotionalCodes.Partners', 'AssociationPartners', 'Brokers.Partners'];
 

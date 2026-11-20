@@ -65,6 +65,10 @@ return [
         'wwwRoot' => WWW_ROOT,
         //'baseUrl' => env('SCRIPT_NAME'),
         'fullBaseUrl' => env('APP_FULL_BASE_URL') ?: false,
+        // Plano de benefícios de um host que não está em config/plans.php.
+        // Só para desenvolvimento (localhost, 127.0.0.1) e testes: em
+        // produção, host desconhecido responde 404 nas rotas públicas.
+        'defaultBenefitPlan' => env('DEFAULT_PLAN') ?: null,
         'imageBaseUrl' => 'img/',
         'cssBaseUrl' => 'css/',
         'jsBaseUrl' => 'js/',

@@ -30,7 +30,7 @@ class PlanSimulatorTest extends TestCase
 
         $this->simulator = new PlanSimulator(
             ConnectionManager::get('test'),
-            TableRegistry::getTableLocator()->get('PlanParameters')->current()
+            TableRegistry::getTableLocator()->get('PlanParameters')->forPlan('plenoprev')
         );
     }
 

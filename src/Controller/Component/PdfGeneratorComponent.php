@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Component;
 
+use App\Services\BenefitPlan;
 use App\Services\PlanProjection;
 use App\Services\PlanQuote;
 use Cake\Controller\Component;
@@ -33,7 +34,8 @@ class PdfGeneratorComponent extends Component
 
     public function generatePdfApplicationForm($id, $returnContent = false)
     {
-        $proposalNumber = $this->proposalNumber($id);
+        $plan = $this->AdhesionInitialDatas->get($id)->benefitPlan();
+        $proposalNumber = $this->proposalNumber($plan, $id);
         $html = $this->applicationFormHtml($id);
 
         $dompdf = new Dompdf();
@@ -44,14 +46,14 @@ class PdfGeneratorComponent extends Component
         if ($returnContent)
             return $dompdf->output();
 
-        return $dompdf->stream("proposta-plenoprev-$proposalNumber.pdf", [
+        return $dompdf->stream("proposta-{$plan->slug}-$proposalNumber.pdf", [
             'Attachment' => true
         ]);
     }
 
-    private function proposalNumber($id): string
+    private function proposalNumber(BenefitPlan $plan, $id): string
     {
-        return 'BFX-' . $id . '-' . date('m-Y');
+        return $plan->proposalPrefix . '-' . $id . '-' . date('m-Y');
     }
 
     /**
@@ -80,30 +82,25 @@ class PdfGeneratorComponent extends Component
                 'AssociationPartners',
             ]
         );
+        // Os dados do plano vêm do config/plans.php atual, não de um retrato
+        // gravado na adesão: o documento assinado de verdade fica na
+        // Clicksign (ver docs/plano-multiplano-maispremium.md).
+        $plan = $adhesion->benefitPlan();
         $fixedData = [
-            'cnpjPlan' => '48.307.525/0001-09',
-            'institutionNumber' => '009',
-            'institutionName' => 'CEPREV',
-            'useInsuranceCompany' => [
-                'code' => '100350',
-                'membershipAgreement' => 'AD2550',
-                'marketingAction' => 'AM0493',
-                'branch' => 'F22',
-                'alternative' => '01',
-                'secureBroker1' => 'MT 8002897',
-            ],
-            'useSecureBroker' => [
-                'name' => 'Corretop Corretora de Seguros',
-                'code' => '202104784',
-            ],
+            'plan' => $plan,
+            'cnpjPlan' => $plan->cnpj,
+            'institutionNumber' => $plan->institution['number'],
+            'institutionName' => $plan->institution['name'],
+            'useInsuranceCompany' => $plan->insurer,
+            'useSecureBroker' => $plan->broker,
             'footer' => self::PLAN_MANAGER,
         ];
 
         // Vínculo associativo troca os dados do instituidor no topo da
         // proposta. Vêm do snapshot gravado na adesão (não do cadastro
         // atual); snapshot sem institutionNumber (adesões anteriores ao
-        // campo) mantém os dados CEPREV, para a proposta reproduzida ser
-        // igual à já assinada.
+        // campo) mantém o instituidor padrão do plano, para a proposta
+        // reproduzida ser igual à já assinada.
         $association = $adhesion->association_texts;
         if (!empty($association['institutionNumber'])) {
             $fixedData['cnpjPlan'] = $association['companyCnpj'] ?? $fixedData['cnpjPlan'];
@@ -114,7 +111,7 @@ class PdfGeneratorComponent extends Component
         $birthDate = new DateTime($adhesion->adhesion_personal_data->birth_date->format('Y-m-d'));
         $today = new DateTime();
         $age = $today->diff($birthDate)->y;
-        $proposalNumber = $this->proposalNumber($id);
+        $proposalNumber = $this->proposalNumber($plan, $id);
         $controller = $this->getController();
         $controller->set(compact('adhesion', 'age', 'proposalNumber', 'fixedData'));
         $builder = $controller->viewBuilder();
@@ -130,7 +127,8 @@ class PdfGeneratorComponent extends Component
     }
 
     /**
-     * A ficha de inscrição CEPREV. Sempre a mesma, padrão -- vínculo
+     * A ficha de inscrição do instituidor padrão do plano (CEPREV, no
+     * PlenoPrev). Sempre a mesma, padrão -- vínculo
      * associativo não entra mais aqui, tem sua própria declaração (ver
      * generateAssociationDeclarationPdf).
      */
@@ -153,8 +151,9 @@ class PdfGeneratorComponent extends Component
             ]
         );
 
+        $benefitPlan = $adhesion->benefitPlan();
         $controller = $this->getController();
-        $controller->set(compact('adhesion'));
+        $controller->set(compact('adhesion', 'benefitPlan'));
 
         $builder = $controller->viewBuilder();
         $oldLayout = $builder->getLayout();

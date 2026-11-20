@@ -36,6 +36,10 @@ if (empty($_SERVER['HTTP_HOST']) && !Configure::read('App.fullBaseUrl')) {
     Configure::write('App.fullBaseUrl', 'http://localhost');
 }
 
+// As requisições dos testes de integração chegam em "localhost", fora do mapa
+// de hosts de config/plans.php; o teste que fala de outro plano troca o host.
+Configure::write('App.defaultBenefitPlan', 'plenoprev');
+
 // DebugKit skips settings these connection config if PHP SAPI is CLI / PHPDBG.
 // But since PagesControllerTest is run with debug enabled and DebugKit is loaded
 // in application, without setting up these config DebugKit errors out.
