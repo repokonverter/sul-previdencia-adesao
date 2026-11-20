@@ -23,8 +23,9 @@ class WebhooksController extends AppController
     }
 
     /**
-     * Recebido em POST /sicoob/webhook/{token}/pix — o Sicoob acrescenta "/pix"
-     * ao final da URL cadastrada, por isso o token vive no path, não na query.
+     * Recebido em POST /{banco}/webhook/{token}/pix -- o banco acrescenta
+     * "/pix" ao final da URL cadastrada (padrão Bacen), por isso o token vive
+     * no path, não na query. O banco vem da rota (`provider`).
      *
      * O payload nunca é tratado como fonte de verdade: cada txid encontrado é
      * reconfirmado via GET /cob/{txid} antes de qualquer coisa ser marcada como paga.
@@ -33,17 +34,23 @@ class WebhooksController extends AppController
     {
         $this->request->allowMethod(['post']);
 
+        $provider = (string)$this->request->getParam('provider');
         $rawBody = (string)$this->request->getBody();
         // O token é o segredo deste endpoint (vive no path, não em header/query),
         // então nunca deve ser persistido em claro no log.
         $loggedUrl = str_replace($token, '[REDACTED]', (string)$this->request->getRequestTarget());
 
         $webhook = $this->fetchTable('PixWebhooks')->find()->where(['token' => $token])->first();
+        // O webhook é cadastrado na conta de um plano (PixWebhooks no admin):
+        // os txids que ele traz são dessa conta, e só chegam pela rota do banco dela.
+        $plan = $webhook && BenefitPlans::exists($webhook->benefit_plan)
+            ? BenefitPlans::get($webhook->benefit_plan)
+            : null;
 
-        if (!$webhook) {
+        if (!$plan || $plan->pix['provider'] !== $provider) {
             IntegrationLogger::logHttp([
-                'service' => 'sicoob',
-                'operation' => 'sicoob.webhook_received',
+                'service' => $provider,
+                'operation' => $provider . '.webhook_received',
                 'direction' => 'inbound',
                 'httpMethod' => 'POST',
                 'url' => $loggedUrl,
@@ -62,14 +69,9 @@ class WebhooksController extends AppController
             $pixEvents = [$body];
 
         if (empty($pixEvents))
-            Log::warning('Webhook Sicoob: payload sem formato reconhecido: ' . $rawBody);
+            Log::warning("Webhook Pix ($provider): payload sem formato reconhecido: " . $rawBody);
 
-        // O webhook é cadastrado na conta de um plano (PixWebhooks no admin):
-        // os txids que ele traz são dessa conta.
-        $pixPaymentService = PixPaymentService::forPlan(
-            BenefitPlans::get($webhook->benefit_plan),
-            $this->fetchTable('PixTransactions')
-        );
+        $pixPaymentService = PixPaymentService::forPlan($plan, $this->fetchTable('PixTransactions'));
         $processedTxids = [];
 
         foreach ($pixEvents as $event) {
@@ -83,13 +85,13 @@ class WebhooksController extends AppController
             try {
                 $pixPaymentService->confirmIfPaid($txid);
             } catch (\Exception $e) {
-                Log::error('Webhook Sicoob: falha ao confirmar txid ' . $txid . ': ' . $e->getMessage());
+                Log::error("Webhook Pix ($provider): falha ao confirmar txid " . $txid . ': ' . $e->getMessage());
             }
         }
 
         IntegrationLogger::logHttp([
-            'service' => 'sicoob',
-            'operation' => 'sicoob.webhook_received',
+            'service' => $provider,
+            'operation' => $provider . '.webhook_received',
             'direction' => 'inbound',
             'httpMethod' => 'POST',
             'url' => $loggedUrl,

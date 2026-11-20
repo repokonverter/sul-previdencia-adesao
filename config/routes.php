@@ -79,10 +79,16 @@ return function (RouteBuilder $routes): void {
             ['pass' => ['resumeToken']]
         );
 
-        // O Sicoob acrescenta "/pix" ao final da URL de webhook cadastrada.
+        // O banco acrescenta "/pix" ao final da URL de webhook cadastrada
+        // (padrão Bacen). A rota diz de que banco é o webhook.
         $builder->connect(
             '/sicoob/webhook/{token}/pix',
-            ['controller' => 'Webhooks', 'action' => 'pix'],
+            ['controller' => 'Webhooks', 'action' => 'pix', 'provider' => 'sicoob'],
+            ['pass' => ['token']]
+        );
+        $builder->connect(
+            '/bancodobrasil/webhook/{token}/pix',
+            ['controller' => 'Webhooks', 'action' => 'pix', 'provider' => 'bancodobrasil'],
             ['pass' => ['token']]
         );
 

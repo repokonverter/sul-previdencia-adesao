@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Services\BancoDoBrasilService;
 use App\Services\ClicksignService;
 use App\Services\SicoobService;
 use Cake\Command\Command;
@@ -13,12 +14,13 @@ use Cake\Console\ConsoleOptionParser;
 use Cake\Core\Configure;
 
 /**
- * Testa as credenciais do ClickSign e do Sicoob.
+ * Testa as credenciais do ClickSign, do Sicoob e do Banco do Brasil.
  *
  * Uso:
  *   bin/cake test_credentials
  *   bin/cake test_credentials --clicksign
  *   bin/cake test_credentials --sicoob
+ *   bin/cake test_credentials --bancodobrasil
  */
 class TestCredentialsCommand extends Command
 {
@@ -30,7 +32,7 @@ class TestCredentialsCommand extends Command
     protected function buildOptionParser(ConsoleOptionParser $parser): ConsoleOptionParser
     {
         $parser
-            ->setDescription('Testa as credenciais do ClickSign e do Sicoob.')
+            ->setDescription('Testa as credenciais do ClickSign, do Sicoob e do Banco do Brasil.')
             ->addOption('clicksign', [
                 'boolean' => true,
                 'default' => false,
@@ -40,6 +42,11 @@ class TestCredentialsCommand extends Command
                 'boolean' => true,
                 'default' => false,
                 'help' => 'Testa apenas as credenciais do Sicoob.',
+            ])
+            ->addOption('bancodobrasil', [
+                'boolean' => true,
+                'default' => false,
+                'help' => 'Testa apenas as credenciais do Banco do Brasil.',
             ]);
 
         return $parser;
@@ -49,9 +56,10 @@ class TestCredentialsCommand extends Command
     {
         $testClicksign = $args->getOption('clicksign');
         $testSicoob    = $args->getOption('sicoob');
+        $testBb        = $args->getOption('bancodobrasil');
 
-        // Se nenhum flag for passado, testa os dois
-        $testAll = !$testClicksign && !$testSicoob;
+        // Se nenhum flag for passado, testa todos
+        $testAll = !$testClicksign && !$testSicoob && !$testBb;
 
         $io->out('');
         $io->out('<info>========================================</info>');
@@ -69,6 +77,14 @@ class TestCredentialsCommand extends Command
 
         if ($testAll || $testSicoob) {
             if (!$this->testSicoob($io)) {
+                $hasError = true;
+            }
+        }
+
+        // Só entra no "todos" quando configurado: enquanto o MaisPremium não
+        // vai ao ar, o .env de produção não tem BB_*.
+        if ($testBb || ($testAll && Configure::read('BancoDoBrasil.clientId'))) {
+            if (!$this->testBancoDoBrasil($io)) {
                 $hasError = true;
             }
         }
@@ -202,6 +218,49 @@ class TestCredentialsCommand extends Command
 
             if (isset($response['parametros']['paginacao']['quantidadeDePaginas'])) {
                 $io->out("  Páginas de cobranças: " . $response['parametros']['paginacao']['quantidadeDePaginas']);
+            }
+        } catch (\Exception $e) {
+            $io->out('<error>  [ERRO] ' . $e->getMessage() . '</error>');
+            $io->out('');
+            return false;
+        }
+
+        $io->out('');
+        return true;
+    }
+
+    // -------------------------------------------------------------------------
+    // Banco do Brasil
+    // -------------------------------------------------------------------------
+
+    private function testBancoDoBrasil(ConsoleIo $io): bool
+    {
+        $io->out('<info>--- Banco do Brasil ---</info>');
+
+        $config = (array)Configure::read('BancoDoBrasil');
+
+        $io->out('  Base URL     : ' . ($config['baseUrl'] ?? ''));
+        $io->out('  Auth URL     : ' . ($config['authUrl'] ?? ''));
+        $io->out('  Client ID    : ' . $this->maskSecret((string)($config['clientId'] ?? '')));
+        $io->out('  Client Secret: ' . $this->maskSecret((string)($config['clientSecret'] ?? '')));
+        $io->out('  App Key      : ' . $this->maskSecret((string)($config['appKey'] ?? '')));
+        $io->out('  PIX Key      : ' . ($config['pixKey'] ?? ''));
+        $io->out('  Cert Base64  : ' . (!empty($config['certificateBase64']) ? '<success>Definido</success>' : '<warning>NÃO definido (obrigatório em produção)</warning>'));
+        $io->out('  Key Base64   : ' . (!empty($config['privateKeyBase64']) ? '<success>Definido</success>' : '<warning>NÃO definido (obrigatório em produção)</warning>'));
+
+        try {
+            $io->out('  Testando autenticação e conexão (GET /cob)...');
+
+            $response = (new BancoDoBrasilService($config))->listCob([
+                'inicio' => date('Y-m-d\TH:i:s\Z', strtotime('-2 days')),
+                'fim' => date('Y-m-d\TH:i:s\Z'),
+                'paginacao.itensPorPagina' => 1,
+            ]);
+
+            $io->out('<success>  [OK] Banco do Brasil autenticou e respondeu com sucesso.</success>');
+
+            if (isset($response['parametros']['paginacao']['quantidadeTotalDeItens'])) {
+                $io->out('  Cobranças nos últimos 2 dias: ' . $response['parametros']['paginacao']['quantidadeTotalDeItens']);
             }
         } catch (\Exception $e) {
             $io->out('<error>  [ERRO] ' . $e->getMessage() . '</error>');

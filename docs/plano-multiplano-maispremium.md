@@ -126,11 +126,32 @@ requisição — webhooks e comandos rodam sem host.
    filtros/seletores, migration de dados. Vai para produção sem nenhuma
    mudança visível.
 2. **Integração Banco do Brasil** — `BancoDoBrasilService` contra o sandbox do
-   BB, em paralelo.
+   BB, em paralelo. _(Código implementado e testado com a API mockada:
+   `BancoDoBrasilService`, rota `/bancodobrasil/webhook/{token}/pix`,
+   configuração `BancoDoBrasil` / `BB_*`. Falta validar no sandbox com as
+   credenciais: `bin/cake test_credentials --bancodobrasil`, depois uma
+   cobrança e o webhook de ponta a ponta.)_
 3. **Go-live do MaisPremium** — configuração do plano, DNS de
    `maispremium.konverter.com.br` para o mesmo servidor, host no proxy do
    Kamal (`config/deploy.yml`), secrets do BB. Só abre ao público depois do Pix
    do BB validado em produção — não existe modo "sem pagamento".
+
+## Riscos da integração BB
+
+- **mTLS na entrada do webhook.** Em produção o BB entrega o webhook com mTLS
+  e orienta instalar o certificado dele no servidor que recebe. O TLS hoje é
+  terminado pelo kamal-proxy (Let's Encrypt), que não valida certificado de
+  cliente. Validar no sandbox/homologação se o BB entrega sem o servidor
+  pedir certificado; se não entregar, o webhook do MaisPremium precisa de um
+  proxy com mTLS na frente (ou de outra porta/host para essa rota). Sem
+  webhook, o pagamento só é confirmado quando o participante reabre o link de
+  pagamento ou pelo botão do admin — a página não fica consultando sozinha.
+- **Formato dos campos.** O BB devolve o copia-e-cola em `pixCopiaECola`
+  (padrão Bacen); o serviço o expõe também como `brcode`. Confirmar no
+  sandbox que `PUT /cob/{txid}` aceita o txid gerado (26–35 caracteres
+  alfanuméricos) e o corpo atual (`solicitacaoPagador`, `devedor`).
+- **`BB_*` fora do `config/deploy.yml`** até a fase 3: o Kamal falha no deploy
+  se um secret listado não existir em `.kamal/secrets`.
 
 ## Pendências com o cliente
 

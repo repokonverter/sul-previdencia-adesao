@@ -529,6 +529,22 @@ return [
         'pixKey' => env('SICOOB_PIX_KEY', null),
     ],
 
+    /*
+     * API Pix do Banco do Brasil (conta do MaisPremium; ver config/plans.php).
+     * URLs e credenciais do aplicativo no portal BB Developers; o certificado
+     * da empresa (mTLS) em Base64, como o do Sicoob.
+     */
+    'BancoDoBrasil' => [
+        'baseUrl' => env('BB_BASE_URL', null),
+        'authUrl' => env('BB_AUTH_URL', null),
+        'clientId' => env('BB_CLIENT_ID', null),
+        'clientSecret' => env('BB_CLIENT_SECRET', null),
+        'appKey' => env('BB_APP_KEY', null),
+        'certificateBase64' => env('BB_CERTIFICATE_BASE64', null),
+        'privateKeyBase64' => env('BB_PRIVATE_KEY_BASE64', null),
+        'pixKey' => env('BB_PIX_KEY', null),
+    ],
+
     'Resend' => [
         'apiKey' => env('RESEND_API_KEY', null),
         'fromAddress' => env('MAIL_FROM_ADDRESS', 'atendimento@sulprevidencia.org.br'),

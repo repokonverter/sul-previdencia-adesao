@@ -39,7 +39,13 @@ class IntegrationLogsController extends AppController
             $query->where(['IntegrationLogs.adhesion_initial_data_id' => $adhesionId]);
 
         $logs = $this->paginate($query);
-        $services = ['sicoob', 'clicksign', 'resend', 'internal'];
+        $services = [
+            'sicoob' => 'Sicoob',
+            'bancodobrasil' => 'Banco do Brasil',
+            'clicksign' => 'Clicksign',
+            'resend' => 'Resend',
+            'internal' => 'Internal',
+        ];
 
         $this->set(compact('logs', 'services', 'service', 'status', 'adhesionId'));
     }

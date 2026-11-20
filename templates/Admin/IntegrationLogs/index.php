@@ -3,7 +3,7 @@
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\IntegrationLog> $logs
- * @var array<string> $services
+ * @var array<string, string> $services
  * @var string|null $service
  * @var string|null $status
  * @var string|null $adhesionId
@@ -35,7 +35,7 @@ function formatLogBody(?string $value): string
                     'label' => 'Serviço',
                     'class' => 'form-select',
                     'type' => 'select',
-                    'options' => array_combine($services, array_map('ucfirst', $services)),
+                    'options' => $services,
                     'empty' => 'Todos os serviços',
                     'value' => $service,
                 ]) ?>

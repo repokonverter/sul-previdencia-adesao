@@ -45,6 +45,7 @@ class PixPaymentService
 
         return match ($provider) {
             'sicoob' => SicoobService::fromConfigure($plan->pix['config']),
+            'bancodobrasil' => BancoDoBrasilService::fromConfigure($plan->pix['config']),
             default => throw new InvalidArgumentException("Banco Pix desconhecido no plano {$plan->slug}: \"$provider\"."),
         };
     }
