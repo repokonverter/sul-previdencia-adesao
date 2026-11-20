@@ -13,9 +13,12 @@
  * manda por e-mail (convite, redefinição de senha), que não pertencem a
  * plano nenhum.
  *
+ * Um plano só existe para o sistema se estiver aqui: o MaisPremium entra
+ * com MAISPREMIUM_ENABLED, ligado no go-live (ver o fim do arquivo).
+ *
  * Ver docs/plano-multiplano-maispremium.md.
  */
-return [
+$plans = [
     'BenefitPlans' => [
         'plenoprev' => [
             'name' => 'PlenoPrev',
@@ -60,3 +63,47 @@ return [
         ],
     ],
 ];
+
+// FICTÍCIO: os dados do MaisPremium marcados com "a definir" ainda não vieram
+// do cliente, e vão impressos na proposta. Fica desligado (fora da lista de
+// planos: sem host, sem opção no admin) até serem os verdadeiros e o Pix do
+// BB estar validado.
+if (filter_var(env('MAISPREMIUM_ENABLED', false), FILTER_VALIDATE_BOOLEAN)) {
+    $plans['BenefitPlans']['maispremium'] = [
+        'name' => 'MaisPremium',
+        // Em desenvolvimento, MAISPREMIUM_BASE_URL=http://maispremium.localhost:8765
+        'baseUrl' => env('MAISPREMIUM_BASE_URL', 'https://maispremium.konverter.com.br'),
+        'cnpj' => '00.000.000/0000-00', // a definir
+        'cnpb' => '0000/0000-00', // a definir
+        'loading' => '0%', // a definir
+        'slogan' => 'A realização do seu futuro', // a definir
+        'proposalPrefix' => 'MPX', // a definir
+        'txidPrefix' => 'MAISPREMIUM',
+        'institution' => [
+            'number' => '000', // a definir
+            'name' => 'INSTITUIDOR A DEFINIR',
+        ],
+        'insurer' => [
+            'name' => 'Seguradora a definir',
+            'shortName' => 'Seguradora a definir',
+            'cnpj' => '00.000.000/0000-00',
+            'loading' => '0%',
+            'code' => '000000',
+            'membershipAgreement' => 'A DEFINIR',
+            'marketingAction' => 'A DEFINIR',
+            'branch' => 'A DEFINIR',
+            'alternative' => '00',
+            'secureBroker1' => 'A DEFINIR',
+        ],
+        'broker' => [
+            'name' => 'Corretora a definir',
+            'code' => '000000000',
+        ],
+        'pix' => [
+            'provider' => 'bancodobrasil',
+            'config' => 'BancoDoBrasil',
+        ],
+    ];
+}
+
+return $plans;

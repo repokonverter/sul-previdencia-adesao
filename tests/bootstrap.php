@@ -39,6 +39,9 @@ if (empty($_SERVER['HTTP_HOST']) && !Configure::read('App.fullBaseUrl')) {
 // As requisições dos testes de integração chegam em "localhost", fora do mapa
 // de hosts de config/plans.php; o teste que fala de outro plano troca o host.
 Configure::write('App.defaultBenefitPlan', 'plenoprev');
+// Os testes que precisam de um segundo plano o configuram
+// (SecondBenefitPlanTrait); o MaisPremium do .env de desenvolvimento não entra.
+Configure::delete('BenefitPlans.maispremium');
 
 // DebugKit skips settings these connection config if PHP SAPI is CLI / PHPDBG.
 // But since PagesControllerTest is run with debug enabled and DebugKit is loaded

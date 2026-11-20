@@ -134,7 +134,29 @@ requisição — webhooks e comandos rodam sem host.
 3. **Go-live do MaisPremium** — configuração do plano, DNS de
    `maispremium.konverter.com.br` para o mesmo servidor, host no proxy do
    Kamal (`config/deploy.yml`), secrets do BB. Só abre ao público depois do Pix
-   do BB validado em produção — não existe modo "sem pagamento".
+   do BB validado em produção — não existe modo "sem pagamento". _(Preparado: o
+   MaisPremium está em `config/plans.php` com dados **fictícios** marcados
+   "a definir", ligado só com `MAISPREMIUM_ENABLED`; a migration
+   `AddMaisPremiumPlanParameters` cria a linha de `plan_parameters` copiando
+   os valores do PlenoPrev. Checklist abaixo.)_
+
+## Checklist de go-live do MaisPremium
+
+1. Trocar todo "a definir" do MaisPremium em `config/plans.php` pelos dados
+   do cliente (CNPJ, CNPB, carregamento, slogan, prefixo da proposta,
+   instituidor, seguradora e códigos, corretora) e conferir uma proposta
+   gerada localmente (`MAISPREMIUM_ENABLED=true`, host
+   `maispremium.localhost`).
+2. Ajustar no admin os parâmetros iniciais (Parâmetros do plano → MaisPremium).
+3. Validar o BB no sandbox: `bin/cake test_credentials --bancodobrasil`, uma
+   cobrança paga e o webhook chegando (ver "Riscos" abaixo).
+4. DNS de `maispremium.konverter.com.br` (e `www.`) para 143.95.173.13.
+5. `config/deploy.yml`: os dois hosts em `proxy.hosts`, `MAISPREMIUM_ENABLED:
+   true` em `env.clear` e os `BB_*` em `env.secret`, com os valores de
+   produção em `.kamal/secrets`.
+6. Deploy; no admin, Webhooks Pix → cadastrar o do MaisPremium.
+7. Adesão de teste de ponta a ponta em produção (Pix real de valor baixo)
+   antes de divulgar.
 
 ## Riscos da integração BB
 
