@@ -64,40 +64,40 @@ $plans = [
     ],
 ];
 
-// FICTÍCIO: os dados do MaisPremium marcados com "a definir" ainda não vieram
-// do cliente, e vão impressos na proposta. Fica desligado (fora da lista de
-// planos: sem host, sem opção no admin) até serem os verdadeiros e o Pix do
-// BB estar validado.
+// Sem MAISPREMIUM_ENABLED o MaisPremium fica fora da lista de planos: sem
+// host, sem opção no admin. Recebe pelo Banco do Brasil; sem as credenciais
+// BB_*, a adesão é registrada normalmente e só a página de pagamento mostra
+// que não foi possível gerar a cobrança.
 if (filter_var(env('MAISPREMIUM_ENABLED', false), FILTER_VALIDATE_BOOLEAN)) {
     $plans['BenefitPlans']['maispremium'] = [
         'name' => 'MaisPremium',
         // Em desenvolvimento, MAISPREMIUM_BASE_URL=http://maispremium.localhost:8765
         'baseUrl' => env('MAISPREMIUM_BASE_URL', 'https://maispremium.konverter.com.br'),
-        'cnpj' => '00.000.000/0000-00', // a definir
-        'cnpb' => '0000/0000-00', // a definir
-        'loading' => '0%', // a definir
-        'slogan' => 'A realização do seu futuro', // a definir
-        'proposalPrefix' => 'MPX', // a definir
+        'cnpj' => '49.619.853/0001-03',
+        'cnpb' => '2022/0020-83',
+        'loading' => '0%',
+        'slogan' => 'A realização do seu futuro',
+        'proposalPrefix' => 'MPX',
         'txidPrefix' => 'MAISPREMIUM',
         'institution' => [
-            'number' => '000', // a definir
-            'name' => 'INSTITUIDOR A DEFINIR',
+            'number' => '009',
+            'name' => 'CEPREV',
         ],
         'insurer' => [
-            'name' => 'Seguradora a definir',
-            'shortName' => 'Seguradora a definir',
-            'cnpj' => '00.000.000/0000-00',
-            'loading' => '0%',
-            'code' => '000000',
-            'membershipAgreement' => 'A DEFINIR',
-            'marketingAction' => 'A DEFINIR',
-            'branch' => 'A DEFINIR',
-            'alternative' => '00',
-            'secureBroker1' => 'A DEFINIR',
+            'name' => 'Mongeral Aegon Seguros e Previdência',
+            'shortName' => 'MAG Seguros',
+            'cnpj' => '33.608.308/0001-73',
+            'loading' => '30%',
+            'code' => '100350',
+            'membershipAgreement' => 'AD2550',
+            'marketingAction' => 'AM0493',
+            'branch' => 'F22',
+            'alternative' => '01',
+            'secureBroker1' => 'MT 8002897',
         ],
         'broker' => [
-            'name' => 'Corretora a definir',
-            'code' => '000000000',
+            'name' => 'Corretop Corretora de Seguros',
+            'code' => '202104784',
         ],
         'pix' => [
             'provider' => 'bancodobrasil',
