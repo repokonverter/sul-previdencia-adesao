@@ -184,6 +184,7 @@ class BenefitPlanHostTest extends TestCase
         $this->onSecondPlanHost();
         $this->get("/proposta/$token");
 
-        $this->assertRedirect("https://plenoprev.konverter.com.br/proposta/$token");
+        // PLENOPREV_BASE_URL do .env de desenvolvimento muda o host.
+        $this->assertRedirect(Configure::read('BenefitPlans.plenoprev.baseUrl') . "/proposta/$token");
     }
 }
